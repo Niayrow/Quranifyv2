@@ -1,33 +1,61 @@
-import React, { useState, useMemo, lazy, Suspense } from 'react';
+import React, { useEffect, useState, useMemo, lazy, Suspense, useDeferredValue } from 'react';
 import { useAudio, AudioProvider } from './context/AudioContext';
 import { ReciterCard } from './components/ReciterCard';
 import { BottomNavbar } from './components/BottomNavbar';
 import { 
-  Search, Heart, Radio, AlertTriangle
+  Search, Heart, Radio, AlertTriangle, Crown, Headphones, Play
 } from 'lucide-react';
 import type { Reciter } from './types';
-import { RECITER_IMAGES } from './utils/images';
+import { getGeneratedReciterAvatar, getReciterImage } from './utils/images';
 
 const SurahList = lazy(() => import('./components/SurahList').then((module) => ({ default: module.SurahList })));
 const GlobalPlayer = lazy(() => import('./components/GlobalPlayer').then((module) => ({ default: module.GlobalPlayer })));
 const AboutPanel = lazy(() => import('./components/AboutPanel').then((module) => ({ default: module.AboutPanel })));
 const RECITER_BATCH_SIZE = 14;
+const TAB_IDS = ['reciters', 'surahs', 'favorites', 'about'] as const;
+type TabId = typeof TAB_IDS[number];
+
+const getInitialTab = (): TabId => {
+  if (typeof window === 'undefined') return 'reciters';
+  const tab = new URLSearchParams(window.location.search).get('tab');
+  return TAB_IDS.includes(tab as TabId) ? tab as TabId : 'reciters';
+};
+
+const FEATURED_RECITER_IDS = [123, 54, 31, 30, 102, 5, 112, 118];
+const FEATURED_RECITER_COPY: Record<number, { badge: string; note: string }> = {
+  123: { badge: 'Top mondial', note: 'Voix moderne, claire et très écoutée' },
+  54: { badge: 'Imam de La Mecque', note: 'Récitation iconique du Haram' },
+  31: { badge: 'Grand classique', note: 'Voix puissante, très connue en prière' },
+  30: { badge: 'Très demandé', note: 'Lecture douce, stable et facile à suivre' },
+  102: { badge: 'Voix majeure', note: 'Ton posé, fluide et reconnaissable' },
+  5: { badge: 'Style marquant', note: 'Récitation expressive et populaire' },
+  112: { badge: 'Classique égyptien', note: 'Style profond et récitation historique' },
+  118: { badge: 'Référence tajwid', note: 'École lente, précise et pédagogique' },
+};
 
 // Dictionary of phonetic synonyms & aliases for the most famous reciters
 const RECITER_ALIASES: Record<number, string[]> = {
-  108: ["alafasy", "al afasy", "al-afasy", "alafasi", "afasy", "afasi", "mishary", "mishari", "rashid", "mishari rashid alafasy"],
-  118: ["sudais", "soudais", "soudays", "sudays", "abdul rahman", "soudaiss", "sudaiss"],
-  104: ["muaiqly", "al muaiqly", "al-muaiqly", "mueaqly", "maher", "mahir", "mouaiqly"],
-  44: ["ghamdi", "al ghamdi", "al-ghamdi", "ghamidi", "saad", "sa'd"],
-  122: ["dosari", "dossari", "dossary", "al dosari", "yasser", "yassir"],
-  54: ["abdul basit", "abdelbasset", "abdel basit", "basit", "samad"],
-  78: ["minshawi", "menshawi", "menshavi", "mohamed siddiq"],
-  94: ["shuraim", "churaim", "shuraym", "saud"],
-  112: ["ghamdi", "hassan", "hazem"],
-  60: ["husary", "hussary", "al hussary", "mahmoud khalil"],
-  2: ["tablawi", "al tablawi", "mahmoud"],
+  123: ["alafasy", "al afasy", "al-afasy", "alafasi", "afasy", "afasi", "mishary", "mshary", "mishari", "rashid", "mishari rashid alafasy"],
+  54: ["sudais", "soudais", "soudays", "sudays", "abdul rahman", "soudaiss", "sudaiss"],
+  102: ["muaiqly", "al muaiqly", "al-muaiqly", "mueaqly", "maher", "mahir", "mouaiqly", "meaqli"],
+  31: ["shuraim", "shurim", "shuraym", "cherim", "saoud", "saud al shuraim"],
+  30: ["ghamidi", "ghmidi", "ghamdi", "saad", "saad el ghamidi"],
+  5: ["ajami", "ajmy", "el ajami", "ahmed ajami"],
+  118: ["husary", "hussary", "al hussary", "mahmoud khalil"],
+  112: ["minshawi", "menshawi", "menshavi", "mohamed siddiq", "manchaoui"],
+  106: ["tablawi", "tablawy", "mohamed tablawi", "mohamed el tablawi"],
+  74: ["hudhaify", "hudaify", "houdayfi", "ali hudhaify"],
+  86: ["qattami", "qatami", "nasser qattami", "naser al qattami"],
+  92: ["doussari", "dosari", "yasser dossari", "yasser al doussari"],
+  226: ["ghamdi", "khalid ghamdi", "khaled al ghamdi"],
+  60: ["basfer", "abdellah basfer", "abdullah basfar"],
+  44: ["hachem", "hashem", "salah"],
+  94: ["yasser", "faylakawi", "fylakawi"],
+  2: ["jebrine", "jebreen", "ibrahime jebrine"],
   3: ["hudhaify", "hudaify", "al hudhaify", "ali jaber"],
 };
+
+const SEARCH_STOP_WORDS = new Set(['al', 'el', 'a', 'an', 'bin', 'ben', 'ibn', 'abu']);
 
 // Advanced string normalizer that handles French diacritics, hyphens, and whitespace
 const normalizeString = (str: string): string => {
@@ -40,77 +68,167 @@ const normalizeString = (str: string): string => {
     .trim();
 };
 
-// High-performance search relevancy scoring algorithm
-const getSearchScore = (reciter: Reciter, queryNormalized: string): number => {
-  const nameNormalized = normalizeString(reciter.name);
-  
-  // 1. Exact match gets ultimate priority
-  if (nameNormalized === queryNormalized) return 1000;
-  
-  // 2. Exact phrase containment
-  if (nameNormalized.includes(queryNormalized)) return 500;
-  
-  // 3. Synonym / Alias match
-  const aliases = RECITER_ALIASES[reciter.id] || [];
-  for (const alias of aliases) {
-    if (alias.includes(queryNormalized) || queryNormalized.includes(alias)) {
-      return 400;
+const compactString = (str: string) => str.replace(/\s/g, '');
+
+const getSearchTokens = (value: string) => (
+  normalizeString(value)
+    .split(' ')
+    .filter((token) => token && !SEARCH_STOP_WORDS.has(token))
+);
+
+const uniqueSearchCandidates = (reciter: Reciter) => {
+  const normalizedCandidates = [
+    reciter.name,
+    ...(RECITER_ALIASES[reciter.id] || [])
+  ].map(normalizeString).filter(Boolean);
+
+  return Array.from(new Set(normalizedCandidates));
+};
+
+const isSubsequence = (needle: string, haystack: string) => {
+  if (!needle) return true;
+  let index = 0;
+  for (const char of haystack) {
+    if (char === needle[index]) index += 1;
+    if (index === needle.length) return true;
+  }
+  return false;
+};
+
+const levenshteinDistance = (source: string, target: string, maxDistance = 4) => {
+  if (source === target) return 0;
+  if (Math.abs(source.length - target.length) > maxDistance) return maxDistance + 1;
+
+  let previous = Array.from({ length: target.length + 1 }, (_, index) => index);
+  let current = new Array<number>(target.length + 1);
+
+  for (let i = 1; i <= source.length; i += 1) {
+    current[0] = i;
+    let rowMin = current[0];
+
+    for (let j = 1; j <= target.length; j += 1) {
+      const substitutionCost = source[i - 1] === target[j - 1] ? 0 : 1;
+      current[j] = Math.min(
+        previous[j] + 1,
+        current[j - 1] + 1,
+        previous[j - 1] + substitutionCost
+      );
+      rowMin = Math.min(rowMin, current[j]);
+    }
+
+    if (rowMin > maxDistance) return maxDistance + 1;
+    [previous, current] = [current, previous];
+  }
+
+  return previous[target.length];
+};
+
+const getBigramScore = (query: string, target: string) => {
+  if (query.length < 2 || target.length < 2) return 0;
+
+  const targetBigrams = new Map<string, number>();
+  for (let index = 0; index < target.length - 1; index += 1) {
+    const bigram = target.slice(index, index + 2);
+    targetBigrams.set(bigram, (targetBigrams.get(bigram) || 0) + 1);
+  }
+
+  let overlap = 0;
+  for (let index = 0; index < query.length - 1; index += 1) {
+    const bigram = query.slice(index, index + 2);
+    const count = targetBigrams.get(bigram) || 0;
+    if (count > 0) {
+      overlap += 1;
+      targetBigrams.set(bigram, count - 1);
     }
   }
 
-  // 4. Token prefix and initials matching
-  const queryTokens = queryNormalized.split(" ");
-  const nameTokens = nameNormalized.split(" ");
-  
-  // Match initials (e.g., 'MA' from 'Mishary Alafasy')
-  const initials = nameTokens.map(t => t[0]).join("");
-  if (initials.includes(queryNormalized) || queryNormalized === initials) {
-    return 300;
+  return (2 * overlap) / (query.length + target.length - 2);
+};
+
+const getTokenScore = (queryToken: string, targetToken: string) => {
+  if (!queryToken || !targetToken) return 0;
+  if (queryToken === targetToken) return 180;
+  if (targetToken.startsWith(queryToken)) return 150;
+  if (targetToken.includes(queryToken)) return 122;
+  if (queryToken.length >= 3 && isSubsequence(queryToken, targetToken)) return 96;
+
+  const maxDistance = queryToken.length <= 4 ? 1 : queryToken.length <= 7 ? 2 : 3;
+  const distance = levenshteinDistance(queryToken, targetToken, maxDistance);
+  if (distance <= maxDistance) {
+    return Math.max(72, 128 - distance * 24);
   }
 
-  let matchCount = 0;
-  let prefixMatchCount = 0;
-  
-  for (const qToken of queryTokens) {
-    if (!qToken) continue;
-    
-    // Prefix match on a token (e.g. 'shur' matches 'shuraim')
-    const isPrefix = nameTokens.some(nToken => nToken.startsWith(qToken));
-    if (isPrefix) {
-      prefixMatchCount++;
-    }
-    
-    // Simple containment
-    const isContained = nameTokens.some(nToken => nToken.includes(qToken));
-    if (isContained) {
-      matchCount++;
-    }
+  const bigramScore = getBigramScore(queryToken, targetToken);
+  if (bigramScore >= 0.58) return Math.round(70 + bigramScore * 35);
+
+  return 0;
+};
+
+const getCandidateScore = (candidate: string, queryNormalized: string) => {
+  const candidateCompact = compactString(candidate);
+  const queryCompact = compactString(queryNormalized);
+
+  if (!queryCompact) return 0;
+  if (candidate === queryNormalized) return 1200;
+  if (candidateCompact === queryCompact) return 1140;
+  if (candidate.startsWith(queryNormalized)) return 1020;
+  if (candidateCompact.startsWith(queryCompact)) return 990;
+  if (candidate.includes(queryNormalized)) return 900;
+  if (candidateCompact.includes(queryCompact)) return 860;
+
+  const queryTokens = getSearchTokens(queryNormalized);
+  const candidateTokens = getSearchTokens(candidate);
+  if (queryTokens.length === 0 || candidateTokens.length === 0) return 0;
+
+  const initials = candidateTokens.map((token) => token[0]).join('');
+  if (queryCompact.length >= 2 && initials.startsWith(queryCompact)) return 760;
+  if (queryCompact.length >= 3 && isSubsequence(queryCompact, candidateCompact)) return 280;
+
+  const tokenScores = queryTokens.map((queryToken) => (
+    Math.max(...candidateTokens.map((candidateToken) => getTokenScore(queryToken, candidateToken)))
+  ));
+  const matchedTokens = tokenScores.filter((score) => score >= 72).length;
+  const allTokensMatched = matchedTokens === queryTokens.length;
+
+  if (allTokensMatched) {
+    const averageTokenScore = tokenScores.reduce((sum, score) => sum + score, 0) / tokenScores.length;
+    return Math.round(430 + averageTokenScore * 1.55);
   }
 
-  if (prefixMatchCount === queryTokens.length) {
-    return 200 + prefixMatchCount * 10;
+  if (matchedTokens > 0 && queryTokens.length > 1) {
+    const matchRatio = matchedTokens / queryTokens.length;
+    return Math.round(230 + matchRatio * 160 + Math.max(...tokenScores) * 0.45);
   }
 
-  if (matchCount > 0) {
-    return 100 + matchCount * 10;
-  }
+  if (queryCompact.length >= 4) {
+    const maxDistance = queryCompact.length <= 6 ? 2 : 3;
+    const distance = levenshteinDistance(queryCompact, candidateCompact, maxDistance);
+    if (distance <= maxDistance) return 420 - distance * 45;
 
-  // 5. Typo Tolerance via Jaccard char overlap (threshold of 0.55 similarity)
-  const queryChars = new Set(queryNormalized.replace(/\s/g, ""));
-  const nameChars = new Set(nameNormalized.replace(/\s/g, ""));
-  let intersectionSize = 0;
-  for (const c of queryChars) {
-    if (nameChars.has(c)) {
-      intersectionSize++;
-    }
-  }
-  const JaccardScore = intersectionSize / (queryChars.size + nameChars.size - intersectionSize);
-  
-  if (JaccardScore > 0.55) {
-    return 50 + Math.round(JaccardScore * 40);
+    const bigramScore = getBigramScore(queryCompact, candidateCompact);
+    if (bigramScore >= 0.5) return Math.round(220 + bigramScore * 220);
   }
 
   return 0;
+};
+
+const getSearchThreshold = (queryNormalized: string) => {
+  const queryLength = compactString(queryNormalized).length;
+  if (queryLength <= 2) return 120;
+  if (queryLength === 3) return 260;
+  return 540;
+};
+
+// Predictive search: accents/case-insensitive, alias-aware, typo-tolerant and stable.
+const getSearchScore = (reciter: Reciter, queryNormalized: string): number => {
+  if (!queryNormalized) return 0;
+
+  const bestCandidateScore = Math.max(
+    ...uniqueSearchCandidates(reciter).map((candidate) => getCandidateScore(candidate, queryNormalized))
+  );
+  const famousBoost = FEATURED_RECITER_IDS.includes(reciter.id) ? 18 : 0;
+
+  return bestCandidateScore >= getSearchThreshold(queryNormalized) ? bestCandidateScore + famousBoost : 0;
 };
 
 const RecitersLoadingSkeleton: React.FC = () => (
@@ -141,6 +259,135 @@ const RecitersLoadingSkeleton: React.FC = () => (
   </div>
 );
 
+const LoadingHome: React.FC<{ progress: number; reciterCount: number }> = ({ progress, reciterCount }) => {
+  const countdown = Math.max(0, Math.ceil((100 - progress) / 20));
+  const statusText = progress >= 96
+    ? 'Préparation de l’interface'
+    : reciterCount > 0
+      ? 'Synchronisation du catalogue complet'
+      : 'Chargement des récitateurs';
+
+  return (
+    <div className="min-h-[100dvh] w-full bg-slate-950 text-slate-100 flex items-center justify-center px-6 py-10 overflow-hidden">
+      <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_0%,rgba(16,185,129,0.12),transparent_45%),radial-gradient(circle_at_10%_90%,rgba(245,158,11,0.06),transparent_35%)] pointer-events-none" />
+      <main className="relative w-full max-w-sm flex flex-col items-center text-center gap-8">
+        <div className="flex flex-col items-center gap-4">
+          <div className="w-20 h-20 rounded-3xl bg-gradient-to-tr from-emerald-500 to-amber-500 flex items-center justify-center shadow-2xl shadow-emerald-500/20">
+            <Radio className="w-9 h-9 text-slate-950" />
+          </div>
+          <div>
+            <h1 className="text-3xl font-black tracking-tight text-emerald-100 m-0">QURANIFY</h1>
+            <p className="text-[11px] tracking-[0.22em] text-slate-400 font-bold uppercase mt-1">
+              Lecteur Coranique Premium
+            </p>
+          </div>
+        </div>
+
+        <div className="w-full flex flex-col gap-4">
+          <div className="flex items-center justify-between text-xs font-bold uppercase tracking-widest text-slate-400">
+            <span>{statusText}</span>
+            <span className="text-emerald-400">{Math.round(progress)}%</span>
+          </div>
+          <div className="h-3 w-full rounded-full bg-slate-900 border border-slate-800 overflow-hidden shadow-inner">
+            <div
+              className="h-full rounded-full bg-gradient-to-r from-emerald-500 via-emerald-300 to-amber-400 transition-[width] duration-500 ease-out shadow-[0_0_18px_rgba(16,185,129,0.45)]"
+              style={{ width: `${progress}%` }}
+            />
+          </div>
+          <div className="grid grid-cols-3 gap-2 text-left">
+            <div className="rounded-2xl border border-slate-800 bg-slate-900/70 p-3">
+              <p className="text-[10px] uppercase tracking-widest text-slate-500 font-bold">Récitants</p>
+              <p className="text-lg font-black text-slate-100 mt-1">{reciterCount || '...'}</p>
+            </div>
+            <div className="rounded-2xl border border-slate-800 bg-slate-900/70 p-3">
+              <p className="text-[10px] uppercase tracking-widest text-slate-500 font-bold">Sourates</p>
+              <p className="text-lg font-black text-slate-100 mt-1">114</p>
+            </div>
+            <div className="rounded-2xl border border-slate-800 bg-slate-900/70 p-3">
+              <p className="text-[10px] uppercase tracking-widest text-slate-500 font-bold">Départ</p>
+              <p className="text-lg font-black text-slate-100 mt-1">{countdown}s</p>
+            </div>
+          </div>
+        </div>
+
+        <div className="flex items-center gap-2 text-xs text-slate-400">
+          <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+          Connexion à l’API coranique
+        </div>
+      </main>
+    </div>
+  );
+};
+
+interface FeaturedReciterCardProps {
+  reciter: Reciter;
+  isSelected: boolean;
+  onSelect: () => void;
+}
+
+const FeaturedReciterCard: React.FC<FeaturedReciterCardProps> = ({ reciter, isSelected, onSelect }) => {
+  const profile = FEATURED_RECITER_COPY[reciter.id] || {
+    badge: 'Récitateur reconnu',
+    note: 'Sélection recommandée pour commencer',
+  };
+  const imageUrl = getReciterImage(reciter);
+  const fallbackImage = getGeneratedReciterAvatar(reciter);
+  const moshaf = reciter.moshaf.find((item) => item.surah_list.split(',').length >= 100) || reciter.moshaf[0];
+  const surahCount = moshaf?.surah_list.split(',').length || 0;
+
+  return (
+    <button
+      onClick={onSelect}
+      className={`group relative overflow-hidden rounded-2xl border p-4 text-left transition-all tap-feedback ${
+        isSelected
+          ? 'border-emerald-500/50 bg-emerald-500/10 shadow-[0_12px_28px_rgba(16,185,129,0.16)]'
+          : 'border-slate-800/70 bg-slate-900/55 hover:border-emerald-500/35 hover:bg-slate-900/85'
+      }`}
+    >
+      <div className="absolute inset-0 bg-[radial-gradient(circle_at_20%_0%,rgba(16,185,129,0.14),transparent_38%)] opacity-70 pointer-events-none" />
+      <div className="relative flex gap-4">
+        <div className="w-20 h-20 shrink-0 rounded-2xl overflow-hidden border border-slate-700/70 bg-slate-950 shadow-xl">
+          <img
+            src={imageUrl}
+            alt={reciter.name}
+            width="80"
+            height="80"
+            loading="lazy"
+            decoding="async"
+            className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
+            onError={(e) => {
+              const img = e.currentTarget;
+              if (img.src !== fallbackImage) {
+                img.src = fallbackImage;
+              }
+            }}
+          />
+        </div>
+
+        <div className="min-w-0 flex-1">
+          <div className="flex items-center gap-2 mb-2">
+            <span className="inline-flex items-center gap-1 rounded-full bg-amber-400/10 border border-amber-400/20 px-2 py-0.5 text-[10px] font-black uppercase tracking-widest text-amber-300">
+              <Crown className="w-3 h-3" />
+              {profile.badge}
+            </span>
+          </div>
+          <h3 className="text-base font-black text-slate-100 leading-tight truncate">{reciter.name}</h3>
+          <p className="text-xs text-slate-400 mt-1 leading-snug line-clamp-2">{profile.note}</p>
+          <div className="mt-3 flex items-center justify-between gap-3">
+            <span className="inline-flex items-center gap-1.5 text-[11px] font-semibold text-emerald-300">
+              <Headphones className="w-3.5 h-3.5" />
+              {surahCount} sourates
+            </span>
+            <span className="w-9 h-9 rounded-full bg-emerald-500 text-slate-950 flex items-center justify-center shadow-lg shadow-emerald-500/20">
+              <Play className="w-4 h-4 fill-current ml-0.5" />
+            </span>
+          </div>
+        </div>
+      </div>
+    </button>
+  );
+};
+
 const AppContent: React.FC = () => {
   const {
     reciters,
@@ -152,10 +399,38 @@ const AppContent: React.FC = () => {
   } = useAudio();
 
 
-  const [activeTab, setActiveTab] = useState<string>('reciters');
+  const [activeTab, setActiveTab] = useState<string>(() => getInitialTab());
   const [reciterSearch, setReciterSearch] = useState<string>('');
+  const deferredReciterSearch = useDeferredValue(reciterSearch);
   const [selectedLetter, setSelectedLetter] = useState<string>('');
   const [reciterPaging, setReciterPaging] = useState({ key: '', limit: RECITER_BATCH_SIZE });
+  const [loadingProgress, setLoadingProgress] = useState(8);
+  const [showLoadingHome, setShowLoadingHome] = useState(true);
+
+  useEffect(() => {
+    if (!isLoadingReciters) {
+      const completeTimer = window.setTimeout(() => setLoadingProgress(100), 0);
+      const doneTimer = window.setTimeout(() => setShowLoadingHome(false), 550);
+      return () => {
+        window.clearTimeout(completeTimer);
+        window.clearTimeout(doneTimer);
+      };
+    }
+
+    const showTimer = window.setTimeout(() => setShowLoadingHome(true), 0);
+    const progressTimer = window.setInterval(() => {
+      setLoadingProgress((value) => {
+        if (value >= 88) return value;
+        const step = value < 45 ? 9 : value < 70 ? 5 : 2;
+        return Math.min(88, value + step);
+      });
+    }, 280);
+
+    return () => {
+      window.clearTimeout(showTimer);
+      window.clearInterval(progressTimer);
+    };
+  }, [isLoadingReciters]);
 
   // Favorites state persisted locally
   const [favorites, setFavorites] = useState<number[]>(() => {
@@ -187,28 +462,12 @@ const AppContent: React.FC = () => {
     return Array.from(new Set(letters)).sort();
   }, [reciters]);
 
-  // Extract dynamic curated categories for reciters
-  const curatedCategories = useMemo(() => {
+  const featuredReciters = useMemo(() => {
     if (!reciters) return [];
-    
-    return [
-      {
-        id: 'popular',
-        title: '✨ Les Incontournables',
-        description: 'Les voix les plus écoutées au monde',
-        reciters: [108, 118, 104, 54, 44, 122]
-          .map(id => reciters.find(r => r.id === id))
-          .filter((r): r is Reciter => !!r)
-      },
-      {
-        id: 'discover',
-        title: '🌟 À Découvrir',
-        description: 'Récitations classiques et styles uniques',
-        reciters: [78, 60, 94, 112, 2, 3]
-          .map(id => reciters.find(r => r.id === id))
-          .filter((r): r is Reciter => !!r)
-      }
-    ].filter(category => category.reciters.length > 0);
+
+    return FEATURED_RECITER_IDS
+      .map(id => reciters.find(r => r.id === id))
+      .filter((r): r is Reciter => !!r);
   }, [reciters]);
 
   // Client-side fuzzy search and letter filter on reciters
@@ -227,8 +486,8 @@ const AppContent: React.FC = () => {
     }
 
     // Apply search query with smart ranking
-    if (reciterSearch.trim()) {
-      const queryNorm = normalizeString(reciterSearch);
+    if (deferredReciterSearch.trim()) {
+      const queryNorm = normalizeString(deferredReciterSearch);
       
       // Calculate search scores for all items
       const scored = result
@@ -239,15 +498,15 @@ const AppContent: React.FC = () => {
         .filter(item => item.score > 0); // Keep only matching items
         
       // Sort by score in descending order
-      scored.sort((a, b) => b.score - a.score);
+      scored.sort((a, b) => b.score - a.score || a.reciter.name.localeCompare(b.reciter.name));
       
       return scored.map(item => item.reciter);
     }
 
     return result;
-  }, [reciters, reciterSearch, selectedLetter]);
+  }, [reciters, deferredReciterSearch, selectedLetter]);
 
-  const reciterFilterKey = `${reciterSearch.trim()}|${selectedLetter}`;
+  const reciterFilterKey = `${deferredReciterSearch.trim()}|${selectedLetter}`;
   const visibleReciterLimit = reciterPaging.key === reciterFilterKey
     ? reciterPaging.limit
     : RECITER_BATCH_SIZE;
@@ -258,6 +517,7 @@ const AppContent: React.FC = () => {
   );
 
   const hasMoreReciters = visibleReciterLimit < filteredReciters.length;
+  const isSearchPending = reciterSearch !== deferredReciterSearch;
 
   const favoritedReciters = useMemo(() => {
     if (!reciters) return [];
@@ -269,6 +529,10 @@ const AppContent: React.FC = () => {
     // Smooth transition: shift to the surahs tab immediately to let them play
     setActiveTab('surahs');
   };
+
+  if (showLoadingHome) {
+    return <LoadingHome progress={loadingProgress} reciterCount={reciters.length} />;
+  }
 
   return (
     <div className="flex-1 flex flex-col pt-4 px-4 max-w-lg mx-auto w-full mobile-shell-padding md:pl-32 md:pb-32 md:max-w-4xl md:px-8">
@@ -321,68 +585,50 @@ const AppContent: React.FC = () => {
               )}
             </div>
 
-            {/* A. Curated Discover Categories */}
-            {!reciterSearch && !selectedLetter && curatedCategories.length > 0 && (
-              <div className="flex flex-col gap-6">
-                {curatedCategories.map((category) => (
-                  <div key={category.id} className="flex flex-col gap-3">
-                    <div>
-                      <h3 className="text-sm font-bold tracking-wide text-emerald-400 flex items-center gap-1.5">
-                        {category.title}
-                      </h3>
-                      <p className="text-[10px] text-slate-400 font-medium ml-1 mt-0.5 uppercase tracking-widest">{category.description}</p>
-                    </div>
-                    <div className="flex overflow-x-auto gap-4 pb-3 scrollbar-thin scrollbar-thumb-slate-800 scrollbar-track-transparent snap-x snap-mandatory">
-                      {category.reciters.map((reciter) => {
-                        const isSelected = activeReciter?.id === reciter.id;
-                        const nameParts = reciter.name.split(' ');
-                        const initials = nameParts.map(n => n[0]).slice(0, 2).join('').toUpperCase();
-                        const imageUrl = RECITER_IMAGES[reciter.id];
-                        
-                        return (
-                          <button
-                            key={reciter.id}
-                            onClick={() => handleSelectReciter(reciter)}
-                            className="flex flex-col items-center shrink-0 tap-feedback focus:outline-none w-20 snap-start group"
-                          >
-                            <div className={`relative w-16 h-16 rounded-2xl bg-gradient-to-tr flex items-center justify-center font-bold text-lg shadow-lg transition-all duration-300 overflow-hidden ${
-                              isSelected 
-                                ? 'from-emerald-500 to-amber-500 text-slate-950 scale-105 shadow-[0_10px_20px_rgba(16,185,129,0.3)] ring-2 ring-emerald-500 ring-offset-2 ring-offset-slate-950' 
-                                : 'from-slate-900 to-slate-800 border border-slate-800/80 text-slate-350 hover:border-emerald-500/40 hover:text-emerald-400 hover:shadow-[0_8px_16px_rgba(16,185,129,0.1)] group-hover:-translate-y-1'
-                            }`}>
-                              {imageUrl ? (
-                                <>
-                                  <img 
-                                    src={imageUrl} 
-                                    alt={reciter.name} 
-                                    width="64"
-                                    height="64"
-                                    loading="lazy"
-                                    decoding="async"
-                                    className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
-                                    onError={(e) => {
-                                      (e.target as HTMLImageElement).style.display = 'none';
-                                      (e.target as HTMLImageElement).nextElementSibling?.classList.remove('hidden');
-                                    }}
-                                  />
-                                  <span className="hidden">{initials}</span>
-                                </>
-                              ) : (
-                                <span>{initials}</span>
-                              )}
-                            </div>
-                            <span className={`text-[10px] text-center mt-2 w-full transition-colors leading-tight ${
-                              isSelected ? 'text-emerald-400 font-bold' : 'text-slate-300 font-medium group-hover:text-emerald-300'
-                            }`}>
-                              {reciter.name}
-                            </span>
-                          </button>
-                        );
-                      })}
-                    </div>
-                  </div>
-                ))}
+            {reciterSearch.trim() && (
+              <div className="flex items-center justify-between gap-3 rounded-2xl border border-slate-800/80 bg-slate-900/45 px-4 py-3">
+                <div className="min-w-0">
+                  <p className="text-xs font-bold text-slate-200">
+                    {isSearchPending ? 'Recherche...' : `${filteredReciters.length} résultat${filteredReciters.length > 1 ? 's' : ''} proche${filteredReciters.length > 1 ? 's' : ''}`}
+                  </p>
+                  <p className="mt-0.5 text-[11px] text-slate-500 truncate">
+                    Tolère accents, majuscules, lettres oubliées et orthographes proches.
+                  </p>
+                </div>
+                <span className="shrink-0 rounded-full border border-emerald-400/20 bg-emerald-400/10 px-2.5 py-1 text-[10px] font-black uppercase tracking-widest text-emerald-300">
+                  Smart
+                </span>
               </div>
+            )}
+
+            {!reciterSearch && !selectedLetter && featuredReciters.length > 0 && (
+              <section className="flex flex-col gap-3">
+                <div className="flex items-end justify-between gap-3">
+                  <div>
+                    <h2 className="text-lg font-black text-slate-100 flex items-center gap-2">
+                      <Crown className="w-5 h-5 text-amber-400" />
+                      Grands récitateurs
+                    </h2>
+                    <p className="text-xs text-slate-400 mt-1">
+                      Les voix les plus connues pour commencer sans chercher.
+                    </p>
+                  </div>
+                  <span className="hidden min-[390px]:inline-flex text-[10px] font-black uppercase tracking-widest text-emerald-400 bg-emerald-400/10 border border-emerald-400/20 rounded-full px-3 py-1">
+                    Sélection
+                  </span>
+                </div>
+
+                <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
+                  {featuredReciters.map((reciter) => (
+                    <FeaturedReciterCard
+                      key={reciter.id}
+                      reciter={reciter}
+                      isSelected={activeReciter?.id === reciter.id}
+                      onSelect={() => handleSelectReciter(reciter)}
+                    />
+                  ))}
+                </div>
+              </section>
             )}
 
             {/* B. Alphabetical A-Z Letter Filter Bar */}

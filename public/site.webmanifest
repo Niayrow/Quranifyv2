@@ -1,0 +1,67 @@
+{
+  "name": "Quranify - Lecteur Coranique Premium",
+  "short_name": "Quranify",
+  "description": "Lecteur coranique mobile-first pour écouter les grands récitateurs du Coran en streaming, gérer vos favoris et reprendre l'écoute facilement.",
+  "id": "/",
+  "start_url": "/?source=pwa",
+  "scope": "/",
+  "display": "standalone",
+  "display_override": ["window-controls-overlay", "standalone", "minimal-ui"],
+  "orientation": "portrait",
+  "dir": "ltr",
+  "lang": "fr",
+  "background_color": "#020617",
+  "theme_color": "#020617",
+  "categories": ["music", "education", "lifestyle"],
+  "icons": [
+    { "src": "/icons/icon-72.png", "sizes": "72x72", "type": "image/png" },
+    { "src": "/icons/icon-96.png", "sizes": "96x96", "type": "image/png" },
+    { "src": "/icons/icon-128.png", "sizes": "128x128", "type": "image/png" },
+    { "src": "/icons/icon-144.png", "sizes": "144x144", "type": "image/png" },
+    { "src": "/icons/icon-152.png", "sizes": "152x152", "type": "image/png" },
+    { "src": "/icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "/icons/icon-384.png", "sizes": "384x384", "type": "image/png", "purpose": "any" },
+    { "src": "/icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "/icons/maskable-192.png", "sizes": "192x192", "type": "image/png", "purpose": "maskable" },
+    { "src": "/icons/maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ],
+  "shortcuts": [
+    {
+      "name": "Récitateurs",
+      "short_name": "Récitateurs",
+      "description": "Ouvrir la recherche de récitateurs",
+      "url": "/?tab=reciters",
+      "icons": [{ "src": "/icons/icon-192.png", "sizes": "192x192", "type": "image/png" }]
+    },
+    {
+      "name": "Favoris",
+      "short_name": "Favoris",
+      "description": "Retrouver vos récitateurs favoris",
+      "url": "/?tab=favorites",
+      "icons": [{ "src": "/icons/icon-192.png", "sizes": "192x192", "type": "image/png" }]
+    }
+  ],
+  "screenshots": [
+    {
+      "src": "/screenshots/mobile-home.png",
+      "sizes": "390x844",
+      "type": "image/png",
+      "form_factor": "narrow",
+      "label": "Accueil mobile avec les grands récitateurs"
+    },
+    {
+      "src": "/screenshots/wide-home.png",
+      "sizes": "1280x720",
+      "type": "image/png",
+      "form_factor": "wide",
+      "label": "Accueil desktop avec recherche et sélection de récitateurs"
+    },
+    {
+      "src": "/og-image.png",
+      "sizes": "1200x630",
+      "type": "image/png",
+      "form_factor": "wide",
+      "label": "Quranify, lecteur coranique premium"
+    }
+  ]
+}

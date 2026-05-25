@@ -2,15 +2,67 @@
 <html lang="fr">
   <head>
     <meta charset="UTF-8" />
-    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
     <meta name="theme-color" content="#020617" />
-    <meta name="description" content="Quranify est un lecteur coranique mobile-first avec streaming audio, favoris locaux et contrôles Media Session." />
-    <link rel="preconnect" href="https://mp3quran.net" crossorigin />
+    <meta name="color-scheme" content="dark" />
 
     <title>Quranify - Lecteur Coranique Premium</title>
+    <meta name="description" content="Quranify est un lecteur coranique mobile-first pour écouter les grands récitateurs du Coran en streaming, gérer vos favoris et reprendre l'écoute facilement." />
+    <meta name="keywords" content="Coran audio, Quran, récitateurs, Quranify, Mishary Al Afasi, Soudais, Maher Al Meaqli, Minshawi, Hussary, streaming coranique" />
+    <meta name="author" content="Quranify" />
+    <meta name="robots" content="index, follow, max-image-preview:large" />
+
+    <link rel="manifest" href="/site.webmanifest" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <link rel="icon" type="image/png" sizes="192x192" href="/favicon-192.png" />
+    <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png" />
+    <link rel="mask-icon" href="/safari-pinned-tab.svg" color="#10b981" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="apple-mobile-web-app-title" content="Quranify" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="application-name" content="Quranify" />
+    <meta name="msapplication-TileColor" content="#020617" />
+    <meta name="msapplication-config" content="/browserconfig.xml" />
+
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="Quranify" />
+    <meta property="og:title" content="Quranify - Lecteur Coranique Premium" />
+    <meta property="og:description" content="Écoutez les grands récitateurs du Coran dans une application mobile-first rapide, installable et pensée pour le streaming audio." />
+    <meta property="og:image" content="/og-image.png" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:image:alt" content="Quranify, lecteur coranique premium" />
+    <meta property="og:locale" content="fr_FR" />
+
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="Quranify - Lecteur Coranique Premium" />
+    <meta name="twitter:description" content="Application PWA pour écouter les récitateurs du Coran, sauvegarder vos favoris et reprendre l'écoute facilement." />
+    <meta name="twitter:image" content="/og-image.png" />
+
+    <link rel="preconnect" href="https://mp3quran.net" crossorigin />
+    <link rel="dns-prefetch" href="https://mp3quran.net" />
+    <link rel="preload" href="/icons/icon-192.png" as="image" type="image/png" />
+
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@type": "SoftwareApplication",
+        "name": "Quranify",
+        "applicationCategory": "MultimediaApplication",
+        "operatingSystem": "Web, Android, iOS",
+        "inLanguage": "fr",
+        "description": "Lecteur coranique mobile-first pour écouter les grands récitateurs du Coran en streaming, gérer vos favoris et reprendre l'écoute facilement.",
+        "offers": {
+          "@type": "Offer",
+          "price": "0",
+          "priceCurrency": "EUR"
+        }
+      }
+    </script>
   </head>
   <body class="bg-slate-950">
+    <noscript>Quranify nécessite JavaScript pour charger le lecteur coranique.</noscript>
     <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>
   </body>

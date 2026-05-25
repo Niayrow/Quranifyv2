@@ -12,9 +12,12 @@ createRoot(document.getElementById('root')!).render(
 // Register PWA Service Worker for offline launch capability
 if ('serviceWorker' in navigator && import.meta.env.PROD) {
   window.addEventListener('load', () => {
-    navigator.serviceWorker.register('/sw.js')
-      .then((reg) => console.log('[Service Worker] Registered successfully:', reg.scope))
-      .catch((err) => console.error('[Service Worker] Registration failed:', err));
+    navigator.serviceWorker.register('/sw.js', { updateViaCache: 'none' })
+      .then((registration) => {
+        registration.update();
+      })
+      .catch(() => {
+        // The app remains usable when service worker registration is blocked.
+      });
   });
 }
-

@@ -78,9 +78,15 @@ const stabilizeFirstScreenReciters = (apiReciters: Reciter[]) => {
   ];
 };
 
+const getAudioUrl = (moshaf: Moshaf, surah: Surah) => {
+  const paddedSurah = String(surah.id).padStart(3, '0');
+  const server = moshaf.server.endsWith('/') ? moshaf.server : `${moshaf.server}/`;
+  return `${server}${paddedSurah}.mp3`;
+};
+
 export const AudioProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [reciters, setReciters] = useState<Reciter[]>(SEEDED_RECITERS);
-  const [isLoadingReciters, setIsLoadingReciters] = useState<boolean>(SEEDED_RECITERS.length === 0);
+  const [isLoadingReciters, setIsLoadingReciters] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
 
   // Active configurations
@@ -106,9 +112,7 @@ export const AudioProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 
     const fetchReciters = async () => {
       try {
-        if (SEEDED_RECITERS.length === 0) {
-          setIsLoadingReciters(true);
-        }
+        setIsLoadingReciters(true);
         const response = await fetch(API_RECITERS_URL, { signal: controller.signal });
         if (!response.ok) {
           throw new Error('Failed to fetch reciters from the Quran API.');
@@ -254,6 +258,10 @@ export const AudioProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       // Synchronize action handlers
       try {
         navigator.mediaSession.setActionHandler('play', () => {
+          if (!audio.currentSrc) {
+            playTrack(currentTrack.reciter, currentTrack.moshaf, currentTrack.surah, currentTime);
+            return;
+          }
           audio.play().catch(err => console.error(err));
         });
         navigator.mediaSession.setActionHandler('pause', () => {
@@ -328,23 +336,15 @@ export const AudioProvider: React.FC<{ children: React.ReactNode }> = ({ childre
             if (surah) {
               setActiveSurahState(surah);
               
-              // Load track metadata into player state without playing
+              // Restore player metadata only. The audio source is loaded on user play.
               const restoredTrack: AudioTrack = { reciter, moshaf, surah };
               setCurrentTrack(restoredTrack);
               
-              const audio = audioRef.current;
-              if (audio) {
-                const paddedSurah = String(surah.id).padStart(3, '0');
-                const server = moshaf.server.endsWith('/') ? moshaf.server : `${moshaf.server}/`;
-                audio.src = `${server}${paddedSurah}.mp3`;
-                
-                const savedTime = readStorage(`${LOCAL_STORAGE_PREFIX}timestamp`);
-                if (savedTime) {
-                  const parsedTime = Number.parseFloat(savedTime);
-                  if (Number.isFinite(parsedTime) && parsedTime >= 0) {
-                    audio.currentTime = parsedTime;
-                    setCurrentTime(parsedTime);
-                  }
+              const savedTime = readStorage(`${LOCAL_STORAGE_PREFIX}timestamp`);
+              if (savedTime) {
+                const parsedTime = Number.parseFloat(savedTime);
+                if (Number.isFinite(parsedTime) && parsedTime >= 0) {
+                  setCurrentTime(parsedTime);
                 }
               }
             }
@@ -393,8 +393,9 @@ export const AudioProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   };
 
   // Play Actions
-  function playTrack(reciter: Reciter, moshaf: Moshaf, surah: Surah) {
-    if (!audioRef.current) return;
+  function playTrack(reciter: Reciter, moshaf: Moshaf, surah: Surah, startAt = 0) {
+    const audio = audioRef.current;
+    if (!audio) return;
     if (!moshaf.server) {
       setPlaybackStatus('error');
       return;
@@ -409,19 +410,34 @@ export const AudioProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     persistSelection(reciter, moshaf, surah);
 
     // 2. Play Audio File
-    const paddedSurah = String(surah.id).padStart(3, '0');
-    const server = moshaf.server.endsWith('/') ? moshaf.server : `${moshaf.server}/`;
-    const audioUrl = `${server}${paddedSurah}.mp3`;
+    const audioUrl = getAudioUrl(moshaf, surah);
+    const safeStartAt = Number.isFinite(startAt) ? Math.max(0, startAt) : 0;
 
-    audioRef.current.pause();
-    audioRef.current.src = audioUrl;
-    audioRef.current.playbackRate = playbackSpeed;
-    audioRef.current.load();
-    setCurrentTime(0);
+    audio.pause();
+    audio.src = audioUrl;
+    audio.playbackRate = playbackSpeed;
+    audio.load();
+    setCurrentTime(safeStartAt);
     setDuration(0);
     setPlaybackStatus('buffering');
+
+    if (safeStartAt > 0) {
+      const applyStartTime = () => {
+        try {
+          audio.currentTime = safeStartAt;
+        } catch {
+          // Some streams reject seeking before enough metadata is available.
+        }
+      };
+
+      if (audio.readyState >= HTMLMediaElement.HAVE_METADATA) {
+        applyStartTime();
+      } else {
+        audio.addEventListener('loadedmetadata', applyStartTime, { once: true });
+      }
+    }
     
-    audioRef.current.play()
+    audio.play()
       .then(() => {
         setPlaybackStatus('playing');
       })
@@ -432,12 +448,15 @@ export const AudioProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   };
 
   const togglePlay = () => {
-    if (!audioRef.current || !currentTrack) return;
+    const audio = audioRef.current;
+    if (!audio || !currentTrack || playbackStatus === 'buffering') return;
     
     if (playbackStatus === 'playing') {
-      audioRef.current.pause();
+      audio.pause();
+    } else if (!audio.currentSrc) {
+      playTrack(currentTrack.reciter, currentTrack.moshaf, currentTrack.surah, currentTime);
     } else {
-      audioRef.current.play().catch(err => {
+      audio.play().catch(err => {
         console.error(err);
         setPlaybackStatus('error');
       });
@@ -451,8 +470,13 @@ export const AudioProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   };
 
   const play = () => {
-    if (audioRef.current && currentTrack && playbackStatus !== 'playing') {
-      audioRef.current.play().catch(err => console.error(err));
+    const audio = audioRef.current;
+    if (audio && currentTrack && playbackStatus !== 'playing') {
+      if (!audio.currentSrc) {
+        playTrack(currentTrack.reciter, currentTrack.moshaf, currentTrack.surah, currentTime);
+        return;
+      }
+      audio.play().catch(err => console.error(err));
     }
   };
 

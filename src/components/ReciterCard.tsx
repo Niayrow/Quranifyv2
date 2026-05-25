@@ -2,7 +2,7 @@ import React from 'react';
 import type { Reciter, Moshaf } from '../types';
 import { useAudio } from '../context/AudioContext';
 import { Play, Volume2, Disc, Heart } from 'lucide-react';
-import { RECITER_IMAGES } from '../utils/images';
+import { getGeneratedReciterAvatar, getReciterImage } from '../utils/images';
 
 interface ReciterCardProps {
   reciter: Reciter;
@@ -69,7 +69,8 @@ export const ReciterCard: React.FC<ReciterCardProps> = ({
 
   const availableSurahs = getAvailableSurahs(reciter, currentCardMoshaf);
   const isPlayingThisReciter = currentTrack?.reciter.id === reciter.id && playbackStatus === 'playing';
-  const imageUrl = RECITER_IMAGES[reciter.id];
+  const imageUrl = getReciterImage(reciter);
+  const fallbackImage = getGeneratedReciterAvatar(reciter);
 
   const handleMoshafChange = (e: React.MouseEvent, moshaf: Moshaf) => {
     if (!isSelected) return;
@@ -100,26 +101,21 @@ export const ReciterCard: React.FC<ReciterCardProps> = ({
               ? 'bg-gradient-to-tr from-emerald-500 to-amber-500 text-slate-950 shadow-lg ring-2 ring-emerald-500 ring-offset-2 ring-offset-slate-950' 
               : 'bg-gradient-to-tr from-slate-800 to-slate-900 text-slate-400 border border-slate-700/50 group-hover:border-emerald-500/40 group-hover:text-emerald-400'
           }`}>
-            {imageUrl ? (
-              <>
-                <img 
-                  src={imageUrl} 
-                  alt={reciter.name} 
-                  width="56"
-                  height="56"
-                  loading="lazy"
-                  decoding="async"
-                  className="w-full h-full object-cover"
-                  onError={(e) => {
-                    (e.target as HTMLImageElement).style.display = 'none';
-                    (e.target as HTMLImageElement).nextElementSibling?.classList.remove('hidden');
-                  }}
-                />
-                <span className="hidden">{reciter.letter}</span>
-              </>
-            ) : (
-              <span>{reciter.letter}</span>
-            )}
+            <img
+              src={imageUrl}
+              alt={reciter.name}
+              width="56"
+              height="56"
+              loading="lazy"
+              decoding="async"
+              className="w-full h-full object-cover"
+              onError={(e) => {
+                const img = e.currentTarget;
+                if (img.src !== fallbackImage) {
+                  img.src = fallbackImage;
+                }
+              }}
+            />
           </div>
 
           <div className="flex-1 min-w-0">
