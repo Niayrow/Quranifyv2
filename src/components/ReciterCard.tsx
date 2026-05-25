@@ -80,7 +80,7 @@ export const ReciterCard: React.FC<ReciterCardProps> = ({
   return (
     <div
       onClick={onSelect}
-      className={`glass-panel-interactive cursor-pointer p-5 rounded-2xl flex flex-col justify-between gap-4 tap-feedback relative overflow-hidden group ${
+      className={`glass-panel-interactive content-visibility-auto cursor-pointer p-5 rounded-2xl flex flex-col justify-between gap-4 tap-feedback relative overflow-hidden group ${
         isSelected 
           ? 'border-emerald-500/40 bg-slate-900/80 shadow-[0_0_20px_rgba(16,185,129,0.1)] ring-1 ring-emerald-500/20' 
           : 'hover:border-slate-800'
@@ -105,6 +105,10 @@ export const ReciterCard: React.FC<ReciterCardProps> = ({
                 <img 
                   src={imageUrl} 
                   alt={reciter.name} 
+                  width="56"
+                  height="56"
+                  loading="lazy"
+                  decoding="async"
                   className="w-full h-full object-cover"
                   onError={(e) => {
                     (e.target as HTMLImageElement).style.display = 'none';

@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useState, useEffect, useRef, useCallback } from 'react';
 import type { Reciter, Moshaf, Surah, AudioTrack, PlaybackStatus } from '../types';
 import { SURAHS } from '../data/surahs';
+import { SEEDED_RECITERS } from '../data/recitersSeed';
 
 interface AudioContextType {
   // Playback state
@@ -67,9 +68,19 @@ const parseSavedNumber = (key: string, fallback: number, min?: number, max?: num
   return Math.min(max ?? parsed, Math.max(min ?? parsed, parsed));
 };
 
+const stabilizeFirstScreenReciters = (apiReciters: Reciter[]) => {
+  if (SEEDED_RECITERS.length === 0) return apiReciters;
+
+  const seededIds = new Set(SEEDED_RECITERS.map((reciter) => reciter.id));
+  return [
+    ...SEEDED_RECITERS,
+    ...apiReciters.filter((reciter) => !seededIds.has(reciter.id))
+  ];
+};
+
 export const AudioProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [reciters, setReciters] = useState<Reciter[]>([]);
-  const [isLoadingReciters, setIsLoadingReciters] = useState<boolean>(true);
+  const [reciters, setReciters] = useState<Reciter[]>(SEEDED_RECITERS);
+  const [isLoadingReciters, setIsLoadingReciters] = useState<boolean>(SEEDED_RECITERS.length === 0);
   const [error, setError] = useState<string | null>(null);
 
   // Active configurations
@@ -95,7 +106,9 @@ export const AudioProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 
     const fetchReciters = async () => {
       try {
-        setIsLoadingReciters(true);
+        if (SEEDED_RECITERS.length === 0) {
+          setIsLoadingReciters(true);
+        }
         const response = await fetch(API_RECITERS_URL, { signal: controller.signal });
         if (!response.ok) {
           throw new Error('Failed to fetch reciters from the Quran API.');
@@ -104,7 +117,7 @@ export const AudioProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         if (!isCurrentRequest) return;
 
         if (data && data.reciters) {
-          setReciters(data.reciters);
+          setReciters(stabilizeFirstScreenReciters(data.reciters));
           writeStorage(RECITERS_CACHE_KEY, JSON.stringify(data.reciters));
           // Restore selected reciter from local storage if valid
           restoreFromLocalStorage(data.reciters);
@@ -119,7 +132,7 @@ export const AudioProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         if (cached) {
           try {
             const cachedReciters = JSON.parse(cached) as Reciter[];
-            setReciters(cachedReciters);
+            setReciters(stabilizeFirstScreenReciters(cachedReciters));
             restoreFromLocalStorage(cachedReciters);
             setError('Connexion instable : affichage des récitants sauvegardés localement.');
           } catch {
