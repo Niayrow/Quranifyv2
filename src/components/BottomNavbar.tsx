@@ -16,7 +16,7 @@ export const BottomNavbar: React.FC<BottomNavbarProps> = ({ activeTab, setActive
   ];
 
   return (
-    <nav className="fixed bottom-0 left-0 right-0 glass-panel border-t border-slate-800/80 rounded-t-3xl shadow-[0_-10px_40px_rgba(0,0,0,0.5)] z-40 px-3 pb-safe pt-2 md:top-0 md:bottom-auto md:h-screen md:right-auto md:w-24 md:rounded-none md:border-t-0 md:border-r md:px-0 md:pt-8 md:pb-28 md:bg-slate-950/90 md:backdrop-blur-xl">
+    <nav className="fixed bottom-0 left-0 right-0 glass-panel-opaque border-t border-slate-800/80 rounded-t-3xl shadow-[0_-10px_40px_rgba(0,0,0,0.5)] z-40 px-3 pb-safe pt-2 md:top-0 md:bottom-auto md:h-screen md:right-auto md:w-24 md:rounded-none md:border-t-0 md:border-r md:px-0 md:pt-8 md:pb-28 md:bg-slate-950/90 md:backdrop-blur-xl">
       <div className="max-w-md mx-auto flex items-center justify-between h-16 md:flex-col md:h-full md:justify-start md:gap-8 md:w-full">
         {tabs.map((tab) => {
           const Icon = tab.icon;

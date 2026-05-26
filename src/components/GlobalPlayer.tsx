@@ -90,7 +90,7 @@ export const GlobalPlayer: React.FC = () => {
           if (window.innerWidth < 768) setIsExpanded(true);
         }}
         className={`fixed z-50 transition-all duration-300
-          left-3 right-3 bottom-[calc(5.6rem+env(safe-area-inset-bottom,0px))] rounded-2xl p-3 glass-panel border border-slate-800/80 shadow-2xl flex flex-row items-center justify-between
+          left-3 right-3 bottom-[calc(5.6rem+env(safe-area-inset-bottom,0px))] rounded-2xl p-3 glass-panel-opaque border border-slate-800/80 shadow-2xl flex flex-row items-center justify-between
           cursor-pointer active:scale-[0.98]
           md:left-0 md:right-0 md:bottom-0 md:h-24 md:rounded-none md:border-x-0 md:border-b-0 md:px-8 md:bg-slate-950/98 md:backdrop-blur-2xl md:grid md:grid-cols-3 md:cursor-default md:active:scale-100 md:transform-none md:shadow-[0_-15px_50px_rgba(0,0,0,0.6)]
           ${isExpanded ? 'opacity-0 pointer-events-none translate-y-4 md:opacity-100 md:pointer-events-auto md:translate-y-0' : 'opacity-100 translate-y-0'}
