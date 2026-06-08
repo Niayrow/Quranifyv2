@@ -4,8 +4,107 @@ import {
   Play, Pause, SkipForward, SkipBack, 
   ChevronDown, Volume2, VolumeX, Gauge, 
   Disc, AlertCircle, RefreshCw, RotateCcw,
-  RotateCw, ListMusic, Search, X 
+  RotateCw, ListMusic, Search, X,
+  Settings, Sparkles, Check, Moon, Repeat, Clock
 } from 'lucide-react';
+
+const THEMES: Record<string, {
+  name: string;
+  accent: string;
+  accentText: string;
+  accentTextHover: string;
+  accentBgLight: string;
+  accentBorder: string;
+  accentBorderActive: string;
+  accentBorderLight: string;
+  accentRing: string;
+  accentShadow: string;
+  accentGlow: string;
+  glowDisc: string;
+  sliderAccentColor: string;
+  sliderBackground: (percent: number) => string;
+}> = {
+  emerald: {
+    name: 'Spiritual Émeraude',
+    accent: 'bg-emerald-500 hover:bg-emerald-400',
+    accentText: 'text-emerald-400',
+    accentTextHover: 'hover:text-emerald-400',
+    accentBgLight: 'bg-emerald-500/10',
+    accentBorder: 'border-emerald-500/20',
+    accentBorderActive: 'border-emerald-500/40',
+    accentBorderLight: 'border-emerald-500/10',
+    accentRing: 'ring-emerald-500/20',
+    accentShadow: 'shadow-emerald-500/20',
+    accentGlow: 'from-emerald-500/5',
+    glowDisc: 'text-emerald-400 drop-shadow-[0_0_8px_rgba(52,211,153,0.5)]',
+    sliderAccentColor: '#10b981',
+    sliderBackground: (percent) => `linear-gradient(to right, #10b981 0%, #10b981 ${percent}%, #1e293b ${percent}%, #1e293b 100%)`
+  },
+  amber: {
+    name: 'Or Sacré',
+    accent: 'bg-amber-500 hover:bg-amber-400',
+    accentText: 'text-amber-400',
+    accentTextHover: 'hover:text-amber-400',
+    accentBgLight: 'bg-amber-500/10',
+    accentBorder: 'border-amber-500/20',
+    accentBorderActive: 'border-amber-500/40',
+    accentBorderLight: 'border-amber-500/10',
+    accentRing: 'ring-amber-500/20',
+    accentShadow: 'shadow-amber-500/20',
+    accentGlow: 'from-amber-500/5',
+    glowDisc: 'text-amber-400 drop-shadow-[0_0_8px_rgba(251,191,36,0.5)]',
+    sliderAccentColor: '#f59e0b',
+    sliderBackground: (percent) => `linear-gradient(to right, #f59e0b 0%, #f59e0b ${percent}%, #1e293b ${percent}%, #1e293b 100%)`
+  },
+  blue: {
+    name: 'Sérénité Céleste',
+    accent: 'bg-sky-500 hover:bg-sky-400',
+    accentText: 'text-sky-400',
+    accentTextHover: 'hover:text-sky-400',
+    accentBgLight: 'bg-sky-500/10',
+    accentBorder: 'border-sky-500/20',
+    accentBorderActive: 'border-sky-500/40',
+    accentBorderLight: 'border-sky-500/10',
+    accentRing: 'ring-sky-500/20',
+    accentShadow: 'shadow-sky-500/20',
+    accentGlow: 'from-sky-500/5',
+    glowDisc: 'text-sky-400 drop-shadow-[0_0_8px_rgba(56,189,248,0.5)]',
+    sliderAccentColor: '#0ea5e9',
+    sliderBackground: (percent) => `linear-gradient(to right, #0ea5e9 0%, #0ea5e9 ${percent}%, #1e293b ${percent}%, #1e293b 100%)`
+  },
+  purple: {
+    name: 'Améthyste Royale',
+    accent: 'bg-violet-500 hover:bg-violet-400',
+    accentText: 'text-violet-400',
+    accentTextHover: 'hover:text-violet-400',
+    accentBgLight: 'bg-violet-500/10',
+    accentBorder: 'border-violet-500/20',
+    accentBorderActive: 'border-violet-500/40',
+    accentBorderLight: 'border-violet-500/10',
+    accentRing: 'ring-violet-500/20',
+    accentShadow: 'shadow-violet-500/20',
+    accentGlow: 'from-violet-500/5',
+    glowDisc: 'text-violet-400 drop-shadow-[0_0_8px_rgba(167,139,250,0.5)]',
+    sliderAccentColor: '#8b5cf6',
+    sliderBackground: (percent) => `linear-gradient(to right, #8b5cf6 0%, #8b5cf6 ${percent}%, #1e293b ${percent}%, #1e293b 100%)`
+  },
+  oled: {
+    name: 'Nuit Infinie (OLED)',
+    accent: 'bg-slate-100 hover:bg-white',
+    accentText: 'text-slate-200',
+    accentTextHover: 'hover:text-white',
+    accentBgLight: 'bg-slate-900/50',
+    accentBorder: 'border-slate-800',
+    accentBorderActive: 'border-slate-700',
+    accentBorderLight: 'border-slate-800/60',
+    accentRing: 'ring-slate-800',
+    accentShadow: 'shadow-slate-900/40',
+    accentGlow: 'from-slate-900/5',
+    glowDisc: 'text-slate-200 drop-shadow-[0_0_8px_rgba(241,245,249,0.4)]',
+    sliderAccentColor: '#f1f5f9',
+    sliderBackground: (percent) => `linear-gradient(to right, #f1f5f9 0%, #f1f5f9 ${percent}%, #111827 ${percent}%, #111827 100%)`
+  }
+};
 
 export const GlobalPlayer: React.FC = () => {
   const {
@@ -22,7 +121,13 @@ export const GlobalPlayer: React.FC = () => {
     playNextTrack,
     playPrevTrack,
     playTrack,
-    getAvailableSurahs
+    getAvailableSurahs,
+    repeatMode,
+    setRepeatMode,
+    sleepTimer,
+    setSleepTimer,
+    playerTheme,
+    setPlayerTheme
   } = useAudio();
 
   const [isExpanded, setIsExpanded] = useState(false);
@@ -30,7 +135,18 @@ export const GlobalPlayer: React.FC = () => {
   const [prevVolume, setPrevVolume] = useState(volume);
   const [showSpeedMenu, setShowSpeedMenu] = useState(false);
   const [showPlaylistDrawer, setShowPlaylistDrawer] = useState(false);
+  const [showSettingsMenu, setShowSettingsMenu] = useState(false);
   const [drawerSearch, setDrawerSearch] = useState('');
+
+  // Active Theme resolver
+  const theme = THEMES[playerTheme] || THEMES.emerald;
+
+  // Format Sleep Timer Countdown
+  const formatSleepTime = (seconds: number) => {
+    const mins = Math.floor(seconds / 60);
+    const secs = seconds % 60;
+    return `${mins}m ${secs.toString().padStart(2, '0')}s`;
+  };
 
   // Time formatter (seconds -> mm:ss)
   const formatTime = (time: number) => {
@@ -92,12 +208,12 @@ export const GlobalPlayer: React.FC = () => {
         className={`fixed z-50 transition-all duration-300
           left-3 right-3 bottom-[calc(5.6rem+env(safe-area-inset-bottom,0px))] rounded-2xl p-3 glass-panel-opaque border border-slate-800/80 shadow-2xl flex flex-row items-center justify-between
           cursor-pointer active:scale-[0.98]
-          md:left-0 md:right-0 md:bottom-0 md:h-24 md:rounded-none md:border-x-0 md:border-b-0 md:px-8 md:bg-slate-950/98 md:backdrop-blur-2xl md:grid md:grid-cols-3 md:cursor-default md:active:scale-100 md:transform-none md:shadow-[0_-15px_50px_rgba(0,0,0,0.6)]
+          md:left-28 md:right-4 md:bottom-4 md:h-20 md:rounded-2xl md:border md:border-slate-800/60 md:px-6 md:bg-slate-950/92 md:backdrop-blur-3xl md:grid md:grid-cols-3 md:cursor-default md:active:scale-100 md:transform-none md:shadow-[0_20px_50px_rgba(0,0,0,0.8)] md:hover:border-slate-750/70
           ${isExpanded ? 'opacity-0 pointer-events-none translate-y-4 md:opacity-100 md:pointer-events-auto md:translate-y-0' : 'opacity-100 translate-y-0'}
         `}
       >
         <div 
-          className="absolute top-0 left-0 right-0 h-0.5 md:h-1 bg-slate-900 rounded-t-2xl md:rounded-none overflow-hidden md:cursor-pointer md:overflow-visible group/progress"
+          className="absolute top-0 left-0 right-0 h-0.5 md:h-1 bg-slate-900 rounded-t-2xl overflow-hidden md:cursor-pointer md:overflow-visible group/progress"
           onClick={(e) => {
             if (window.innerWidth < 768) return;
             e.stopPropagation();
@@ -107,79 +223,103 @@ export const GlobalPlayer: React.FC = () => {
           }}
         >
           <div 
-            className="h-full bg-emerald-500 transition-all duration-100 ease-linear shadow-[0_0_8px_rgba(16,185,129,0.8)] relative"
-            style={{ width: `${progressPercent}%` }}
+            className={`h-full ${theme.accent} transition-all duration-100 ease-linear shadow-[0_0_8px_rgba(16,185,129,0.8)] relative`}
+            style={{ width: `${progressPercent}%`, backgroundColor: theme.sliderAccentColor }}
           >
-            <div className="hidden md:block absolute right-0 top-1/2 -translate-y-1/2 w-3 h-3 bg-white rounded-full shadow-lg translate-x-1/2 scale-0 group-hover/progress:scale-100 transition-transform duration-200" />
+            <div className="hidden md:block absolute right-0 top-1/2 -translate-y-1/2 w-2.5 h-2.5 bg-white rounded-full shadow-lg translate-x-1/2 scale-0 group-hover/progress:scale-100 transition-transform duration-200" />
           </div>
         </div>
 
-        <div className="flex items-center gap-3 min-w-0 flex-1 md:col-span-1">
-          <div className={`w-10 h-10 md:w-14 md:h-14 rounded-xl bg-slate-950 flex items-center justify-center border border-slate-850 shrink-0 ${
-            playbackStatus === 'playing' ? 'animate-[spin_8s_linear_infinite]' : ''
-          }`}>
-            <Disc className="w-5 h-5 md:w-8 md:h-8 text-emerald-400" />
+        <div className="flex items-center gap-3.5 min-w-0 flex-1 md:col-span-1">
+          <div className="relative shrink-0">
+            <div className={`w-10 h-10 md:w-11 md:h-11 rounded-xl bg-slate-950 flex items-center justify-center border border-slate-850 shadow-inner`}>
+              <Disc className={`w-5 h-5 md:w-6 md:h-6 ${theme.accentText} ${playbackStatus === 'playing' ? 'animate-[spin_8s_linear_infinite]' : ''}`} />
+            </div>
+            {playbackStatus === 'playing' && (
+              <div 
+                className="absolute -bottom-1 -right-1 rounded-full p-0.5 border border-slate-950 flex items-center justify-center shadow-lg"
+                style={{ backgroundColor: theme.sliderAccentColor }}
+              >
+                <div className="flex gap-0.5 items-end justify-center h-2 w-2">
+                  <div className="w-0.5 bg-slate-950 animate-[shimmer_0.6s_infinite_alternate] h-full rounded-full" style={{ animationDelay: '0.1s' }}></div>
+                  <div className="w-0.5 bg-slate-950 animate-[shimmer_0.6s_infinite_alternate] h-2/3 rounded-full" style={{ animationDelay: '0.3s' }}></div>
+                  <div className="w-0.5 bg-slate-950 animate-[shimmer_0.6s_infinite_alternate] h-full rounded-full" style={{ animationDelay: '0.5s' }}></div>
+                </div>
+              </div>
+            )}
           </div>
 
           <div className="min-w-0 flex-1">
             <div className="flex items-baseline gap-1.5 md:gap-2">
-              <h4 className="font-semibold text-sm md:text-base text-slate-100 truncate hover:text-emerald-400 transition-colors">
+              <h4 className={`font-semibold text-xs md:text-sm text-slate-100 truncate hover:${theme.accentText} transition-colors`}>
                 {String(currentTrack.surah.id).padStart(3, '0')}. {currentTrack.surah.name}
               </h4>
-              <span className="text-[10px] md:text-xs text-slate-400 font-serif shrink-0">
+              <span className="text-[9px] md:text-[10px] text-slate-450 font-serif shrink-0">
                 ({currentTrack.surah.arabicName})
               </span>
             </div>
-            <p className="text-xs text-slate-400 truncate mt-0.5">
+            <p className="text-[10px] md:text-xs text-slate-400 truncate mt-0.5">
               {currentTrack.reciter.name} <span className="md:hidden">•</span> <span className="hidden md:inline-block mx-1.5">•</span> 
-              <span className="text-[10px] text-emerald-400 bg-emerald-400/5 px-1 py-0.2 rounded border border-emerald-500/10">{currentTrack.moshaf.name}</span>
+              <span className={`text-[9px] ${theme.accentText} ${theme.accentBgLight} px-1.5 py-0.2 rounded border ${theme.accentBorderLight} font-semibold uppercase tracking-wider`}>{currentTrack.moshaf.name}</span>
             </p>
           </div>
         </div>
 
         <div className="flex items-center gap-2.5 shrink-0 ml-2 md:col-span-1 md:justify-center md:flex-col md:gap-1.5 md:ml-0" onClick={e => e.stopPropagation()}>
           
-          <div className="flex items-center gap-2.5 md:gap-6">
+          <div className="flex items-center gap-2.5 md:gap-5">
             <button 
               onClick={playPrevTrack}
-              className="hidden md:flex text-slate-400 hover:text-slate-200 transition-colors"
+              className={`hidden md:flex text-slate-400 hover:text-slate-200 transition-colors p-1.5 hover:bg-slate-900/60 rounded-xl`}
             >
-              <SkipBack className="w-5 h-5 fill-current" />
+              <SkipBack className="w-4 h-4 fill-current" />
             </button>
 
             {playbackStatus === 'buffering' ? (
-              <div className="w-9 h-9 md:w-11 md:h-11 border-2 border-emerald-500 border-t-transparent rounded-full animate-spin flex items-center justify-center" />
+              <div className={`w-9 h-9 md:w-10 md:h-10 border-2 border-slate-700 border-t-transparent rounded-full animate-spin flex items-center justify-center`} style={{ borderTopColor: theme.sliderAccentColor }} />
             ) : (
               <button 
                 onClick={togglePlay}
-                className="w-10 h-10 md:w-12 md:h-12 rounded-full bg-emerald-500 text-slate-950 flex items-center justify-center shadow-md shadow-emerald-500/20 tap-feedback hover:scale-105 transition-all"
+                className={`w-9 h-9 md:w-10 md:h-10 rounded-full ${theme.accent} text-slate-950 flex items-center justify-center shadow-md ${theme.accentShadow} tap-feedback hover:scale-105 transition-all`}
               >
                 {playbackStatus === 'playing' ? (
-                  <Pause className="w-4.5 h-4.5 md:w-5 md:h-5 fill-current" />
+                  <Pause className="w-4 h-4 md:w-4.5 md:h-4.5 fill-current" />
                 ) : (
-                  <Play className="w-4.5 h-4.5 md:w-5 md:h-5 fill-current ml-0.5 md:ml-1" />
+                  <Play className="w-4 h-4 md:w-4.5 md:h-4.5 fill-current ml-0.5 md:ml-1" />
                 )}
               </button>
             )}
 
             <button 
               onClick={playNextTrack}
-              className="w-9 h-9 md:w-auto md:h-auto md:bg-transparent md:border-none md:rounded-none rounded-full bg-slate-950 text-slate-400 hover:text-slate-200 border border-slate-800 flex items-center justify-center tap-feedback transition-colors"
+              className="w-9 h-9 md:w-9 md:h-9 md:bg-transparent md:border-none md:rounded-none rounded-full bg-slate-950 text-slate-400 hover:text-slate-200 border border-slate-800 flex items-center justify-center tap-feedback transition-colors p-1.5 hover:bg-slate-900/60 md:hover:bg-transparent"
             >
-              <SkipForward className="w-4.5 h-4.5 md:w-5 md:h-5 fill-current" />
+              <SkipForward className="w-4 h-4 md:w-4.5 md:h-4.5 fill-current" />
             </button>
           </div>
 
-          <div className="hidden md:flex items-center justify-center gap-3 w-full max-w-sm text-[10px] font-mono font-medium text-slate-400">
+          <div className="hidden md:flex items-center justify-center gap-2.5 w-full max-w-xs text-[9px] font-mono font-bold text-slate-450">
             <span>{formatTime(currentTime)}</span>
-            <span className="w-24 border-t border-slate-800"></span>
+            <input
+              type="range"
+              min={0}
+              max={duration || 100}
+              step={0.1}
+              value={currentTime}
+              onChange={handleProgressChange}
+              className="flex-1 h-1 bg-slate-800/80 rounded-lg appearance-none cursor-pointer focus:outline-none transition-colors"
+              style={{
+                background: theme.sliderBackground(progressPercent),
+                accentColor: theme.sliderAccentColor
+              }}
+            />
             <span>{formatTime(duration)}</span>
           </div>
         </div>
 
-        <div className="hidden md:flex items-center justify-end gap-6 col-span-1" onClick={e => e.stopPropagation()}>
-          <div className="flex items-center gap-3 w-32 group">
-            <button onClick={toggleMute} className="text-slate-400 hover:text-emerald-400 transition-colors">
+        <div className="hidden md:flex items-center justify-end gap-5 col-span-1" onClick={e => e.stopPropagation()}>
+          <div className="flex items-center gap-2.5 w-28 group">
+            <button onClick={toggleMute} className={`text-slate-400 ${theme.accentTextHover} transition-colors p-1`}>
               {isMuted || volume === 0 ? <VolumeX className="w-4 h-4" /> : <Volume2 className="w-4 h-4" />}
             </button>
             <input
@@ -189,26 +329,161 @@ export const GlobalPlayer: React.FC = () => {
               step={0.01}
               value={isMuted ? 0 : volume}
               onChange={handleVolumeChange}
-              className="w-full h-1 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-emerald-500 hover:accent-emerald-400 focus:outline-none"
+              className="w-full h-1 bg-slate-800 rounded-lg appearance-none cursor-pointer focus:outline-none transition-colors"
               style={{
-                background: `linear-gradient(to right, #10b981 0%, #10b981 ${(isMuted ? 0 : volume) * 100}%, #1e293b ${(isMuted ? 0 : volume) * 100}%, #1e293b 100%)`
+                background: theme.sliderBackground((isMuted ? 0 : volume) * 100),
+                accentColor: theme.sliderAccentColor
               }}
             />
+          </div>
+
+          <div className="relative">
+            <button 
+              onClick={() => {
+                setShowSettingsMenu(!showSettingsMenu);
+                setShowPlaylistDrawer(false);
+              }}
+              className={`p-2.5 rounded-xl transition-colors ${
+                showSettingsMenu
+                  ? `${theme.accentText} ${theme.accentBgLight}`
+                  : `text-slate-400 ${theme.accentTextHover} hover:bg-slate-900/60`
+              }`}
+              title="Personnalisation & Options"
+            >
+              <Settings className="w-4.5 h-4.5" />
+            </button>
+            
+            {showSettingsMenu && (
+              <div className="absolute bottom-16 right-0 bg-slate-950/98 border border-slate-800/85 rounded-2xl p-4 shadow-[0_-15px_40px_rgba(0,0,0,0.8)] flex flex-col gap-4.5 z-[55] min-w-[280px] animate-[double-pulse_0.15s] glass-panel-opaque">
+                <div className="flex items-center justify-between border-b border-slate-900 pb-2">
+                  <h4 className="text-xs font-bold text-slate-200 flex items-center gap-1.5">
+                    <Sparkles className={`w-3.5 h-3.5 ${theme.glowDisc}`} /> Personnalisation
+                  </h4>
+                  <button 
+                    onClick={() => setShowSettingsMenu(false)}
+                    className="text-slate-500 hover:text-slate-350 active:scale-95 transition-transform"
+                  >
+                    <X className="w-3.5 h-3.5" />
+                  </button>
+                </div>
+
+                {/* Theme Selection */}
+                <div>
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-[10px] uppercase font-bold text-slate-500 tracking-wider">Thème Visuel</span>
+                    <span className="text-[10px] font-semibold text-slate-400">{theme.name}</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    {Object.entries(THEMES).map(([key, t]) => {
+                      const isActive = playerTheme === key;
+                      return (
+                        <button
+                          key={key}
+                          onClick={() => setPlayerTheme(key)}
+                          className={`w-6 h-6 rounded-full flex items-center justify-center transition-all duration-350 hover:scale-105 active:scale-95 ${
+                            isActive 
+                              ? `${t.accent} ring-2 ring-white scale-110 shadow-md` 
+                              : 'bg-slate-900 hover:bg-slate-800 border border-slate-800'
+                          }`}
+                          title={t.name}
+                        >
+                          {isActive && <Check className={`w-3.5 h-3.5 ${key === 'oled' ? 'text-slate-900' : 'text-slate-950'} stroke-[3.5]`} />}
+                          {!isActive && (
+                            <div className={`w-2.5 h-2.5 rounded-full ${
+                              key === 'emerald' ? 'bg-emerald-500' :
+                              key === 'amber' ? 'bg-amber-500' :
+                              key === 'blue' ? 'bg-sky-500' :
+                              key === 'purple' ? 'bg-violet-500' : 'bg-slate-350'
+                            }`} />
+                          )}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                {/* Repeat Mode */}
+                <div>
+                  <span className="text-[10px] uppercase font-bold text-slate-500 tracking-wider block mb-2">Lecture</span>
+                  <div className="grid grid-cols-3 gap-1.5">
+                    {[
+                      { value: 'all', label: 'Boucle' },
+                      { value: 'one', label: 'Sourate' },
+                      { value: 'none', label: 'Arrêt' }
+                    ].map((mode) => {
+                      const isActive = repeatMode === mode.value;
+                      return (
+                        <button
+                          key={mode.value}
+                          onClick={() => setRepeatMode(mode.value as any)}
+                          className={`py-1.5 px-2 rounded-xl border text-[9px] font-bold uppercase transition-all duration-305 ${
+                            isActive 
+                              ? `${theme.accentBgLight} ${theme.accentBorderActive} ${theme.accentText} ring-1 ${theme.accentRing}` 
+                              : 'border-slate-900 bg-slate-900/40 text-slate-400 hover:text-slate-200'
+                          }`}
+                        >
+                          {mode.label}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                {/* Sleep Timer */}
+                <div>
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-[10px] uppercase font-bold text-slate-500 tracking-wider">Minuteur</span>
+                    {sleepTimer !== null && (
+                      <span className={`text-[10px] font-mono font-bold ${theme.accentText} flex items-center gap-1 bg-emerald-500/5 px-2 py-0.5 rounded-full border ${theme.accentBorderLight}`}>
+                        <Clock className="w-3 h-3 animate-pulse" /> {formatSleepTime(sleepTimer)}
+                      </span>
+                    )}
+                  </div>
+                  <div className="grid grid-cols-5 gap-1">
+                    {[
+                      { value: null, label: 'Off' },
+                      { value: 15 * 60, label: '15m' },
+                      { value: 30 * 60, label: '30m' },
+                      { value: 45 * 60, label: '45m' },
+                      { value: 60 * 60, label: '1h' }
+                    ].map((opt) => {
+                      const isActive = 
+                        (opt.value === null && sleepTimer === null) || 
+                        (opt.value !== null && sleepTimer !== null && Math.abs(sleepTimer - opt.value) < 10);
+                      return (
+                        <button
+                          key={opt.label}
+                          onClick={() => setSleepTimer(opt.value)}
+                          className={`py-1.5 rounded-xl border text-[9px] font-bold uppercase transition-all duration-300 text-center ${
+                            isActive 
+                              ? `${theme.accentBgLight} ${theme.accentBorderActive} ${theme.accentText} ring-1 ${theme.accentRing}` 
+                              : 'border-slate-900 bg-slate-900/40 text-slate-400 hover:text-slate-200'
+                          }`}
+                        >
+                          {opt.label}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
 
           <button 
             onClick={() => {
               setShowPlaylistDrawer(true);
+              setShowSettingsMenu(false);
               setDrawerSearch('');
             }}
             className={`p-2.5 rounded-xl transition-colors ${
               showPlaylistDrawer
-                ? 'text-emerald-400 bg-emerald-500/10' 
-                : 'text-slate-400 hover:text-emerald-400 hover:bg-slate-800/60'
+                ? `${theme.accentText} ${theme.accentBgLight}`
+                : `text-slate-400 ${theme.accentTextHover} hover:bg-slate-900/60`
             }`}
             title="Liste de lecture"
           >
-            <ListMusic className="w-5 h-5" />
+            <ListMusic className="w-4.5 h-4.5" />
           </button>
         </div>
       </div>
@@ -219,8 +494,8 @@ export const GlobalPlayer: React.FC = () => {
           isExpanded ? 'translate-y-0 opacity-100' : 'translate-y-full opacity-0 pointer-events-none'
         }`}
       >
-        <div className="absolute top-0 left-0 right-0 h-[40vh] bg-gradient-to-b from-emerald-500/5 to-transparent blur-3xl pointer-events-none -z-10" />
-        <div className="absolute bottom-0 right-0 w-[50vw] h-[30vh] bg-amber-500/3 blur-3xl pointer-events-none -z-10" />
+        <div className={`absolute top-0 left-0 right-0 h-[40vh] bg-gradient-to-b ${theme.accentGlow} to-transparent blur-3xl pointer-events-none -z-10`} />
+        <div className="absolute bottom-0 right-0 w-[50vw] h-[30vh] bg-slate-900/3 blur-3xl pointer-events-none -z-10" />
 
         {/* 2.1 Header Nav Bar */}
         <div className="flex items-center justify-between">
@@ -235,7 +510,7 @@ export const GlobalPlayer: React.FC = () => {
             <ChevronDown className="w-6 h-6" />
           </button>
           <div className="text-center">
-            <span className="text-[10px] uppercase font-bold tracking-widest text-emerald-400 block mb-0.5">Audio en Direct</span>
+            <span className={`text-[10px] uppercase font-bold tracking-widest ${theme.accentText} block mb-0.5`}>Audio en Direct</span>
             <span className="text-xs font-semibold text-slate-300">Édition Saint Coran</span>
           </div>
           <div className="w-11 h-11" />
@@ -244,27 +519,27 @@ export const GlobalPlayer: React.FC = () => {
         {/* 2.2 Immersive Center Deck: Rotator Panel */}
         <div className="flex flex-col items-center justify-center my-4 flex-1 max-w-sm mx-auto w-full min-h-[18rem]">
           <div className="relative group">
-            <div className={`absolute inset-0 bg-emerald-500/10 rounded-full blur-2xl transition-all duration-1000 ${
+            <div className={`absolute inset-0 rounded-full blur-2xl transition-all duration-1000 ${
               playbackStatus === 'playing' ? 'scale-110 opacity-100' : 'scale-95 opacity-50'
-            }`} />
+            }`} style={{ backgroundColor: theme.sliderAccentColor + '10' }} />
             <div className={`w-56 h-56 min-[390px]:w-64 min-[390px]:h-64 md:w-72 md:h-72 rounded-full bg-slate-900 border-4 border-slate-800 shadow-[0_15px_50px_rgba(0,0,0,0.6)] flex items-center justify-center relative overflow-hidden transition-transform duration-700 ${
               playbackStatus === 'playing' ? 'animate-[spin_20s_linear_infinite]' : 'rotate-45'
             }`}>
-              <div className="absolute inset-4 rounded-full border border-emerald-500/20" />
-              <div className="absolute inset-10 rounded-full border-2 border-dashed border-amber-500/20" />
-              <div className="w-16 h-16 rounded-full bg-slate-950 flex items-center justify-center border-2 border-emerald-500/30 z-10">
-                <Disc className="w-8 h-8 text-emerald-400" />
+              <div className={`absolute inset-4 rounded-full border ${theme.accentBorderLight}`} />
+              <div className="absolute inset-10 rounded-full border-2 border-dashed border-slate-700/15" />
+              <div className={`w-16 h-16 rounded-full bg-slate-950 flex items-center justify-center border-2 ${theme.accentBorderActive} z-10`}>
+                <Disc className={`w-8 h-8 ${theme.accentText}`} />
               </div>
-              <div className="absolute inset-0 opacity-15 bg-[radial-gradient(circle_at_center,_transparent_40%,_black_90%),_repeating-radial-gradient(circle_at_center,_#10b981_0,_#f59e0b_10px)] pointer-events-none" />
+              <div className="absolute inset-0 opacity-15 pointer-events-none" style={{ backgroundImage: `radial-gradient(circle_at_center, transparent 40%, black 90%), repeating-radial-gradient(circle_at_center, ${theme.sliderAccentColor} 0, ${theme.sliderAccentColor} 10px)` }} />
             </div>
           </div>
           
           {playbackStatus === 'playing' && (
-            <div className="flex items-center gap-1 h-6 mt-8">
+            <div className="flex items-center gap-1.5 h-6 mt-8">
               {[40, 85, 50, 100, 35, 75].map((height, i) => (
                 <div 
                   key={i} 
-                  className="w-1 bg-emerald-500/80 rounded-full animate-[shimmer_0.8s_infinite_alternate]"
+                  className={`w-1 ${theme.accent} rounded-full animate-[shimmer_0.8s_infinite_alternate]`}
                   style={{ 
                     height: `${height}%`,
                     animationDelay: `${i * 0.12}s`
@@ -274,7 +549,7 @@ export const GlobalPlayer: React.FC = () => {
             </div>
           )}
           {playbackStatus === 'buffering' && (
-            <div className="flex items-center gap-2 mt-8 text-xs text-emerald-400 font-semibold uppercase tracking-wider">
+            <div className={`flex items-center gap-2 mt-8 text-xs ${theme.accentText} font-semibold uppercase tracking-wider`}>
               <RefreshCw className="w-4 h-4 animate-spin" /> Chargement du flux...
             </div>
           )}
@@ -286,9 +561,9 @@ export const GlobalPlayer: React.FC = () => {
         </div>
 
         {/* 2.3 Audio Metadata & Titles */}
-        <div className="text-center max-w-md mx-auto w-full mb-4">
+        <div className="text-center max-w-md mx-auto w-full mb-3">
           <div className="flex items-center justify-center gap-2 mb-1.5">
-            <span className="text-[10px] font-bold px-2 py-0.5 rounded-md bg-slate-900 border border-slate-800 text-emerald-400 uppercase">
+            <span className={`text-[10px] font-bold px-2 py-0.5 rounded-md bg-slate-900 border border-slate-800 ${theme.accentText} uppercase`}>
               Sourate {currentTrack.surah.id}
             </span>
             <span className="text-xs font-semibold px-2 py-0.5 rounded-md bg-slate-900 border border-slate-800 text-slate-400">
@@ -297,7 +572,7 @@ export const GlobalPlayer: React.FC = () => {
           </div>
           <h2 className="text-2xl md:text-3xl font-bold text-slate-100 flex items-center justify-center gap-2 flex-wrap leading-tight">
             {currentTrack.surah.name}
-            <span className="font-serif text-xl text-emerald-400 select-none arabic-text">
+            <span className={`font-serif text-xl ${theme.accentText} select-none arabic-text`}>
               ({currentTrack.surah.arabicName})
             </span>
           </h2>
@@ -305,16 +580,17 @@ export const GlobalPlayer: React.FC = () => {
         </div>
 
         {/* 2.4 Scrubbing slider & Timers */}
-        <div className="max-w-md mx-auto w-full mb-6">
+        <div className="max-w-md mx-auto w-full mb-4">
           <input
             type="range"
             min={0}
             max={duration || 100}
             value={currentTime}
             onChange={handleProgressChange}
-            className="w-full h-1.5 bg-slate-900 rounded-lg appearance-none cursor-pointer accent-emerald-500 focus:outline-none"
+            className="w-full h-1.5 bg-slate-900 rounded-lg appearance-none cursor-pointer focus:outline-none"
             style={{
-              background: `linear-gradient(to right, #10b981 0%, #10b981 ${progressPercent}%, #0f172a ${progressPercent}%, #0f172a 100%)`
+              background: theme.sliderBackground(progressPercent),
+              accentColor: theme.sliderAccentColor
             }}
           />
           <div className="flex items-center justify-between text-xs text-slate-400 mt-2 font-mono">
@@ -324,14 +600,14 @@ export const GlobalPlayer: React.FC = () => {
         </div>
 
         {/* 2.5 Console Control Deck */}
-        <div className="max-w-md mx-auto w-full flex flex-col gap-5">
+        <div className="max-w-md mx-auto w-full flex flex-col gap-4">
           <div className="flex items-center justify-between gap-1 min-[390px]:gap-2">
             <div className="relative">
               <button 
                 onClick={() => setShowSpeedMenu(!showSpeedMenu)}
                 className={`w-10 h-10 min-[390px]:w-11 min-[390px]:h-11 rounded-full flex items-center justify-center border border-slate-850 tap-feedback transition-colors ${
                   playbackSpeed !== 1.0 
-                    ? 'bg-emerald-500/10 border-emerald-500/25 text-emerald-400' 
+                    ? `${theme.accentBgLight} ${theme.accentBorderActive} ${theme.accentText}` 
                     : 'bg-slate-900/60 text-slate-400 hover:text-slate-200'
                 }`}
                 title="Vitesse de lecture"
@@ -351,7 +627,7 @@ export const GlobalPlayer: React.FC = () => {
                       }}
                       className={`text-xs text-left px-2.5 py-1.5 rounded-lg transition-colors font-mono ${
                         playbackSpeed === opt 
-                          ? 'bg-emerald-500 text-slate-950 font-bold' 
+                          ? `${theme.accent} text-slate-950 font-bold` 
                           : 'text-slate-300 hover:bg-slate-800'
                       }`}
                     >
@@ -381,7 +657,7 @@ export const GlobalPlayer: React.FC = () => {
 
             <button 
               onClick={togglePlay}
-              className="w-16 h-16 min-[390px]:w-18 min-[390px]:h-18 rounded-full bg-emerald-500 text-slate-950 flex items-center justify-center shadow-2xl shadow-emerald-500/30 active:scale-90 hover:scale-105 transition-all tap-feedback shrink-0"
+              className={`w-16 h-16 min-[390px]:w-18 min-[390px]:h-18 rounded-full ${theme.accent} text-slate-950 flex items-center justify-center shadow-2xl ${theme.accentShadow} active:scale-90 hover:scale-105 transition-all tap-feedback shrink-0`}
             >
               {playbackStatus === 'playing' ? (
                 <Pause className="w-7 h-7 fill-current" />
@@ -414,7 +690,7 @@ export const GlobalPlayer: React.FC = () => {
               }}
               className={`w-10 h-10 min-[390px]:w-11 min-[390px]:h-11 rounded-full flex items-center justify-center border border-slate-850 tap-feedback transition-colors ${
                 showPlaylistDrawer
-                  ? 'bg-emerald-500/10 border-emerald-500/25 text-emerald-400' 
+                  ? `${theme.accentBgLight} ${theme.accentBorderActive} ${theme.accentText}` 
                   : 'bg-slate-900/60 text-slate-400 hover:text-slate-200'
               }`}
               title="Liste de lecture"
@@ -424,7 +700,7 @@ export const GlobalPlayer: React.FC = () => {
           </div>
 
           <div className="flex items-center gap-3 px-4 py-2.5 rounded-2xl bg-slate-900/40 border border-slate-900/60">
-            <button onClick={toggleMute} className="text-slate-400 hover:text-slate-200">
+            <button onClick={toggleMute} className={`text-slate-400 ${theme.accentTextHover}`}>
               {isMuted || volume === 0 ? <VolumeX className="w-4 h-4" /> : <Volume2 className="w-4 h-4" />}
             </button>
             <input
@@ -434,14 +710,128 @@ export const GlobalPlayer: React.FC = () => {
               step={0.01}
               value={isMuted ? 0 : volume}
               onChange={handleVolumeChange}
-              className="w-full h-1 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-emerald-500 focus:outline-none"
+              className="w-full h-1 bg-slate-800 rounded-lg appearance-none cursor-pointer focus:outline-none transition-colors"
               style={{
-                background: `linear-gradient(to right, #10b981 0%, #10b981 ${(isMuted ? 0 : volume) * 100}%, #1e293b ${(isMuted ? 0 : volume) * 100}%, #1e293b 100%)`
+                background: theme.sliderBackground((isMuted ? 0 : volume) * 100),
+                accentColor: theme.sliderAccentColor
               }}
             />
             <span className="font-mono text-slate-400 min-w-7 text-right text-[10px]">
               {Math.round((isMuted ? 0 : volume) * 100)}%
             </span>
+          </div>
+
+          {/* Dynamic Theme & Immersion Customization Deck */}
+          <div className="p-4 rounded-2xl bg-slate-900/35 border border-slate-900/65 flex flex-col gap-4.5 mt-1 text-left">
+            
+            {/* Visual Accent Theme */}
+            <div>
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider flex items-center gap-1.5">
+                  <Sparkles className={`w-3.5 h-3.5 ${theme.glowDisc}`} /> Thème Visuel
+                </span>
+                <span className="text-[10px] font-semibold text-slate-350">{theme.name}</span>
+              </div>
+              <div className="flex items-center gap-3">
+                {Object.entries(THEMES).map(([key, t]) => {
+                  const isActive = playerTheme === key;
+                  return (
+                    <button
+                      key={key}
+                      onClick={() => setPlayerTheme(key)}
+                      className={`w-7.5 h-7.5 rounded-full flex items-center justify-center border transition-all duration-350 hover:scale-105 active:scale-95 tap-feedback ${
+                        isActive 
+                          ? `${t.accent} border-white shadow-lg scale-110` 
+                          : 'bg-slate-950 border-slate-800 hover:border-slate-700'
+                      }`}
+                      title={t.name}
+                    >
+                      {isActive && <Check className={`w-3.5 h-3.5 ${key === 'oled' ? 'text-slate-900' : 'text-slate-950'} stroke-[3.5]`} />}
+                      {!isActive && (
+                        <div className={`w-2.5 h-2.5 rounded-full ${
+                          key === 'emerald' ? 'bg-emerald-500' :
+                          key === 'amber' ? 'bg-amber-500' :
+                          key === 'blue' ? 'bg-sky-500' :
+                          key === 'purple' ? 'bg-violet-500' : 'bg-slate-350'
+                        }`} />
+                      )}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* Repeat / Reading Loop Mode */}
+            <div>
+              <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider flex items-center gap-1.5 mb-2">
+                <Repeat className={`w-3.5 h-3.5 ${theme.glowDisc}`} /> Mode de Lecture
+              </span>
+              <div className="grid grid-cols-3 gap-2">
+                {[
+                  { value: 'all', label: 'Boucle', desc: 'Tout répéter' },
+                  { value: 'one', label: 'Sourate', desc: 'Une sourate' },
+                  { value: 'none', label: 'Arrêt', desc: 'Dernière sourate' }
+                ].map((mode) => {
+                  const isActive = repeatMode === mode.value;
+                  return (
+                    <button
+                      key={mode.value}
+                      onClick={() => setRepeatMode(mode.value as any)}
+                      className={`p-2 rounded-xl border text-center transition-all duration-300 tap-feedback ${
+                        isActive 
+                          ? `${theme.accentBgLight} ${theme.accentBorderActive} ${theme.accentText} font-semibold ring-1 ${theme.accentRing}` 
+                          : 'border-slate-850 bg-slate-950/20 text-slate-400 hover:text-slate-200'
+                      }`}
+                    >
+                      <p className="text-[10px] font-bold uppercase">{mode.label}</p>
+                      <p className="text-[8px] opacity-75 mt-0.5">{mode.desc}</p>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* Sleep Timer Preset Cards */}
+            <div>
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider flex items-center gap-1.5">
+                  <Moon className={`w-3.5 h-3.5 ${theme.glowDisc}`} /> Minuteur de Veille
+                </span>
+                {sleepTimer !== null && (
+                  <span className={`text-[10px] font-bold ${theme.accentText} bg-emerald-500/5 border border-emerald-500/10 px-2 py-0.5 rounded-full flex items-center gap-1`}>
+                    <Clock className="w-3 h-3 animate-pulse" /> {formatSleepTime(sleepTimer)}
+                  </span>
+                )}
+              </div>
+              <div className="flex flex-wrap gap-1.5">
+                {[
+                  { value: null, label: 'Off' },
+                  { value: 5 * 60, label: '5m' },
+                  { value: 15 * 60, label: '15m' },
+                  { value: 30 * 60, label: '30m' },
+                  { value: 45 * 60, label: '45m' },
+                  { value: 60 * 60, label: '1h' }
+                ].map((opt) => {
+                  const isActive = 
+                    (opt.value === null && sleepTimer === null) || 
+                    (opt.value !== null && sleepTimer !== null && Math.abs(sleepTimer - opt.value) < 10);
+                  return (
+                    <button
+                      key={opt.label}
+                      onClick={() => setSleepTimer(opt.value)}
+                      className={`px-2.5 py-1.5 rounded-xl border text-[10px] font-bold uppercase transition-all duration-300 tap-feedback flex-1 text-center ${
+                        isActive 
+                          ? `${theme.accentBgLight} ${theme.accentBorderActive} ${theme.accentText} ring-1 ${theme.accentRing}` 
+                          : 'border-slate-850 bg-slate-950/20 text-slate-400 hover:text-slate-200'
+                      }`}
+                    >
+                      {opt.label}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+
           </div>
         </div>
       </div>
@@ -457,7 +847,7 @@ export const GlobalPlayer: React.FC = () => {
             <div className="flex items-center justify-between border-b border-slate-900 pb-3">
               <div>
                 <h3 className="font-bold text-slate-200 text-base flex items-center gap-2">
-                  <ListMusic className="w-5 h-5 text-emerald-400" />
+                  <ListMusic className={`w-5 h-5 ${theme.accentText}`} />
                   Liste des Sourates
                 </h3>
                 <p className="text-xs text-slate-400 mt-0.5">{currentTrack.reciter.name}</p>
@@ -471,13 +861,13 @@ export const GlobalPlayer: React.FC = () => {
             </div>
 
             <div className="relative">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-550" />
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500" />
               <input
                 type="text"
                 value={drawerSearch}
                 onChange={(e) => setDrawerSearch(e.target.value)}
                 placeholder="Rechercher une sourate par nom ou numéro..."
-                className="w-full pl-9 pr-8 py-2 bg-slate-900/60 focus:bg-slate-900 border border-slate-850 focus:border-emerald-500/30 rounded-xl text-slate-200 placeholder-slate-500 text-xs focus:outline-none transition-all"
+                className={`w-full pl-9 pr-8 py-2 bg-slate-900/60 focus:bg-slate-900 border border-slate-850 focus:${theme.accentBorder} rounded-xl text-slate-200 placeholder-slate-500 text-xs focus:outline-none transition-all`}
               />
               {drawerSearch && (
                 <button
@@ -491,7 +881,7 @@ export const GlobalPlayer: React.FC = () => {
 
             <div className="flex-1 overflow-y-auto pr-1 flex flex-col gap-1.5 scrollbar-thin scrollbar-thumb-slate-800 scrollbar-track-transparent pb-6">
               {filteredDrawerSurahs.length === 0 ? (
-                <p className="text-xs text-slate-550 text-center py-6">Aucune sourate trouvée.</p>
+                <p className="text-xs text-slate-500 text-center py-6">Aucune sourate trouvée.</p>
               ) : (
                 filteredDrawerSurahs.map((surah) => {
                   const isCurrentSurah = currentTrack.surah.id === surah.id;
@@ -504,27 +894,33 @@ export const GlobalPlayer: React.FC = () => {
                       }}
                       className={`group w-full p-3 rounded-xl border flex items-center gap-3 text-left transition-all duration-300 relative ${
                         isCurrentSurah
-                          ? 'border-emerald-500/40 bg-emerald-500/10 shadow-[0_4px_15px_rgba(16,185,129,0.1)] ring-1 ring-emerald-500/20'
+                          ? `${theme.accentBorderActive} ${theme.accentBgLight} shadow-md ring-1 ${theme.accentRing}`
                           : 'border-slate-800/40 bg-slate-900/30 hover:bg-slate-900/80 hover:border-slate-700/60'
                       }`}
                     >
                       {isCurrentSurah && (
-                        <div className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-1/2 bg-emerald-400 rounded-r-full shadow-[0_0_8px_rgba(16,185,129,0.8)]" />
+                        <div 
+                          className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-1/2 rounded-r-full shadow-[0_0_8px_rgba(16,185,129,0.8)]" 
+                          style={{ backgroundColor: theme.sliderAccentColor }}
+                        />
                       )}
 
                       <div className="relative flex items-center justify-center w-8 h-8 shrink-0 ml-1">
-                        <div className={`absolute inset-0 rotate-45 rounded-md border transition-all duration-500 ${
-                          isCurrentSurah 
-                            ? 'bg-emerald-500/20 border-emerald-400 shadow-[0_0_10px_rgba(16,185,129,0.3)] scale-105' 
-                            : 'bg-slate-950 border-slate-700 group-hover:border-slate-500 group-hover:rotate-[135deg]'
-                        }`} />
-                        <span className={`relative z-10 text-[10px] font-bold ${isCurrentSurah ? 'text-emerald-300' : 'text-slate-400 group-hover:text-slate-200'}`}>
+                        <div 
+                          className={`absolute inset-0 rotate-45 rounded-md border transition-all duration-500 ${
+                            isCurrentSurah 
+                              ? 'bg-slate-950 scale-105' 
+                              : 'bg-slate-950 border-slate-700 group-hover:border-slate-500 group-hover:rotate-[135deg]'
+                          }`}
+                          style={isCurrentSurah ? { borderColor: theme.sliderAccentColor } : {}}
+                        />
+                        <span className={`relative z-10 text-[10px] font-bold ${isCurrentSurah ? theme.accentText : 'text-slate-400 group-hover:text-slate-200'}`}>
                           {surah.id}
                         </span>
                       </div>
 
                       <div className="min-w-0 flex-1">
-                        <p className={`font-semibold text-sm truncate transition-colors ${isCurrentSurah ? 'text-emerald-400' : 'text-slate-200 group-hover:text-emerald-400'}`}>
+                        <p className={`font-semibold text-sm truncate transition-colors ${isCurrentSurah ? theme.accentText : 'text-slate-200 group-hover:text-emerald-400'}`}>
                           {surah.name}
                         </p>
                         <p className="text-[10px] text-slate-400/80 truncate mt-0.5 font-medium">{surah.englishTranslation}</p>
@@ -532,15 +928,15 @@ export const GlobalPlayer: React.FC = () => {
                       
                       <div className="flex items-center gap-3 shrink-0">
                         <span className={`font-serif text-lg tracking-wide select-none arabic-text transition-colors ${
-                          isCurrentSurah ? 'text-emerald-400 drop-shadow-[0_0_8px_rgba(16,185,129,0.4)]' : 'text-slate-350 group-hover:text-slate-200'
+                          isCurrentSurah ? `${theme.accentText} drop-shadow-[0_0_8px_rgba(16,185,129,0.4)]` : 'text-slate-350 group-hover:text-slate-200'
                         }`}>
                           {surah.arabicName}
                         </span>
                         {isCurrentSurah && (
                           <div className="flex gap-0.5 items-end justify-center h-3 w-3 mr-1">
-                            <div className="w-0.5 bg-emerald-400 animate-[shimmer_0.6s_infinite_alternate] h-full rounded-full" style={{ animationDelay: '0.1s' }}></div>
-                            <div className="w-0.5 bg-emerald-400 animate-[shimmer_0.6s_infinite_alternate] h-2/3 rounded-full" style={{ animationDelay: '0.3s' }}></div>
-                            <div className="w-0.5 bg-emerald-400 animate-[shimmer_0.6s_infinite_alternate] h-full rounded-full" style={{ animationDelay: '0.5s' }}></div>
+                            <div className="w-0.5 animate-[shimmer_0.6s_infinite_alternate] h-full rounded-full" style={{ animationDelay: '0.1s', backgroundColor: theme.sliderAccentColor }}></div>
+                            <div className="w-0.5 animate-[shimmer_0.6s_infinite_alternate] h-2/3 rounded-full" style={{ animationDelay: '0.3s', backgroundColor: theme.sliderAccentColor }}></div>
+                            <div className="w-0.5 animate-[shimmer_0.6s_infinite_alternate] h-full rounded-full" style={{ animationDelay: '0.5s', backgroundColor: theme.sliderAccentColor }}></div>
                           </div>
                         )}
                       </div>

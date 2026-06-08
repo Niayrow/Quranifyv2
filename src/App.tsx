@@ -3,7 +3,7 @@ import { useAudio, AudioProvider } from './context/AudioContext';
 import { ReciterCard } from './components/ReciterCard';
 import { BottomNavbar } from './components/BottomNavbar';
 import { 
-  Search, Heart, Radio, AlertTriangle, Crown, Headphones, Play
+  Search, Heart, AlertTriangle, Crown, Headphones, Play
 } from 'lucide-react';
 import type { Reciter } from './types';
 import { getGeneratedReciterAvatar, getReciterImage } from './utils/images';
@@ -272,9 +272,11 @@ const LoadingHome: React.FC<{ progress: number; reciterCount: number }> = ({ pro
       <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_0%,rgba(16,185,129,0.12),transparent_45%),radial-gradient(circle_at_10%_90%,rgba(245,158,11,0.06),transparent_35%)] pointer-events-none" />
       <main className="relative w-full max-w-sm flex flex-col items-center text-center gap-8">
         <div className="flex flex-col items-center gap-4">
-          <div className="w-20 h-20 rounded-3xl bg-gradient-to-tr from-emerald-500 to-amber-500 flex items-center justify-center shadow-2xl shadow-emerald-500/20">
-            <Radio className="w-9 h-9 text-slate-950" />
-          </div>
+          <img
+            src="/icons/logo.png"
+            alt="Quranify"
+            className="w-32 h-32 object-contain drop-shadow-[0_0_24px_rgba(16,185,129,0.35)]"
+          />
           <div>
             <h1 className="text-3xl font-black tracking-tight text-emerald-100 m-0">QURANIFY</h1>
             <p className="text-[11px] tracking-[0.22em] text-slate-400 font-bold uppercase mt-1">
@@ -538,18 +540,13 @@ const AppContent: React.FC = () => {
     <div className="flex-1 flex flex-col pt-4 px-4 max-w-lg mx-auto w-full mobile-shell-padding md:pl-32 md:pb-32 md:max-w-4xl md:px-8">
       {/* 1. App Header with Gold and Emerald Accents */}
       <header className="mb-6 flex items-center justify-between">
-        <div className="flex items-center gap-2">
-          <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-emerald-500 to-amber-500 flex items-center justify-center shadow-lg shadow-emerald-500/10">
-            <Radio className="w-5 h-5 text-slate-950 font-bold" />
-          </div>
-          <div>
-            <h1 className="text-xl font-black tracking-tight bg-gradient-to-r from-slate-100 via-emerald-250 to-amber-350 bg-clip-text text-transparent m-0 py-1">
-              QURANIFY
-            </h1>
-            <p className="text-[10px] tracking-widest text-slate-400 font-bold uppercase -mt-1.5">
-              Lecteur Coranique Premium
-            </p>
-          </div>
+        <div className="flex items-center">
+          <h1 className="sr-only">Quranify — Lecteur Coranique Premium</h1>
+          <img
+            src="/icons/logo.png"
+            alt="Quranify"
+            className="h-16 w-auto object-contain drop-shadow-[0_0_16px_rgba(16,185,129,0.35)]"
+          />
         </div>
 
         {/* Sync Status Badge */}

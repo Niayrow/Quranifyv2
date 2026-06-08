@@ -11,6 +11,9 @@ interface AudioContextType {
   duration: number;
   volume: number;
   playbackSpeed: number;
+  repeatMode: 'none' | 'one' | 'all';
+  sleepTimer: number | null;
+  playerTheme: string;
   
   // Lists and loading states
   reciters: Reciter[];
@@ -21,6 +24,10 @@ interface AudioContextType {
   activeReciter: Reciter | null;
   activeMoshaf: Moshaf | null;
   activeSurah: Surah | null;
+
+  // Playlist selection (checked surahs)
+  selectedSurahIds: Set<number>;
+  setSelectedSurahIds: (ids: Set<number>) => void;
   
   // Actions
   setActiveReciter: (reciter: Reciter | null) => void;
@@ -33,6 +40,9 @@ interface AudioContextType {
   seekTo: (time: number) => void;
   setVolume: (vol: number) => void;
   setPlaybackSpeed: (speed: number) => void;
+  setRepeatMode: (mode: 'none' | 'one' | 'all') => void;
+  setSleepTimer: (time: number | null) => void;
+  setPlayerTheme: (theme: string) => void;
   playNextTrack: () => void;
   playPrevTrack: () => void;
   getAvailableSurahs: (reciter: Reciter | null, moshaf: Moshaf | null) => Surah[];
@@ -42,7 +52,7 @@ const AudioContext = createContext<AudioContextType | undefined>(undefined);
 
 const LOCAL_STORAGE_PREFIX = 'quran_streamer_';
 const RECITERS_CACHE_KEY = `${LOCAL_STORAGE_PREFIX}reciters_cache`;
-const ARTWORK_URL = 'https://images.unsplash.com/photo-1609599006353-e629fffaae6f?auto=format&fit=crop&w=512&q=80';
+const ARTWORK_URL = '/icons/artwork.png';
 const API_RECITERS_URL = 'https://mp3quran.net/api/v3/reciters?language=fr';
 
 const readStorage = (key: string): string | null => {
@@ -68,13 +78,78 @@ const parseSavedNumber = (key: string, fallback: number, min?: number, max?: num
   return Math.min(max ?? parsed, Math.max(min ?? parsed, parsed));
 };
 
+// Curated display-name corrections keyed by reciter ID.
+// The API transliterations are often inconsistent; these take priority.
+const RECITER_NAME_CORRECTIONS: Record<number, string> = {
+  // Featured reciters
+  123: 'Mishary Rachid Al-Afasy',
+  54:  'Abderrahmane Al-Soudais',
+  102: 'Maher Al-Mouaiqly',
+  31:  'Saoud Al-Shuraim',
+  30:  'Saad El-Ghamidi',
+  5:   'Ahmed El-Ajami',
+  112: 'Mohamed Siddiq El-Menchaoui',
+  118: 'Mahmoud Khalil Al-Housary',
+  // Other common reciters
+  51:  'Abdel Bassit Abdel Samad',
+  74:  'Ali Al-Houdhayfi',
+  76:  'Ali Jaber',
+  86:  'Nasser Al-Qatami',
+  92:  'Yasser Al-Dossary',
+  226: 'Khalid Al-Ghamdi',
+  106: 'Mohamed Tablaoui',
+  107: 'Mohamed El-Louhaïdan',
+  109: 'Mohamed Ayyoub',
+  111: 'Mohamed Jibreel',
+  4:   'Abou Bakr Al-Chatri',
+  49:  'Abdel Bari Al-Toubaïty',
+  43:  'Salah Al-Boudeir',
+  62:  'Abdullah Al-Johani',
+  67:  'Abdelmohsen Al-Qasim',
+  71:  'Abdelwadoud Hanif',
+  78:  'Imad Zuhair Hafez',
+  80:  'Omar Al-Qazabri',
+  17:  'Tawfiq Al-Sayegh',
+  20:  'Khaled Al-Jalil',
+  21:  'Khaled Al-Qahtani',
+  24:  'Khalifa Al-Tounaïji',
+  25:  'Daoud Hamza',
+  48:  'Adel Ryyan',
+  46:  'Salah Boukhater',
+  60:  'Abdullah Basfar',
+  104: 'Mohammad Al-Airawy',
+  44:  'Salah Al-Hachem',
+  94:  'Yasser Al-Faylakawi',
+  100: 'Majed Al-Enezi',
+  70:  'Saud Al-Kanakeri',
+  230: 'Rami Al-Dais',
+  221: 'Raad Al-Kurdi',
+  217: 'Bandar Balilah',
+  160: 'Adel Al-Khalbani',
+  163: 'Hatem Farid Al-Waar',
+  197: 'Moeedh Al-Harthi',
+  202: 'Abdullah Al-Kandari',
+  178: 'Ibrahim Al-Dossary',
+  149: 'Maher Chakachero',
+  236: 'Abdulrahman Al-Majed',
+  27:  'Rachid Belalya',
+};
+
+const applyNameCorrections = (reciters: Reciter[]): Reciter[] =>
+  reciters.map((r) =>
+    RECITER_NAME_CORRECTIONS[r.id]
+      ? { ...r, name: RECITER_NAME_CORRECTIONS[r.id] }
+      : r
+  );
+
 const stabilizeFirstScreenReciters = (apiReciters: Reciter[]) => {
-  if (SEEDED_RECITERS.length === 0) return apiReciters;
+  const corrected = applyNameCorrections(apiReciters);
+  if (SEEDED_RECITERS.length === 0) return corrected;
 
   const seededIds = new Set(SEEDED_RECITERS.map((reciter) => reciter.id));
   return [
-    ...SEEDED_RECITERS,
-    ...apiReciters.filter((reciter) => !seededIds.has(reciter.id))
+    ...SEEDED_RECITERS,  // seed already has correct names
+    ...corrected.filter((reciter) => !seededIds.has(reciter.id))
   ];
 };
 
@@ -101,6 +176,25 @@ export const AudioProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   const [duration, setDuration] = useState<number>(0);
   const [volume, setVolumeState] = useState<number>(0.8);
   const [playbackSpeed, setPlaybackSpeedState] = useState<number>(1.0);
+  const [repeatMode, setRepeatModeState] = useState<'none' | 'one' | 'all'>(() => {
+    const saved = readStorage(`${LOCAL_STORAGE_PREFIX}repeat_mode`);
+    return (saved === 'none' || saved === 'one' || saved === 'all') ? saved : 'all';
+  });
+  const [sleepTimer, setSleepTimer] = useState<number | null>(null);
+  const [playerTheme, setPlayerThemeState] = useState<string>(() => {
+    return readStorage(`${LOCAL_STORAGE_PREFIX}player_theme`) || 'emerald';
+  });
+  // IDs of user-selected (checked) surahs; empty = play all
+  const [selectedSurahIds, setSelectedSurahIds] = useState<Set<number>>(new Set());
+  const selectedSurahIdsRef = useRef<Set<number>>(new Set());
+  useEffect(() => {
+    selectedSurahIdsRef.current = selectedSurahIds;
+  }, [selectedSurahIds]);
+
+  const repeatModeRef = useRef(repeatMode);
+  useEffect(() => {
+    repeatModeRef.current = repeatMode;
+  }, [repeatMode]);
 
   // Audio HTML5 Reference
   const audioRef = useRef<HTMLAudioElement | null>(null);
@@ -204,8 +298,14 @@ export const AudioProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       writeStorage(`${LOCAL_STORAGE_PREFIX}timestamp`, String(audio.currentTime));
     };
     const onEnded = () => {
-      setPlaybackStatus('paused');
-      playNextTrack();
+      if (repeatModeRef.current === 'one' && audioRef.current) {
+        audioRef.current.currentTime = 0;
+        audioRef.current.play().catch(err => console.error(err));
+        setPlaybackStatus('playing');
+      } else {
+        setPlaybackStatus('paused');
+        playNextTrack();
+      }
     };
     const onError = (e: Event | string | unknown) => {
       console.error('Audio Playback Error:', e);
@@ -508,38 +608,100 @@ export const AudioProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     }
   };
 
+  const setRepeatMode = (mode: 'none' | 'one' | 'all') => {
+    setRepeatModeState(mode);
+    writeStorage(`${LOCAL_STORAGE_PREFIX}repeat_mode`, mode);
+  };
+
+  const setPlayerTheme = (theme: string) => {
+    setPlayerThemeState(theme);
+    writeStorage(`${LOCAL_STORAGE_PREFIX}player_theme`, theme);
+  };
+
+  // Sleep Timer Countdown Effect
+  useEffect(() => {
+    if (sleepTimer === null) return;
+    if (sleepTimer <= 0) {
+      if (audioRef.current) {
+        audioRef.current.pause();
+      }
+      setPlaybackStatus('paused');
+      setSleepTimer(null);
+      return;
+    }
+
+    const interval = setInterval(() => {
+      setSleepTimer((prev) => {
+        if (prev === null) return null;
+        if (prev <= 1) {
+          if (audioRef.current) {
+            audioRef.current.pause();
+          }
+          setPlaybackStatus('paused');
+          clearInterval(interval);
+          return null;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+
+    return () => clearInterval(interval);
+  }, [sleepTimer]);
+
   // Next and Previous tracks playlist manager
   function playNextTrack() {
     if (!currentTrack) return;
     
-    const available = getAvailableSurahs(currentTrack.reciter, currentTrack.moshaf);
-    if (available.length === 0) return;
+    const allAvailable = getAvailableSurahs(currentTrack.reciter, currentTrack.moshaf);
+    if (allAvailable.length === 0) return;
 
-    const currentIndex = available.findIndex(s => s.id === currentTrack.surah.id);
+    // Use the checked selection when non-empty, otherwise fall back to all
+    const selectedIds = selectedSurahIdsRef.current;
+    const playlist = selectedIds.size > 0
+      ? allAvailable.filter(s => selectedIds.has(s.id))
+      : allAvailable;
+
+    if (playlist.length === 0) return;
+
+    const currentIndex = playlist.findIndex(s => s.id === currentTrack.surah.id);
     let nextIndex = currentIndex + 1;
     
-    if (nextIndex >= available.length) {
-      nextIndex = 0; // Wrap around to the first available Surah
+    if (nextIndex >= playlist.length) {
+      if (repeatModeRef.current === 'none') {
+        setPlaybackStatus('paused');
+        if (audioRef.current) {
+          audioRef.current.pause();
+        }
+        return;
+      }
+      nextIndex = 0; // Wrap around to the first Surah in the playlist
     }
 
-    const nextSurah = available[nextIndex];
+    const nextSurah = playlist[nextIndex];
     playTrack(currentTrack.reciter, currentTrack.moshaf, nextSurah);
   };
 
   function playPrevTrack() {
     if (!currentTrack) return;
     
-    const available = getAvailableSurahs(currentTrack.reciter, currentTrack.moshaf);
-    if (available.length === 0) return;
+    const allAvailable = getAvailableSurahs(currentTrack.reciter, currentTrack.moshaf);
+    if (allAvailable.length === 0) return;
 
-    const currentIndex = available.findIndex(s => s.id === currentTrack.surah.id);
+    const selectedIds = selectedSurahIdsRef.current;
+    const playlist = selectedIds.size > 0
+      ? allAvailable.filter(s => selectedIds.has(s.id))
+      : allAvailable;
+
+    if (playlist.length === 0) return;
+
+    const currentIndex = playlist.findIndex(s => s.id === currentTrack.surah.id);
     let prevIndex = currentIndex - 1;
     
     if (prevIndex < 0) {
-      prevIndex = available.length - 1; // Wrap around to the last available Surah
+      prevIndex = playlist.length - 1; // Wrap around to the last Surah in the playlist
     }
 
-    const prevSurah = available[prevIndex];
+    const prevSurah = playlist[prevIndex];
     playTrack(currentTrack.reciter, currentTrack.moshaf, prevSurah);
   };
 
@@ -551,6 +713,9 @@ export const AudioProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       duration,
       volume,
       playbackSpeed,
+      repeatMode,
+      sleepTimer,
+      playerTheme,
       
       reciters,
       isLoadingReciters,
@@ -559,6 +724,9 @@ export const AudioProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       activeReciter,
       activeMoshaf,
       activeSurah,
+
+      selectedSurahIds,
+      setSelectedSurahIds,
       
       setActiveReciter,
       setActiveMoshaf,
@@ -570,6 +738,9 @@ export const AudioProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       seekTo,
       setVolume,
       setPlaybackSpeed,
+      setRepeatMode,
+      setSleepTimer,
+      setPlayerTheme,
       playNextTrack,
       playPrevTrack,
       getAvailableSurahs
