@@ -1,24 +1,80 @@
-import React, { useEffect, useState, useMemo, lazy, Suspense, useDeferredValue } from 'react';
+import React, { useEffect, useState, useMemo, lazy, Suspense, useDeferredValue, useCallback, useRef } from 'react';
 import { useAudio, AudioProvider } from './context/AudioContext';
 import { ReciterCard } from './components/ReciterCard';
 import { BottomNavbar } from './components/BottomNavbar';
 import { 
-  Search, Heart, AlertTriangle, Crown, Headphones, Play
+  Search, Heart, AlertTriangle, Crown, Headphones, Play, ArrowRight, BookOpenText,
+  Bookmark, Download, GitCompare, LayoutGrid, Sparkles
 } from 'lucide-react';
+import type { LucideIcon } from 'lucide-react';
 import type { Reciter } from './types';
 import { getGeneratedReciterAvatar, getReciterImage } from './utils/images';
 
 const SurahList = lazy(() => import('./components/SurahList').then((module) => ({ default: module.SurahList })));
+const EveryAyahReader = lazy(() => import('./components/EveryAyahReader').then((module) => ({ default: module.EveryAyahReader })));
 const GlobalPlayer = lazy(() => import('./components/GlobalPlayer').then((module) => ({ default: module.GlobalPlayer })));
 const AboutPanel = lazy(() => import('./components/AboutPanel').then((module) => ({ default: module.AboutPanel })));
+const ReciterCompare = lazy(() => import('./components/ReciterCompare').then((module) => ({ default: module.ReciterCompare })));
 const RECITER_BATCH_SIZE = 14;
-const TAB_IDS = ['reciters', 'surahs', 'favorites', 'about'] as const;
+const TAB_IDS = ['home', 'listen', 'ayah', 'favorites', 'more'] as const;
 type TabId = typeof TAB_IDS[number];
+type MorePanel = 'priorities' | 'compare' | 'about';
+
+const PRODUCT_PRIORITIES: Array<{
+  id: string;
+  title: string;
+  summary: string;
+  detail: string;
+  icon: LucideIcon;
+}> = [
+  {
+    id: 'offline',
+    title: 'Mode hors-ligne audio',
+    summary: 'Permettre le téléchargement ou le cache local des récitations pour écouter sans réseau.',
+    detail: 'Priorité mobile la plus forte pour les trajets, le sommeil et les zones à faible connexion.',
+    icon: Download,
+  },
+  {
+    id: 'text',
+    title: 'Texte du Coran et suivi par verset',
+    summary: 'Ajouter la lecture ayah par ayah avec affichage du texte et suivi synchronisé.',
+    detail: 'L’app deviendrait un vrai compagnon de lecture, révision et mémorisation.',
+    icon: BookOpenText,
+  },
+  {
+    id: 'library',
+    title: 'Bibliothèque personnelle',
+    summary: 'Étendre les favoris vers des signets de sourates, historique et reprise ciblée.',
+    detail: 'Une couche personnelle améliore fortement la fidélisation et les reprises quotidiennes.',
+    icon: Bookmark,
+  },
+];
+
+const mapLegacyTab = (tab: string | null): TabId => {
+  switch (tab) {
+    case 'listen':
+    case 'reciters':
+    case 'surahs':
+      return 'listen';
+    case 'ayah':
+    case 'everyayah':
+      return 'ayah';
+    case 'favorites':
+      return 'favorites';
+    case 'more':
+    case 'compare':
+    case 'about':
+      return 'more';
+    case 'home':
+    default:
+      return 'home';
+  }
+};
 
 const getInitialTab = (): TabId => {
-  if (typeof window === 'undefined') return 'reciters';
+  if (typeof window === 'undefined') return 'home';
   const tab = new URLSearchParams(window.location.search).get('tab');
-  return TAB_IDS.includes(tab as TabId) ? tab as TabId : 'reciters';
+  return mapLegacyTab(tab);
 };
 
 const FEATURED_RECITER_IDS = [123, 54, 31, 30, 102, 5, 112, 118];
@@ -321,6 +377,56 @@ const LoadingHome: React.FC<{ progress: number; reciterCount: number }> = ({ pro
   );
 };
 
+interface ShortcutCardProps {
+  title: string;
+  description: string;
+  icon: LucideIcon;
+  onClick: () => void;
+}
+
+const ShortcutCard: React.FC<ShortcutCardProps> = ({ title, description, icon: Icon, onClick }) => (
+  <button
+    onClick={onClick}
+    className="group rounded-2xl border border-slate-800/80 bg-slate-900/55 p-4 text-left transition-all hover:border-emerald-500/35 hover:bg-slate-900/80 tap-feedback"
+  >
+    <div className="flex items-start justify-between gap-3">
+      <div>
+        <h3 className="text-sm font-black text-slate-100">{title}</h3>
+        <p className="mt-1 text-xs leading-relaxed text-slate-400">{description}</p>
+      </div>
+      <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-emerald-500/10 text-emerald-300">
+        <Icon className="h-4.5 w-4.5" />
+      </span>
+    </div>
+    <span className="mt-4 inline-flex items-center gap-1 text-[11px] font-black uppercase tracking-wider text-emerald-400">
+      Ouvrir
+      <ArrowRight className="h-3.5 w-3.5 transition-transform group-hover:translate-x-0.5" />
+    </span>
+  </button>
+);
+
+interface ProductPriorityCardProps {
+  title: string;
+  summary: string;
+  detail: string;
+  icon: LucideIcon;
+}
+
+const ProductPriorityCard: React.FC<ProductPriorityCardProps> = ({ title, summary, detail, icon: Icon }) => (
+  <div className="rounded-2xl border border-slate-800/80 bg-slate-900/55 p-4">
+    <div className="flex items-start gap-3">
+      <span className="mt-0.5 flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-amber-400/10 text-amber-300">
+        <Icon className="h-4.5 w-4.5" />
+      </span>
+      <div>
+        <h3 className="text-sm font-black text-slate-100">{title}</h3>
+        <p className="mt-1 text-xs leading-relaxed text-slate-300">{summary}</p>
+        <p className="mt-2 text-[11px] leading-relaxed text-slate-500">{detail}</p>
+      </div>
+    </div>
+  </div>
+);
+
 interface FeaturedReciterCardProps {
   reciter: Reciter;
   isSelected: boolean;
@@ -401,13 +507,89 @@ const AppContent: React.FC = () => {
   } = useAudio();
 
 
-  const [activeTab, setActiveTab] = useState<string>(() => getInitialTab());
+  const [activeTab, setActiveTab] = useState<TabId>(() => getInitialTab());
+  const [morePanel, setMorePanel] = useState<MorePanel>('priorities');
   const [reciterSearch, setReciterSearch] = useState<string>('');
   const deferredReciterSearch = useDeferredValue(reciterSearch);
   const [selectedLetter, setSelectedLetter] = useState<string>('');
   const [reciterPaging, setReciterPaging] = useState({ key: '', limit: RECITER_BATCH_SIZE });
   const [loadingProgress, setLoadingProgress] = useState(8);
   const [showLoadingHome, setShowLoadingHome] = useState(true);
+  const surahSectionRef = useRef<HTMLElement | null>(null);
+
+  const applyDeepLink = useCallback((rawUrl: string) => {
+    try {
+      const url = new URL(rawUrl, window.location.origin);
+      const tab = url.searchParams.get('tab');
+      if (tab === 'compare') {
+        setMorePanel('compare');
+        setActiveTab('more');
+        return;
+      }
+      if (tab === 'about') {
+        setMorePanel('about');
+        setActiveTab('more');
+        return;
+      }
+      if (tab) {
+        setActiveTab(mapLegacyTab(tab));
+      }
+      if (url.protocol === 'quranify:' || url.pathname.includes('/surah')) {
+        setActiveTab('listen');
+      }
+    } catch {
+      if (rawUrl.includes('tab=compare')) {
+        setMorePanel('compare');
+        setActiveTab('more');
+      } else if (rawUrl.includes('tab=about')) {
+        setMorePanel('about');
+        setActiveTab('more');
+      } else if (
+        rawUrl.includes('tab=surahs') ||
+        rawUrl.includes('tab=reciters') ||
+        rawUrl.includes('tab=listen') ||
+        rawUrl.includes('tab=ayah') ||
+        rawUrl.includes('quranify://surah')
+      ) {
+        setActiveTab(rawUrl.includes('tab=ayah') ? 'ayah' : 'listen');
+      }
+    }
+  }, []);
+
+  useEffect(() => {
+    let removeListener: (() => void) | undefined;
+
+    const bindDeepLinks = async () => {
+      try {
+        const { App } = await import('@capacitor/app');
+        const launch = await App.getLaunchUrl();
+        if (launch?.url) applyDeepLink(launch.url);
+
+        const handle = await App.addListener('appUrlOpen', (event) => {
+          applyDeepLink(event.url);
+        });
+        removeListener = () => { void handle.remove(); };
+      } catch {
+        // Web/PWA: URL query params only.
+      }
+    };
+
+    void bindDeepLinks();
+    return () => removeListener?.();
+  }, [applyDeepLink]);
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const params = new URLSearchParams(window.location.search);
+    params.set('tab', activeTab);
+    if (activeTab === 'more') {
+      params.set('panel', morePanel);
+    } else {
+      params.delete('panel');
+    }
+    const nextUrl = `${window.location.pathname}?${params.toString()}${window.location.hash}`;
+    window.history.replaceState({}, '', nextUrl);
+  }, [activeTab, morePanel]);
 
   useEffect(() => {
     if (!isLoadingReciters) {
@@ -526,10 +708,20 @@ const AppContent: React.FC = () => {
     return reciters.filter((r) => favorites.includes(r.id));
   }, [reciters, favorites]);
 
+  const handleNavigate = (tab: TabId, panel?: MorePanel) => {
+    setActiveTab(tab);
+    if (panel) setMorePanel(panel);
+  };
+
   const handleSelectReciter = (reciter: Reciter) => {
     setActiveReciter(reciter);
-    // Smooth transition: shift to the surahs tab immediately to let them play
-    setActiveTab('surahs');
+    setActiveTab('listen');
+    window.setTimeout(() => {
+      surahSectionRef.current?.scrollIntoView({
+        block: 'start',
+        behavior: 'smooth',
+      });
+    }, 80);
   };
 
   if (showLoadingHome) {
@@ -559,9 +751,122 @@ const AppContent: React.FC = () => {
       {/* 2. Main Tab Views */}
       <main className="flex-1 flex flex-col gap-5">
         
-        {/* 2.1 Tab Qurra / Reciters View */}
-        {activeTab === 'reciters' && (
+        {activeTab === 'home' && (
           <div className="flex flex-col gap-5">
+            <section className="glass-panel rounded-3xl border border-emerald-500/15 bg-[radial-gradient(circle_at_top,rgba(16,185,129,0.16),transparent_50%)] p-5">
+              <div className="flex items-start justify-between gap-4">
+                <div className="min-w-0">
+                  <span className="inline-flex items-center gap-2 rounded-full border border-emerald-400/20 bg-emerald-400/10 px-3 py-1 text-[10px] font-black uppercase tracking-widest text-emerald-300">
+                    <Sparkles className="h-3.5 w-3.5" />
+                    Nouveau parcours d'écoute
+                  </span>
+                  <h2 className="mt-3 text-xl font-black text-slate-100">Accueil Quranify</h2>
+                  <p className="mt-2 max-w-md text-sm leading-relaxed text-slate-400">
+                    Reprenez votre lecture, explorez les voix majeures et accédez aux fonctions utiles sans naviguer entre des onglets techniques.
+                  </p>
+                </div>
+                <span className="hidden rounded-2xl border border-slate-800 bg-slate-950/60 px-3 py-2 text-[11px] font-bold text-slate-400 md:inline-flex">
+                  4 onglets essentiels
+                </span>
+              </div>
+
+              <div className="mt-5 grid grid-cols-1 gap-3 sm:grid-cols-2">
+                <ShortcutCard
+                  title={currentTrack ? 'Reprendre la lecture' : 'Commencer à écouter'}
+                  description={currentTrack
+                    ? `${currentTrack.surah.name} avec ${currentTrack.reciter.name}`
+                    : activeReciter
+                      ? `Retourner aux sourates de ${activeReciter.name}`
+                      : 'Choisissez un récitateur puis lancez une sourate en quelques secondes.'}
+                  icon={Play}
+                  onClick={() => handleNavigate('listen')}
+                />
+                <ShortcutCard
+                  title="Comparer deux récitateurs"
+                  description="Basculez entre deux voix sur la même sourate depuis l'espace Plus."
+                  icon={GitCompare}
+                  onClick={() => handleNavigate('more', 'compare')}
+                />
+              </div>
+            </section>
+
+            {!reciterSearch && !selectedLetter && featuredReciters.length > 0 && (
+              <section className="flex flex-col gap-3">
+                <div className="flex items-end justify-between gap-3">
+                  <div>
+                    <h2 className="text-lg font-black text-slate-100 flex items-center gap-2">
+                      <Crown className="w-5 h-5 text-amber-400" />
+                      Grands récitateurs
+                    </h2>
+                    <p className="text-xs text-slate-400 mt-1">
+                      Les voix les plus connues pour démarrer rapidement.
+                    </p>
+                  </div>
+                  <button
+                    onClick={() => handleNavigate('listen')}
+                    className="hidden min-[390px]:inline-flex items-center gap-1 text-[10px] font-black uppercase tracking-widest text-emerald-400 bg-emerald-400/10 border border-emerald-400/20 rounded-full px-3 py-1"
+                  >
+                    Tout écouter
+                    <ArrowRight className="h-3.5 w-3.5" />
+                  </button>
+                </div>
+
+                <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
+                  {featuredReciters.map((reciter) => (
+                    <FeaturedReciterCard
+                      key={reciter.id}
+                      reciter={reciter}
+                      isSelected={activeReciter?.id === reciter.id}
+                      onSelect={() => handleSelectReciter(reciter)}
+                    />
+                  ))}
+                </div>
+              </section>
+            )}
+
+            <section className="flex flex-col gap-3">
+              <div>
+                <h2 className="text-lg font-black text-slate-100">Priorités produit</h2>
+                <p className="mt-1 text-xs text-slate-400">
+                  Les trois fonctionnalités essentielles à ajouter ensuite pour faire évoluer l'app.
+                </p>
+              </div>
+
+              <div className="grid grid-cols-1 gap-3">
+                {PRODUCT_PRIORITIES.map((priority) => (
+                  <ProductPriorityCard key={priority.id} {...priority} />
+                ))}
+              </div>
+            </section>
+          </div>
+        )}
+
+        {/* 2.1 Listening Hub */}
+        {activeTab === 'listen' && (
+          <div className="flex flex-col gap-5">
+            <section className="glass-panel rounded-3xl border border-slate-800/70 p-5">
+              <div className="flex items-start justify-between gap-3">
+                <div>
+                  <span className="inline-flex items-center gap-2 rounded-full border border-emerald-400/20 bg-emerald-400/10 px-3 py-1 text-[10px] font-black uppercase tracking-widest text-emerald-300">
+                    <LayoutGrid className="h-3.5 w-3.5" />
+                    Espace Écouter
+                  </span>
+                  <h2 className="mt-3 text-lg font-black text-slate-100">Un seul parcours pour choisir et lancer</h2>
+                  <p className="mt-1 text-xs leading-relaxed text-slate-400">
+                    Sélectionnez un récitateur puis écoutez ses sourates. La lecture EveryAyah est maintenant séparée dans son propre onglet.
+                  </p>
+                </div>
+                {activeReciter && (
+                  <button
+                    onClick={() => handleNavigate('favorites')}
+                    className="hidden rounded-xl border border-slate-800 bg-slate-950/60 px-3 py-2 text-[11px] font-bold text-slate-300 sm:inline-flex"
+                  >
+                    Voir les favoris
+                  </button>
+                )}
+              </div>
+            </section>
+
             {/* Search inputs */}
             <div className="relative">
               <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
@@ -596,36 +901,6 @@ const AppContent: React.FC = () => {
                   Smart
                 </span>
               </div>
-            )}
-
-            {!reciterSearch && !selectedLetter && featuredReciters.length > 0 && (
-              <section className="flex flex-col gap-3">
-                <div className="flex items-end justify-between gap-3">
-                  <div>
-                    <h2 className="text-lg font-black text-slate-100 flex items-center gap-2">
-                      <Crown className="w-5 h-5 text-amber-400" />
-                      Grands récitateurs
-                    </h2>
-                    <p className="text-xs text-slate-400 mt-1">
-                      Les voix les plus connues pour commencer sans chercher.
-                    </p>
-                  </div>
-                  <span className="hidden min-[390px]:inline-flex text-[10px] font-black uppercase tracking-widest text-emerald-400 bg-emerald-400/10 border border-emerald-400/20 rounded-full px-3 py-1">
-                    Sélection
-                  </span>
-                </div>
-
-                <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
-                  {featuredReciters.map((reciter) => (
-                    <FeaturedReciterCard
-                      key={reciter.id}
-                      reciter={reciter}
-                      isSelected={activeReciter?.id === reciter.id}
-                      onSelect={() => handleSelectReciter(reciter)}
-                    />
-                  ))}
-                </div>
-              </section>
             )}
 
             {/* B. Alphabetical A-Z Letter Filter Bar */}
@@ -669,6 +944,27 @@ const AppContent: React.FC = () => {
                 </div>
               </div>
             )}
+
+            <section ref={surahSectionRef} className="scroll-mt-6 flex flex-col gap-3">
+              <div className="flex items-center justify-between gap-3">
+                <div>
+                  <h2 className="text-lg font-black text-slate-100">Sourates</h2>
+                  <p className="mt-1 text-xs text-slate-400">
+                    {activeReciter
+                      ? `Sélection active : ${activeReciter.name}.`
+                      : 'Choisissez une voix ci-dessus pour afficher les sourates disponibles.'}
+                  </p>
+                </div>
+                {!activeReciter && (
+                  <span className="rounded-full border border-slate-800 bg-slate-900/70 px-3 py-1 text-[10px] font-black uppercase tracking-widest text-slate-500">
+                    Étape 2 après sélection
+                  </span>
+                )}
+              </div>
+              <Suspense fallback={<div className="shimmer-loader h-40 rounded-2xl border border-slate-900" />}>
+                <SurahList mode="listen" />
+              </Suspense>
+            </section>
 
             {/* Error notifications */}
             {error && (
@@ -717,14 +1013,30 @@ const AppContent: React.FC = () => {
           </div>
         )}
 
-        {/* 2.2 Tab Surahs View */}
-        {activeTab === 'surahs' && (
-          <Suspense fallback={<div className="shimmer-loader h-40 rounded-2xl border border-slate-900" />}>
-            <SurahList />
-          </Suspense>
+        {activeTab === 'ayah' && (
+          <div className="flex flex-col gap-5">
+            <section className="glass-panel rounded-3xl border border-slate-800/70 p-5">
+              <div className="flex items-start justify-between gap-3">
+                <div>
+                  <span className="inline-flex items-center gap-2 rounded-full border border-emerald-400/20 bg-emerald-400/10 px-3 py-1 text-[10px] font-black uppercase tracking-widest text-emerald-300">
+                    <BookOpenText className="h-3.5 w-3.5" />
+                    EveryAyah
+                  </span>
+                  <h2 className="mt-3 text-lg font-black text-slate-100">Lecture verset par verset</h2>
+                  <p className="mt-1 text-xs leading-relaxed text-slate-400">
+                    Cette section est dédiée au texte, à la phonétique et à la lecture ayah par ayah avec timing exact.
+                  </p>
+                </div>
+              </div>
+            </section>
+
+            <Suspense fallback={<div className="shimmer-loader h-40 rounded-2xl border border-slate-900" />}>
+              <EveryAyahReader />
+            </Suspense>
+          </div>
         )}
 
-        {/* 2.3 Tab Favorites View */}
+        {/* 2.2 Tab Favorites View */}
         {activeTab === 'favorites' && (
           <div className="flex flex-col gap-5">
             <h2 className="text-lg font-bold text-slate-200 flex items-center gap-2">
@@ -738,14 +1050,14 @@ const AppContent: React.FC = () => {
                 <div>
                   <h3 className="font-semibold text-slate-350">Favoris Vides</h3>
                   <p className="text-xs text-slate-400 max-w-xs mt-1">
-                    Appuyez sur l'icône de cœur sur la carte d'un récitateur dans l'onglet Récitateurs pour l'ajouter ici en favori.
+                    Appuyez sur l'icône de cœur sur la carte d'un récitateur dans l'espace Écouter pour l'ajouter ici.
                   </p>
                 </div>
                 <button
-                  onClick={() => setActiveTab('reciters')}
+                  onClick={() => setActiveTab('listen')}
                   className="px-5 py-2.5 rounded-xl bg-emerald-500 text-slate-950 font-semibold text-xs shadow-lg shadow-emerald-500/10 hover:bg-emerald-400 transition-colors tap-feedback"
                 >
-                  Parcourir les Récitateurs
+                  Aller vers Écouter
                 </button>
               </div>
             ) : (
@@ -765,16 +1077,81 @@ const AppContent: React.FC = () => {
           </div>
         )}
 
-        {/* 2.4 Tab About specifications View */}
-        {activeTab === 'about' && (
-          <Suspense fallback={<div className="shimmer-loader h-40 rounded-2xl border border-slate-900" />}>
-            <AboutPanel />
-          </Suspense>
+        {/* 2.3 Tab More View */}
+        {activeTab === 'more' && (
+          <div className="flex flex-col gap-5">
+            <section className="glass-panel rounded-3xl border border-slate-800/70 p-5">
+              <div className="flex items-start justify-between gap-3">
+                <div>
+                  <span className="inline-flex items-center gap-2 rounded-full border border-slate-700 bg-slate-900/70 px-3 py-1 text-[10px] font-black uppercase tracking-widest text-slate-300">
+                    Plus
+                  </span>
+                  <h2 className="mt-3 text-lg font-black text-slate-100">Fonctions avancées et informations</h2>
+                  <p className="mt-1 text-xs leading-relaxed text-slate-400">
+                    Les vues secondaires quittent la navbar principale mais restent accessibles ici avec plus de contexte.
+                  </p>
+                </div>
+              </div>
+
+              <div className="mt-5 grid grid-cols-3 gap-2">
+                <button
+                  onClick={() => setMorePanel('priorities')}
+                  className={`rounded-2xl border px-3 py-3 text-xs font-bold transition-all ${
+                    morePanel === 'priorities'
+                      ? 'border-emerald-500/40 bg-emerald-500/10 text-emerald-300'
+                      : 'border-slate-800 bg-slate-900/60 text-slate-400 hover:text-slate-200'
+                  }`}
+                >
+                  Priorités
+                </button>
+                <button
+                  onClick={() => setMorePanel('compare')}
+                  className={`rounded-2xl border px-3 py-3 text-xs font-bold transition-all ${
+                    morePanel === 'compare'
+                      ? 'border-emerald-500/40 bg-emerald-500/10 text-emerald-300'
+                      : 'border-slate-800 bg-slate-900/60 text-slate-400 hover:text-slate-200'
+                  }`}
+                >
+                  Comparer
+                </button>
+                <button
+                  onClick={() => setMorePanel('about')}
+                  className={`rounded-2xl border px-3 py-3 text-xs font-bold transition-all ${
+                    morePanel === 'about'
+                      ? 'border-emerald-500/40 bg-emerald-500/10 text-emerald-300'
+                      : 'border-slate-800 bg-slate-900/60 text-slate-400 hover:text-slate-200'
+                  }`}
+                >
+                  À propos
+                </button>
+              </div>
+            </section>
+
+            {morePanel === 'priorities' && (
+              <div className="grid grid-cols-1 gap-3">
+                {PRODUCT_PRIORITIES.map((priority) => (
+                  <ProductPriorityCard key={priority.id} {...priority} />
+                ))}
+              </div>
+            )}
+
+            {morePanel === 'compare' && (
+              <Suspense fallback={<div className="shimmer-loader h-40 rounded-2xl border border-slate-900" />}>
+                <ReciterCompare />
+              </Suspense>
+            )}
+
+            {morePanel === 'about' && (
+              <Suspense fallback={<div className="shimmer-loader h-40 rounded-2xl border border-slate-900" />}>
+                <AboutPanel />
+              </Suspense>
+            )}
+          </div>
         )}
       </main>
 
       {/* 3. Global Audio Player Sheet */}
-      {currentTrack && (
+      {currentTrack && activeTab !== 'ayah' && (
         <Suspense fallback={null}>
           <GlobalPlayer />
         </Suspense>

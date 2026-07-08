@@ -2,6 +2,8 @@ import React, { createContext, useContext, useState, useEffect, useRef, useCallb
 import type { Reciter, Moshaf, Surah, AudioTrack, PlaybackStatus } from '../types';
 import { SURAHS } from '../data/surahs';
 import { SEEDED_RECITERS } from '../data/recitersSeed';
+import { getAudioUrl } from '../utils/audioUrl';
+import { syncWidgetPlayback } from '../utils/widgetSync';
 
 interface AudioContextType {
   // Playback state
@@ -153,11 +155,6 @@ const stabilizeFirstScreenReciters = (apiReciters: Reciter[]) => {
   ];
 };
 
-const getAudioUrl = (moshaf: Moshaf, surah: Surah) => {
-  const paddedSurah = String(surah.id).padStart(3, '0');
-  const server = moshaf.server.endsWith('/') ? moshaf.server : `${moshaf.server}/`;
-  return `${server}${paddedSurah}.mp3`;
-};
 
 export const AudioProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [reciters, setReciters] = useState<Reciter[]>(SEEDED_RECITERS);
@@ -404,6 +401,22 @@ export const AudioProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       }
     }
   }, [currentTime, duration, playbackSpeed, currentTrack]);
+
+  // Sync home-screen widget data (Capacitor + web fallback)
+  useEffect(() => {
+    if (!currentTrack) return;
+
+    const progressPercent = duration > 0 ? Math.round((currentTime / duration) * 100) : 0;
+    void syncWidgetPlayback({
+      reciterName: currentTrack.reciter.name,
+      surahName: currentTrack.surah.name,
+      surahId: currentTrack.surah.id,
+      surahArabic: currentTrack.surah.arabicName,
+      isPlaying: playbackStatus === 'playing',
+      progressPercent,
+      updatedAt: Date.now(),
+    });
+  }, [currentTrack, playbackStatus, currentTime, duration]);
 
   // Helper to extract list of available Surahs for a reciter
   const getAvailableSurahs = useCallback((reciter: Reciter | null, moshaf: Moshaf | null): Surah[] => {

@@ -1,23 +1,26 @@
 import React from 'react';
-import { Users, Music, Heart, Info } from 'lucide-react';
+import { BookOpenText, Heart, Home, LayoutGrid, MoreHorizontal } from 'lucide-react';
+
+type NavTabId = 'home' | 'listen' | 'ayah' | 'favorites' | 'more';
 
 interface BottomNavbarProps {
-  activeTab: string;
-  setActiveTab: (tab: string) => void;
+  activeTab: NavTabId;
+  setActiveTab: (tab: NavTabId) => void;
 }
 
 export const BottomNavbar: React.FC<BottomNavbarProps> = ({ activeTab, setActiveTab }) => {
 
-  const tabs = [
-    { id: 'reciters', label: 'Récitateurs', icon: Users },
-    { id: 'surahs', label: 'Sourates', icon: Music },
+  const tabs: Array<{ id: NavTabId; label: string; icon: typeof Home }> = [
+    { id: 'home', label: 'Accueil', icon: Home },
+    { id: 'listen', label: 'Écouter', icon: LayoutGrid },
+    { id: 'ayah', label: 'EveryAyah', icon: BookOpenText },
     { id: 'favorites', label: 'Favoris', icon: Heart },
-    { id: 'about', label: 'À propos', icon: Info },
+    { id: 'more', label: 'Plus', icon: MoreHorizontal },
   ];
 
   return (
     <nav className="fixed bottom-0 left-0 right-0 glass-panel-opaque border-t border-slate-800/80 rounded-t-3xl shadow-[0_-10px_40px_rgba(0,0,0,0.5)] z-40 px-3 pb-safe pt-2 md:top-0 md:bottom-auto md:h-screen md:right-auto md:w-24 md:rounded-none md:border-t-0 md:border-r md:px-0 md:pt-8 md:pb-28 md:bg-slate-950/90 md:backdrop-blur-xl">
-      <div className="max-w-md mx-auto flex items-center justify-between h-16 md:flex-col md:h-full md:justify-start md:gap-8 md:w-full">
+      <div className="max-w-md mx-auto flex items-center justify-between h-16 md:flex-col md:h-full md:justify-start md:gap-6 md:w-full">
         {tabs.map((tab) => {
           const Icon = tab.icon;
           const isActive = activeTab === tab.id;
@@ -44,7 +47,7 @@ export const BottomNavbar: React.FC<BottomNavbarProps> = ({ activeTab, setActive
               />
               
               <span 
-                className={`text-[10px] font-semibold tracking-wider mt-1 transition-colors uppercase md:mt-2 md:text-[9px] ${
+                className={`text-[9px] font-semibold tracking-wider mt-1 transition-colors uppercase md:mt-2 md:text-[8px] ${
                   isActive ? 'text-emerald-400 font-bold' : 'text-slate-500'
                 }`}
               >

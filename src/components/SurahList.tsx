@@ -3,8 +3,11 @@ import { useAudio } from '../context/AudioContext';
 import type { Surah } from '../types';
 import { Search, Play, Pause, Disc, Repeat1 } from 'lucide-react';
 
+interface SurahListProps {
+  mode?: 'listen' | 'ayah';
+}
 
-export const SurahList: React.FC = () => {
+export const SurahList: React.FC<SurahListProps> = () => {
   const {
     activeReciter,
     activeMoshaf,
@@ -17,6 +20,8 @@ export const SurahList: React.FC = () => {
     setRepeatMode,
     selectedSurahIds,
     setSelectedSurahIds,
+    activeSurah,
+    setActiveSurah,
   } = useAudio();
 
   const [searchQuery, setSearchQuery] = useState('');
@@ -36,6 +41,7 @@ export const SurahList: React.FC = () => {
   }, [availableSurahs, searchQuery]);
 
   const playlistActive = selectedSurahIds.size > 0;
+  const viewedSurah = activeSurah ?? currentTrack?.surah ?? null;
 
   const toggleCheck = (id: number) => {
     const next = new Set(selectedSurahIds);
@@ -60,6 +66,10 @@ export const SurahList: React.FC = () => {
     }
   };
 
+  const handleSelectSurah = (surah: Surah) => {
+    setActiveSurah(surah);
+  };
+
   if (!activeReciter || !activeMoshaf) {
     return (
       <div className="flex flex-col items-center justify-center p-12 text-center glass-panel rounded-3xl gap-4">
@@ -67,7 +77,7 @@ export const SurahList: React.FC = () => {
         <div>
           <h3 className="font-semibold text-lg text-slate-200">Aucun récitateur sélectionné</h3>
           <p className="text-sm text-slate-400 max-w-xs mt-1">
-            Veuillez choisir un récitateur dans l'onglet Récitateurs pour voir ses sourates disponibles.
+            Veuillez choisir un récitateur dans l'espace Écouter pour voir ses sourates disponibles.
           </p>
         </div>
       </div>
@@ -204,19 +214,23 @@ export const SurahList: React.FC = () => {
                 </div>
 
                 {/* Names */}
-                <div
-                  className="min-w-0 flex-1 py-1 cursor-pointer"
-                  onClick={() => handlePlay(surah)}
+                <button
+                  type="button"
+                  className="min-w-0 flex-1 py-1 text-left cursor-pointer"
+                  onClick={() => handleSelectSurah(surah)}
                 >
                   <h5 className={`font-bold text-base transition-colors ${
-                    isCurrent ? 'text-emerald-400' : 'text-slate-100 group-hover:text-emerald-400'
+                    viewedSurah?.id === surah.id ? 'text-emerald-400' : isCurrent ? 'text-emerald-400' : 'text-slate-100 group-hover:text-emerald-400'
                   }`}>
                     {surah.name}
                   </h5>
                   <p className="text-xs text-slate-400/80 truncate mt-0.5 font-medium">
                     {surah.englishTranslation}
                   </p>
-                </div>
+                  <p className="mt-2 text-[11px] font-semibold uppercase tracking-widest text-slate-500">
+                    {viewedSurah?.id === surah.id ? 'Texte ouvert' : 'Ouvrir les versets'}
+                  </p>
+                </button>
 
                 {/* Arabic + Play button */}
                 <div className="flex items-center gap-2 min-[390px]:gap-4 shrink-0 text-right">
