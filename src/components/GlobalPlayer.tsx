@@ -206,28 +206,22 @@ export const GlobalPlayer: React.FC = () => {
           if (window.innerWidth < 768) setIsExpanded(true);
         }}
         className={`fixed z-50 transition-all duration-300
-          left-3 right-3 bottom-[calc(5.6rem+env(safe-area-inset-bottom,0px))] rounded-2xl p-3 glass-panel-opaque border border-slate-800/80 shadow-2xl flex flex-row items-center justify-between
-          cursor-pointer active:scale-[0.98]
-          md:left-28 md:right-4 md:bottom-4 md:h-20 md:rounded-2xl md:border md:border-slate-800/60 md:px-6 md:bg-slate-950/92 md:backdrop-blur-3xl md:grid md:grid-cols-3 md:cursor-default md:active:scale-100 md:transform-none md:shadow-[0_20px_50px_rgba(0,0,0,0.8)] md:hover:border-slate-750/70
+          left-3 right-3 bottom-[calc(6.5rem+env(safe-area-inset-bottom,0px))] md:left-6 md:right-6 md:mx-auto md:max-w-4xl md:bottom-6 
+          rounded-2xl md:rounded-3xl p-3 md:p-0 md:px-6 md:h-20 
+          glass-panel-opaque border border-slate-800/80 md:border-slate-800/60 md:bg-slate-950/92 md:backdrop-blur-3xl
+          shadow-2xl md:shadow-[0_20px_50px_rgba(0,0,0,0.8)] md:hover:border-slate-750/70
+          flex flex-row items-center justify-between md:grid md:grid-cols-3
+          cursor-pointer active:scale-[0.98] md:cursor-default md:active:scale-100
+          overflow-hidden md:overflow-visible
           ${isExpanded ? 'opacity-0 pointer-events-none translate-y-4 md:opacity-100 md:pointer-events-auto md:translate-y-0' : 'opacity-100 translate-y-0'}
         `}
       >
-        <div 
-          className="absolute top-0 left-0 right-0 h-0.5 md:h-1 bg-slate-900 rounded-t-2xl overflow-hidden md:cursor-pointer md:overflow-visible group/progress"
-          onClick={(e) => {
-            if (window.innerWidth < 768) return;
-            e.stopPropagation();
-            const rect = e.currentTarget.getBoundingClientRect();
-            const percent = (e.clientX - rect.left) / rect.width;
-            seekTo(percent * duration);
-          }}
-        >
+        {/* Mobile top progress bar */}
+        <div className="absolute top-0 left-0 right-0 h-0.5 bg-slate-900/60 md:hidden">
           <div 
-            className={`h-full ${theme.accent} transition-all duration-100 ease-linear shadow-[0_0_8px_rgba(16,185,129,0.8)] relative`}
+            className={`h-full ${theme.accent} transition-all duration-100 ease-linear shadow-[0_0_8px_rgba(16,185,129,0.8)]`}
             style={{ width: `${progressPercent}%`, backgroundColor: theme.sliderAccentColor }}
-          >
-            <div className="hidden md:block absolute right-0 top-1/2 -translate-y-1/2 w-2.5 h-2.5 bg-white rounded-full shadow-lg translate-x-1/2 scale-0 group-hover/progress:scale-100 transition-transform duration-200" />
-          </div>
+          />
         </div>
 
         <div className="flex items-center gap-3.5 min-w-0 flex-1 md:col-span-1">

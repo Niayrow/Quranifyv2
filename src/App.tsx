@@ -1,7 +1,7 @@
 import React, { useEffect, useState, useMemo, lazy, Suspense, useDeferredValue, useCallback, useRef } from 'react';
 import { useAudio, AudioProvider } from './context/AudioContext';
 import { ReciterCard } from './components/ReciterCard';
-import { BottomNavbar } from './components/BottomNavbar';
+import { Navbar } from './components/Navbar';
 import { 
   Search, Heart, AlertTriangle, Crown, Headphones, Play, ArrowRight, BookOpenText,
   Bookmark, Download, GitCompare, LayoutGrid, Sparkles
@@ -716,6 +716,8 @@ const AppContent: React.FC = () => {
   const handleSelectReciter = (reciter: Reciter) => {
     setActiveReciter(reciter);
     setActiveTab('listen');
+    setReciterSearch('');
+    setSelectedLetter('');
     window.setTimeout(() => {
       surahSectionRef.current?.scrollIntoView({
         block: 'start',
@@ -729,7 +731,7 @@ const AppContent: React.FC = () => {
   }
 
   return (
-    <div className="flex-1 flex flex-col pt-4 px-4 max-w-lg mx-auto w-full mobile-shell-padding md:pl-32 md:pb-32 md:max-w-4xl md:px-8">
+    <div className="flex-1 flex flex-col pt-4 px-4 max-w-lg mx-auto w-full mobile-shell-padding md:pt-28 md:pb-12 md:max-w-4xl md:px-8">
       {/* 1. App Header with Gold and Emerald Accents */}
       <header className="mb-6 flex items-center justify-between">
         <div className="flex items-center">
@@ -790,6 +792,84 @@ const AppContent: React.FC = () => {
               </div>
             </section>
 
+            {/* Search inputs */}
+            <div className="relative">
+              <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
+              <input
+                type="text"
+                value={reciterSearch}
+                onChange={(e) => setReciterSearch(e.target.value)}
+                placeholder="Rechercher un récitateur..."
+                className="w-full pl-12 pr-5 py-3.5 bg-slate-900/60 hover:bg-slate-900/80 focus:bg-slate-900 border border-slate-800 focus:border-emerald-500/50 rounded-2xl text-slate-200 placeholder-slate-500 text-sm focus:outline-none transition-all"
+              />
+              {reciterSearch && (
+                <button
+                  onClick={() => setReciterSearch('')}
+                  className="absolute right-4 top-1/2 -translate-y-1/2 text-xs text-slate-400 hover:text-slate-200 px-2 py-1 bg-slate-800 rounded-md"
+                >
+                  Effacer
+                </button>
+              )}
+            </div>
+
+            {reciterSearch.trim() && (
+              <div className="flex items-center justify-between gap-3 rounded-2xl border border-slate-800/80 bg-slate-900/45 px-4 py-3">
+                <div className="min-w-0">
+                  <p className="text-xs font-bold text-slate-200">
+                    {isSearchPending ? 'Recherche...' : `${filteredReciters.length} résultat${filteredReciters.length > 1 ? 's' : ''} proche${filteredReciters.length > 1 ? 's' : ''}`}
+                  </p>
+                  <p className="mt-0.5 text-[11px] text-slate-500 truncate">
+                    Tolère accents, majuscules, lettres oubliées et orthographes proches.
+                  </p>
+                </div>
+                <span className="shrink-0 rounded-full border border-emerald-400/20 bg-emerald-400/10 px-2.5 py-1 text-[10px] font-black uppercase tracking-widest text-emerald-300">
+                  Smart
+                </span>
+              </div>
+            )}
+
+            {/* B. Alphabetical A-Z Letter Filter Bar */}
+            {availableLetters.length > 0 && (
+              <div className="flex flex-col gap-2.5">
+                <div className="flex items-center justify-between">
+                  <span className="text-[10px] uppercase font-bold tracking-widest text-slate-400">Filtrer par lettre</span>
+                  {selectedLetter && (
+                    <button 
+                      onClick={() => setSelectedLetter('')}
+                      className="text-[10px] text-emerald-400 font-bold hover:underline"
+                    >
+                      Réinitialiser
+                    </button>
+                  )}
+                </div>
+                <div className="flex overflow-x-auto gap-1.5 pb-2 scrollbar-thin scrollbar-thumb-slate-800 scrollbar-track-transparent">
+                  <button
+                    onClick={() => setSelectedLetter('')}
+                    className={`text-xs px-3 py-1.5 rounded-lg border font-semibold shrink-0 transition-all ${
+                      !selectedLetter
+                        ? 'bg-emerald-500 border-emerald-500 text-slate-950 shadow-md shadow-emerald-500/10'
+                        : 'bg-slate-900/60 border-slate-800/80 text-slate-400 hover:text-slate-200'
+                    }`}
+                  >
+                    Tous
+                  </button>
+                  {availableLetters.map(letter => (
+                    <button
+                      key={letter}
+                      onClick={() => setSelectedLetter(selectedLetter === letter ? '' : letter)}
+                      className={`text-xs w-8 h-8 rounded-lg border font-bold flex items-center justify-center shrink-0 transition-all ${
+                        selectedLetter === letter
+                          ? 'bg-emerald-500 border-emerald-500 text-slate-950 shadow-md shadow-emerald-500/10'
+                          : 'bg-slate-900/60 border-slate-800/80 text-slate-400 hover:text-slate-200'
+                      }`}
+                    >
+                      {letter}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+
             {!reciterSearch && !selectedLetter && featuredReciters.length > 0 && (
               <section className="flex flex-col gap-3">
                 <div className="flex items-end justify-between gap-3">
@@ -826,17 +906,49 @@ const AppContent: React.FC = () => {
 
             <section className="flex flex-col gap-3">
               <div>
-                <h2 className="text-lg font-black text-slate-100">Priorités produit</h2>
-                <p className="mt-1 text-xs text-slate-400">
-                  Les trois fonctionnalités essentielles à ajouter ensuite pour faire évoluer l'app.
-                </p>
+                <h2 className="text-lg font-black text-slate-100">
+                  {!reciterSearch && !selectedLetter ? 'Tous les récitateurs' : 'Récitateurs'}
+                </h2>
+                {!reciterSearch && !selectedLetter && (
+                  <p className="text-xs text-slate-400 mt-1">
+                    Parcourez la liste complète des voix disponibles.
+                  </p>
+                )}
               </div>
 
-              <div className="grid grid-cols-1 gap-3">
-                {PRODUCT_PRIORITIES.map((priority) => (
-                  <ProductPriorityCard key={priority.id} {...priority} />
-                ))}
-              </div>
+              {/* Skeleton Shimmer Loaders */}
+              {isLoadingReciters ? (
+                <RecitersLoadingSkeleton />
+              ) : filteredReciters.length === 0 ? (
+                <div className="flex flex-col items-center justify-center p-12 text-center glass-panel rounded-3xl gap-2">
+                  <p className="text-slate-400">Aucun récitateur trouvé</p>
+                </div>
+              ) : (
+                <div className="grid grid-cols-1 gap-4">
+                  {visibleReciters.map((reciter) => (
+                    <ReciterCard
+                      key={reciter.id}
+                      reciter={reciter}
+                      isSelected={activeReciter?.id === reciter.id}
+                      onSelect={() => handleSelectReciter(reciter)}
+                      isFavorite={favorites.includes(reciter.id)}
+                      onToggleFavorite={(e) => toggleFavorite(reciter.id, e)}
+                      searchQuery={reciterSearch}
+                    />
+                  ))}
+                  {hasMoreReciters && (
+                    <button
+                      onClick={() => setReciterPaging({
+                        key: reciterFilterKey,
+                        limit: visibleReciterLimit + RECITER_BATCH_SIZE
+                      })}
+                      className="w-full rounded-2xl border border-slate-800 bg-slate-900/60 px-4 py-3 text-sm font-semibold text-emerald-400 transition-colors hover:bg-slate-900 hover:text-emerald-300 tap-feedback"
+                    >
+                      Afficher plus ({filteredReciters.length - visibleReciterLimit})
+                    </button>
+                  )}
+                </div>
+              )}
             </section>
           </div>
         )}
@@ -945,26 +1057,28 @@ const AppContent: React.FC = () => {
               </div>
             )}
 
-            <section ref={surahSectionRef} className="scroll-mt-6 flex flex-col gap-3">
-              <div className="flex items-center justify-between gap-3">
-                <div>
-                  <h2 className="text-lg font-black text-slate-100">Sourates</h2>
-                  <p className="mt-1 text-xs text-slate-400">
-                    {activeReciter
-                      ? `Sélection active : ${activeReciter.name}.`
-                      : 'Choisissez une voix ci-dessus pour afficher les sourates disponibles.'}
-                  </p>
+            {!reciterSearch.trim() && !selectedLetter && (
+              <section ref={surahSectionRef} className="scroll-mt-6 flex flex-col gap-3">
+                <div className="flex items-center justify-between gap-3">
+                  <div>
+                    <h2 className="text-lg font-black text-slate-100">Sourates</h2>
+                    <p className="mt-1 text-xs text-slate-400">
+                      {activeReciter
+                        ? `Sélection active : ${activeReciter.name}.`
+                        : 'Choisissez une voix ci-dessus pour afficher les sourates disponibles.'}
+                    </p>
+                  </div>
+                  {!activeReciter && (
+                    <span className="rounded-full border border-slate-800 bg-slate-900/70 px-3 py-1 text-[10px] font-black uppercase tracking-widest text-slate-500">
+                      Étape 2 après sélection
+                    </span>
+                  )}
                 </div>
-                {!activeReciter && (
-                  <span className="rounded-full border border-slate-800 bg-slate-900/70 px-3 py-1 text-[10px] font-black uppercase tracking-widest text-slate-500">
-                    Étape 2 après sélection
-                  </span>
-                )}
-              </div>
-              <Suspense fallback={<div className="shimmer-loader h-40 rounded-2xl border border-slate-900" />}>
-                <SurahList mode="listen" />
-              </Suspense>
-            </section>
+                <Suspense fallback={<div className="shimmer-loader h-40 rounded-2xl border border-slate-900" />}>
+                  <SurahList mode="listen" />
+                </Suspense>
+              </section>
+            )}
 
             {/* Error notifications */}
             {error && (
@@ -985,30 +1099,32 @@ const AppContent: React.FC = () => {
                 <p className="text-slate-400">Aucun récitateur trouvé</p>
               </div>
             ) : (
-              <div className="grid grid-cols-1 gap-4">
-                {visibleReciters.map((reciter) => (
-                  <ReciterCard
-                    key={reciter.id}
-                    reciter={reciter}
-                    isSelected={activeReciter?.id === reciter.id}
-                    onSelect={() => handleSelectReciter(reciter)}
-                    isFavorite={favorites.includes(reciter.id)}
-                    onToggleFavorite={(e) => toggleFavorite(reciter.id, e)}
-                    searchQuery={reciterSearch}
-                  />
-                ))}
-                {hasMoreReciters && (
-                  <button
-                    onClick={() => setReciterPaging({
-                      key: reciterFilterKey,
-                      limit: visibleReciterLimit + RECITER_BATCH_SIZE
-                    })}
-                    className="w-full rounded-2xl border border-slate-800 bg-slate-900/60 px-4 py-3 text-sm font-semibold text-emerald-400 transition-colors hover:bg-slate-900 hover:text-emerald-300 tap-feedback"
-                  >
-                    Afficher plus ({filteredReciters.length - visibleReciterLimit})
-                  </button>
-                )}
-              </div>
+              (!activeReciter || deferredReciterSearch.trim() || selectedLetter) && (
+                <div className="grid grid-cols-1 gap-4">
+                  {visibleReciters.map((reciter) => (
+                    <ReciterCard
+                      key={reciter.id}
+                      reciter={reciter}
+                      isSelected={activeReciter?.id === reciter.id}
+                      onSelect={() => handleSelectReciter(reciter)}
+                      isFavorite={favorites.includes(reciter.id)}
+                      onToggleFavorite={(e) => toggleFavorite(reciter.id, e)}
+                      searchQuery={reciterSearch}
+                    />
+                  ))}
+                  {hasMoreReciters && (
+                    <button
+                      onClick={() => setReciterPaging({
+                        key: reciterFilterKey,
+                        limit: visibleReciterLimit + RECITER_BATCH_SIZE
+                      })}
+                      className="w-full rounded-2xl border border-slate-800 bg-slate-900/60 px-4 py-3 text-sm font-semibold text-emerald-400 transition-colors hover:bg-slate-900 hover:text-emerald-300 tap-feedback"
+                    >
+                      Afficher plus ({filteredReciters.length - visibleReciterLimit})
+                    </button>
+                  )}
+                </div>
+              )
             )}
           </div>
         )}
@@ -1157,8 +1273,8 @@ const AppContent: React.FC = () => {
         </Suspense>
       )}
 
-      {/* 4. Sticky Bottom Mobile Nav Bar */}
-      <BottomNavbar
+      {/* 4. Floating Navbar */}
+      <Navbar
         activeTab={activeTab}
         setActiveTab={setActiveTab}
       />

@@ -156,7 +156,8 @@ export const SurahList: React.FC<SurahListProps> = () => {
             return (
               <div
                 key={surah.id}
-                className={`group relative p-3 min-[390px]:p-4 rounded-2xl flex items-center gap-3 transition-all duration-200 border ${
+                onClick={() => handlePlay(surah)}
+                className={`group relative p-3 min-[390px]:p-4 rounded-2xl flex items-center gap-3 transition-all duration-200 border cursor-pointer ${
                   isCurrent
                     ? 'border-emerald-500/40 bg-emerald-500/10 shadow-[0_8px_24px_rgba(16,185,129,0.15)] ring-1 ring-emerald-500/20'
                     : isDimmed
@@ -173,7 +174,10 @@ export const SurahList: React.FC<SurahListProps> = () => {
 
                 {/* ── Checkbox ── always visible, left-most */}
                 <button
-                  onClick={() => toggleCheck(surah.id)}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    toggleCheck(surah.id);
+                  }}
                   className={`shrink-0 w-5 h-5 rounded border-2 flex items-center justify-center transition-all duration-150 ${
                     isChecked
                       ? 'bg-emerald-500 border-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.45)]'
@@ -214,11 +218,7 @@ export const SurahList: React.FC<SurahListProps> = () => {
                 </div>
 
                 {/* Names */}
-                <button
-                  type="button"
-                  className="min-w-0 flex-1 py-1 text-left cursor-pointer"
-                  onClick={() => handleSelectSurah(surah)}
-                >
+                <div className="min-w-0 flex-1 py-1 text-left">
                   <h5 className={`font-bold text-base transition-colors ${
                     viewedSurah?.id === surah.id ? 'text-emerald-400' : isCurrent ? 'text-emerald-400' : 'text-slate-100 group-hover:text-emerald-400'
                   }`}>
@@ -227,10 +227,17 @@ export const SurahList: React.FC<SurahListProps> = () => {
                   <p className="text-xs text-slate-400/80 truncate mt-0.5 font-medium">
                     {surah.englishTranslation}
                   </p>
-                  <p className="mt-2 text-[11px] font-semibold uppercase tracking-widest text-slate-500">
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleSelectSurah(surah);
+                    }}
+                    className="mt-2 text-[11px] font-semibold uppercase tracking-widest text-slate-500 hover:text-emerald-400 transition-colors cursor-pointer"
+                  >
                     {viewedSurah?.id === surah.id ? 'Texte ouvert' : 'Ouvrir les versets'}
-                  </p>
-                </button>
+                  </button>
+                </div>
 
                 {/* Arabic + Play button */}
                 <div className="flex items-center gap-2 min-[390px]:gap-4 shrink-0 text-right">
@@ -241,7 +248,10 @@ export const SurahList: React.FC<SurahListProps> = () => {
                   </span>
 
                   <button
-                    onClick={() => handlePlay(surah)}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handlePlay(surah);
+                    }}
                     className={`w-10 h-10 rounded-full flex items-center justify-center transition-all ${
                       isCurrent
                         ? 'bg-emerald-500 text-slate-950 shadow-[0_0_15px_rgba(16,185,129,0.4)] hover:bg-emerald-400'
