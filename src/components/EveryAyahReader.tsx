@@ -33,55 +33,73 @@ const AYAT_AL_KURSI_SEGMENTS = [
     id: 1,
     arabic: "اللَّهُ لَا إِلَٰهَ إِلَّا هُوَ الْحَيُّ الْقَيُّومُ",
     transliteration: "Allāhu lā ilāha illā huwal-ḥayyul-qayyūm",
-    translation: "Allah ! Point de divinité à part Lui, le Vivant, Celui qui subsiste par Lui-même (al-Qayyûm)."
+    translation: "Allah ! Point de divinité à part Lui, le Vivant, Celui qui subsiste par Lui-même (al-Qayyûm).",
+    startPercent: 0,
+    endPercent: 14
   },
   {
     id: 2,
     arabic: "لَا تَأْخُذُهُ سِنَةٌ وَلَا نَوْمٌ",
     transliteration: "Lā ta'khudhuhu sinatun walā nawm",
-    translation: "Ni somnolence ni sommeil ne S'emparent de Lui."
+    translation: "Ni somnolence ni sommeil ne S'emparent de Lui.",
+    startPercent: 14,
+    endPercent: 24
   },
   {
     id: 3,
     arabic: "لَّهُ مَا فِي السَّمَاوَاتِ وَمَا فِي الْأَرْضِ",
     transliteration: "Lahū mā fis-samāwāti wamā fil-arḍ",
-    translation: "A Lui appartient tout ce qui est dans les cieux et sur la terre."
+    translation: "A Lui appartient tout ce qui est dans les cieux et sur la terre.",
+    startPercent: 24,
+    endPercent: 37
   },
   {
     id: 4,
     arabic: "مَن ذَا الَّذِي يَشْفَعُ عِندَهُ إِلَّا بِإِذْنِهِ",
     transliteration: "Man dhal-ladhī yashfa'u 'indahū illā bi-idhnih",
-    translation: "Qui peut intercéder auprès de Lui sans Sa permission ?"
+    translation: "Qui peut intercéder auprès de Lui sans Sa permission ?",
+    startPercent: 37,
+    endPercent: 50
   },
   {
     id: 5,
     arabic: "يَعْلَمُ مَا بَيْنَ أَيْدِيهِمْ وَمَا خَلْفَهُمْ",
     transliteration: "Ya'lamu mā bayna aydīhim wamā khalfahum",
-    translation: "Il connaît leur passé et leur futur."
+    translation: "Il connaît leur passé et leur futur.",
+    startPercent: 50,
+    endPercent: 62
   },
   {
     id: 6,
     arabic: "وَلَا يُحِيطُونَ بِشَيْءٍ مِّنْ عِلْمِهِ إِلَّا بِمَا شَاءَ",
     transliteration: "Walā yuḥīṭūna bi-shay'im-min 'ilmihī illā bimā shā'",
-    translation: "Et, de Sa science, ils n'embrassent que ce qu'Il veut."
+    translation: "Et, de Sa science, ils n'embrassent que ce qu'Il veut.",
+    startPercent: 62,
+    endPercent: 77
   },
   {
     id: 7,
     arabic: "وَسِعَ كُرْسِيُّهُ السَّمَاوَاتِ وَالْأَرْضَ",
     transliteration: "Wasi'a kursiyyuhus-samāwāti wal-arḍ",
-    translation: "Son Trône (Kursî) déborde les cieux et la terre,"
+    translation: "Son Trône (Kursî) déborde les cieux et la terre,",
+    startPercent: 77,
+    endPercent: 88
   },
   {
     id: 8,
     arabic: "وَلَا يَئُودُهُ حِفْظُهُمَا",
     transliteration: "Walā ya'ūduhū ḥifẓuhumā",
-    translation: "dont la garde ne Lui coûte aucune peine."
+    translation: "dont la garde ne Lui coûte aucune peine.",
+    startPercent: 88,
+    endPercent: 94
   },
   {
     id: 9,
     arabic: "وَهُوَ الْعَلِيُّ الْعَظِيمُ",
     transliteration: "Wahuwal-'aliyyul-'aẓīm",
-    translation: "Et Il est le Très Haut, le Très Grand."
+    translation: "Et Il est le Très Haut, le Très Grand.",
+    startPercent: 94,
+    endPercent: 100
   }
 ];
 
@@ -236,6 +254,48 @@ const useAyatAlKursiPlayer = (pauseMainPlayer: () => void) => {
     }
   }, [volume]);
 
+  const seekToPercent = useCallback((percent: number) => {
+    const audio = audioRef.current;
+    if (!audio) return;
+    
+    // Pause the main audio player in AudioContext
+    pauseMainPlayer();
+
+    const doSeek = () => {
+      if (audio.duration) {
+        audio.currentTime = (percent / 100) * audio.duration;
+        setCurrentTime(audio.currentTime);
+        audio.play()
+          .then(() => {
+            setPlaybackStatus('playing');
+            setIsPlaying(true);
+          })
+          .catch(() => {
+            setPlaybackStatus('error');
+            setIsPlaying(false);
+          });
+      }
+    };
+
+    if (!audio.src || audio.src === '') {
+      // Load current reciter and play
+      playReciter(reciterIndexRef.current, true);
+      const onLoaded = () => {
+        doSeek();
+        audio.removeEventListener('loadedmetadata', onLoaded);
+      };
+      audio.addEventListener('loadedmetadata', onLoaded);
+    } else if (audio.readyState >= 1) {
+      doSeek();
+    } else {
+      const onLoaded = () => {
+        doSeek();
+        audio.removeEventListener('loadedmetadata', onLoaded);
+      };
+      audio.addEventListener('loadedmetadata', onLoaded);
+    }
+  }, [playReciter, pauseMainPlayer]);
+
   return {
     reciters,
     currentReciterIndex,
@@ -250,6 +310,7 @@ const useAyatAlKursiPlayer = (pauseMainPlayer: () => void) => {
     setVolume,
     playReciter,
     togglePlayback,
+    seekToPercent,
   };
 };
 
@@ -282,6 +343,19 @@ export const EveryAyahReader: React.FC = () => {
   // Custom player for Ayat al-Kursi
   const ayatAlKursiPlayer = useAyatAlKursiPlayer(pauseMainPlayer);
 
+  const progressPercent = ayatAlKursiPlayer.duration > 0
+    ? (ayatAlKursiPlayer.currentTime / ayatAlKursiPlayer.duration) * 100
+    : 0;
+
+  const activeSegment = useMemo(() => {
+    return AYAT_AL_KURSI_SEGMENTS.find(
+      (seg) => progressPercent >= seg.startPercent && progressPercent < seg.endPercent
+    );
+  }, [progressPercent]);
+
+  const activeSegmentId = activeSegment ? activeSegment.id : -1;
+  const activeSegmentRef = useRef<HTMLDivElement | null>(null);
+
   useEffect(() => {
     if (activeVerseIndex < 0) return;
     activeVerseRef.current?.scrollIntoView({
@@ -289,6 +363,14 @@ export const EveryAyahReader: React.FC = () => {
       behavior: 'smooth',
     });
   }, [activeVerseIndex]);
+
+  useEffect(() => {
+    if (activeSegmentId < 0 || !isSegmentedMode) return;
+    activeSegmentRef.current?.scrollIntoView({
+      block: 'nearest',
+      behavior: 'smooth',
+    });
+  }, [activeSegmentId, isSegmentedMode]);
 
   // Coordinated pauses when switching tabs/modes
   useEffect(() => {
@@ -646,26 +728,48 @@ export const EveryAyahReader: React.FC = () => {
             ) : (
               /* Segmented Learning View */
               <div className="flex flex-col gap-3.5 max-h-[26rem] overflow-y-auto pr-1 scrollbar-thin scrollbar-thumb-slate-850 scrollbar-track-transparent">
-                {AYAT_AL_KURSI_SEGMENTS.map((seg) => (
-                  <div key={seg.id} className="p-4 rounded-2xl border border-slate-850 bg-slate-900/10 flex flex-col gap-3 relative">
-                    <div className="flex items-center">
-                      <span className="w-5 h-5 rounded-full bg-emerald-500/15 border border-emerald-400/20 text-emerald-300 text-[10px] font-black flex items-center justify-center">
-                        {seg.id}
-                      </span>
-                    </div>
-                    <p className="text-right font-serif leading-relaxed text-xl text-emerald-100 arabic-text select-none">
-                      {seg.arabic}
-                    </p>
-                    <div className="border-t border-slate-850/50 pt-2 flex flex-col gap-1.5">
-                      <p className="text-xs text-slate-200 font-bold italic">
-                        {seg.transliteration}
+                {AYAT_AL_KURSI_SEGMENTS.map((seg) => {
+                  const isActiveSegment = seg.id === activeSegmentId;
+                  return (
+                    <div
+                      key={seg.id}
+                      ref={isActiveSegment ? activeSegmentRef : null}
+                      onClick={() => ayatAlKursiPlayer.seekToPercent(seg.startPercent)}
+                      className={`p-4 rounded-2xl border flex flex-col gap-3 relative cursor-pointer transition-all duration-300 transform ${
+                        isActiveSegment
+                          ? 'border-emerald-500 bg-emerald-950/20 shadow-[0_4px_20px_rgba(16,185,129,0.15)] scale-[1.01]'
+                          : 'border-slate-850 bg-slate-900/10 hover:border-slate-700/50 hover:bg-slate-900/20'
+                      }`}
+                    >
+                      <div className="flex items-center justify-between">
+                        <span className={`w-5 h-5 rounded-full text-[10px] font-black flex items-center justify-center transition-all ${
+                          isActiveSegment
+                            ? 'bg-emerald-500 text-slate-950 shadow-[0_0_10px_rgba(16,185,129,0.5)] font-bold'
+                            : 'bg-emerald-500/15 border border-emerald-400/20 text-emerald-300'
+                        }`}>
+                          {seg.id}
+                        </span>
+                        {isActiveSegment && (
+                          <span className="text-[9px] font-black uppercase tracking-widest text-emerald-400 animate-pulse flex items-center gap-1">
+                            <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-ping" />
+                            En cours de lecture
+                          </span>
+                        )}
+                      </div>
+                      <p className="text-right font-serif leading-relaxed text-xl text-emerald-100 arabic-text select-none">
+                        {seg.arabic}
                       </p>
-                      <p className="text-xs text-slate-400 leading-relaxed font-medium">
-                        {seg.translation}
-                      </p>
+                      <div className="border-t border-slate-850/50 pt-2 flex flex-col gap-1.5">
+                        <p className="text-xs text-slate-200 font-bold italic">
+                          {seg.transliteration}
+                        </p>
+                        <p className="text-xs text-slate-400 leading-relaxed font-medium">
+                          {seg.translation}
+                        </p>
+                      </div>
                     </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             )}
           </div>
