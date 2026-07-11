@@ -71,9 +71,10 @@ export const AboutPanel: React.FC = () => (
           href="https://sofianeweb.fr" 
           target="_blank" 
           rel="noopener noreferrer" 
-          className="text-emerald-400 hover:text-emerald-300 hover:underline font-bold transition-colors"
+          className="group flex items-center gap-1.5 rounded-full border border-emerald-500/20 bg-emerald-500/5 px-2.5 py-1 text-[10px] font-black uppercase tracking-widest text-emerald-400 transition-all duration-300 hover:border-emerald-500/40 hover:bg-emerald-500/10 hover:text-emerald-300 hover:shadow-[0_0_12px_rgba(16,185,129,0.15)]"
         >
-          Créé par sofianeweb.fr
+          <span>Créé par sofianeweb.fr</span>
+          <span className="inline-block transition-transform duration-300 group-hover:translate-x-0.5 group-hover:-translate-y-0.5">↗</span>
         </a>
       </div>
     </div>
