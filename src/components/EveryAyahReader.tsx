@@ -27,6 +27,63 @@ const AYAT_AL_KURSI = {
   transliteration: "Allāhu Lā 'Ilāha 'Illā Huwa Al-Ĥayyu Al-Qayyūmu ۚ Lā Ta'khudhuhu Sinatun Wa Lā Nawmun ۚ Lahu Mā Fī As-Samāwāti Wa Mā Fī Al-'Arđi ۗ Man Dhā Al-Ladhī Yashfa'u `Indahu 'Illā Bi-'Idhnihi ۚ Ya'lamu Mā Bayna 'Aydīhim Wa Mā Khalfahum ۖ Wa Lā Yuĥīţūna Bishay'in Min `Ilmihi 'Illā Bimā Shā'a ۚ Wasi'a Kursiyyuhu As-Samāwāti Wa Al-'Arđa ۖ Wa Lā Ya'ūduhu Ĥifžuhumā ۚ Wa Huwa Al-`Alīyu Al-`Ažīmu"
 };
 
+const AYAT_AL_KURSI_SEGMENTS = [
+  {
+    id: 1,
+    arabic: "اللَّهُ لَا إِلَٰهَ إِلَّا هُوَ الْحَيُّ الْقَيُّومُ",
+    transliteration: "Allāhu lā ilāha illā huwal-ḥayyul-qayyūm",
+    translation: "Allah ! Point de divinité à part Lui, le Vivant, Celui qui subsiste par Lui-même (al-Qayyûm)."
+  },
+  {
+    id: 2,
+    arabic: "لَا تَأْخُذُهُ سِنَةٌ وَلَا نَوْمٌ",
+    transliteration: "Lā ta'khudhuhu sinatun walā nawm",
+    translation: "Ni somnolence ni sommeil ne S'emparent de Lui."
+  },
+  {
+    id: 3,
+    arabic: "لَّهُ مَا فِي السَّمَاوَاتِ وَمَا فِي الْأَرْضِ",
+    transliteration: "Lahū mā fis-samāwāti wamā fil-arḍ",
+    translation: "A Lui appartient tout ce qui est dans les cieux et sur la terre."
+  },
+  {
+    id: 4,
+    arabic: "مَن ذَا الَّذِي يَشْفَعُ عِندَهُ إِلَّا بِإِذْنِهِ",
+    transliteration: "Man dhal-ladhī yashfa'u 'indahū illā bi-idhnih",
+    translation: "Qui peut intercéder auprès de Lui sans Sa permission ?"
+  },
+  {
+    id: 5,
+    arabic: "يَعْلَمُ مَا بَيْنَ أَيْدِيهِمْ وَمَا خَلْفَهُمْ",
+    transliteration: "Ya'lamu mā bayna aydīhim wamā khalfahum",
+    translation: "Il connaît leur passé et leur futur."
+  },
+  {
+    id: 6,
+    arabic: "وَلَا يُحِيطُونَ بِشَيْءٍ مِّنْ عِلْمِهِ إِلَّا بِمَا شَاءَ",
+    transliteration: "Walā yuḥīṭūna bi-shay'im-min 'ilmihī illā bimā shā'",
+    translation: "Et, de Sa science, ils n'embrassent que ce qu'Il veut."
+  },
+  {
+    id: 7,
+    arabic: "وَسِعَ كُرْسِيُّهُ السَّمَاوَاتِ وَالْأَرْضَ",
+    transliteration: "Wasi'a kursiyyuhus-samāwāti wal-arḍ",
+    translation: "Son Trône (Kursî) déborde les cieux et la terre,"
+  },
+  {
+    id: 8,
+    arabic: "وَلَا يَئُودُهُ حِفْظُهُمَا",
+    transliteration: "Walā ya'ūduhū ḥifẓuhumā",
+    translation: "dont la garde ne Lui coûte aucune peine."
+  },
+  {
+    id: 9,
+    arabic: "وَهُوَ الْعَلِيُّ الْعَظِيمُ",
+    transliteration: "Wahuwal-'aliyyul-'aẓīm",
+    translation: "Et Il est le Très Haut, le Très Grand."
+  }
+];
+
 const useAyatAlKursiPlayer = (pauseMainPlayer: () => void) => {
   const [isPlaying, setIsPlaying] = useState(false);
   const [currentReciterIndex, setCurrentReciterIndex] = useState(0);
@@ -186,6 +243,7 @@ const useAyatAlKursiPlayer = (pauseMainPlayer: () => void) => {
 
 export const EveryAyahReader: React.FC = () => {
   const [isAyatAlKursiMode, setIsAyatAlKursiMode] = useState(false);
+  const [isSegmentedMode, setIsSegmentedMode] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedSurah, setSelectedSurah] = useState<Surah | null>(null);
 
@@ -512,43 +570,92 @@ export const EveryAyahReader: React.FC = () => {
           <div className="glass-panel rounded-3xl border border-slate-800/70 p-5 flex flex-col gap-4 relative overflow-hidden bg-slate-950/30">
             <div className="absolute top-0 right-0 w-32 h-32 bg-emerald-500/5 rounded-full blur-3xl pointer-events-none" />
             
-            <div className="flex items-center justify-between border-b border-slate-850 pb-3">
-              <div className="flex items-center gap-2">
-                <Sparkles className="w-5 h-5 text-emerald-400 animate-pulse" />
-                <h3 className="font-black text-sm text-slate-100 uppercase tracking-widest">Le Verset du Trône</h3>
+            <div className="flex items-center justify-between border-b border-slate-850 pb-3 gap-2">
+              <div className="flex items-center gap-2 min-w-0">
+                <Sparkles className="w-5 h-5 text-emerald-400 animate-pulse shrink-0" />
+                <h3 className="font-black text-sm text-slate-100 uppercase tracking-widest truncate">Le Verset du Trône</h3>
               </div>
-              <span className="rounded-full border border-emerald-400/20 bg-emerald-400/10 px-2.5 py-0.5 text-[10px] font-black uppercase tracking-widest text-emerald-300">
-                Al-Baqarah (2:255)
-              </span>
-            </div>
-
-            {/* Arabic */}
-            <div className="py-4">
-              <p className="text-right font-serif leading-[2.5] text-3xl text-emerald-100 drop-shadow-[0_0_12px_rgba(16,185,129,0.2)] arabic-text select-none">
-                {AYAT_AL_KURSI.arabicText}
-              </p>
-            </div>
-
-            {/* Phonetic and Translation details */}
-            <div className="flex flex-col gap-4 border-t border-slate-850 pt-4">
-              <div>
-                <span className="inline-block rounded-md bg-emerald-400/15 border border-emerald-500/20 text-emerald-300 text-[10px] font-black uppercase tracking-widest px-2 py-0.5 mb-2">
-                  Phonétique
-                </span>
-                <p className="text-sm leading-relaxed text-slate-300 italic font-medium">
-                  {AYAT_AL_KURSI.transliteration}
-                </p>
-              </div>
-
-              <div>
-                <span className="inline-block rounded-md bg-slate-800/80 border border-slate-750 text-slate-300 text-[10px] font-black uppercase tracking-widest px-2 py-0.5 mb-2">
-                  Traduction
-                </span>
-                <p className="text-sm leading-relaxed text-slate-400 font-medium">
-                  {AYAT_AL_KURSI.translation}
-                </p>
+              <div className="flex items-center gap-1 bg-slate-900/80 p-0.5 rounded-lg border border-slate-800 shrink-0">
+                <button
+                  type="button"
+                  onClick={() => setIsSegmentedMode(false)}
+                  className={`text-[9px] min-[390px]:text-[10px] font-black uppercase tracking-wider px-2 py-1 rounded-md transition-all ${
+                    !isSegmentedMode
+                      ? 'bg-emerald-500 text-slate-950 shadow-sm font-extrabold'
+                      : 'text-slate-400 hover:text-slate-200'
+                  }`}
+                >
+                  Complet
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setIsSegmentedMode(true)}
+                  className={`text-[9px] min-[390px]:text-[10px] font-black uppercase tracking-wider px-2 py-1 rounded-md transition-all ${
+                    isSegmentedMode
+                      ? 'bg-emerald-500 text-slate-950 shadow-sm font-extrabold'
+                      : 'text-slate-400 hover:text-slate-200'
+                  }`}
+                >
+                  Découpé
+                </button>
               </div>
             </div>
+
+            {!isSegmentedMode ? (
+              <>
+                {/* Arabic */}
+                <div className="py-4">
+                  <p className="text-right font-serif leading-[2.5] text-3xl text-emerald-100 drop-shadow-[0_0_12px_rgba(16,185,129,0.2)] arabic-text select-none">
+                    {AYAT_AL_KURSI.arabicText}
+                  </p>
+                </div>
+
+                {/* Phonetic and Translation details */}
+                <div className="flex flex-col gap-4 border-t border-slate-850 pt-4">
+                  <div>
+                    <span className="inline-block rounded-md bg-emerald-400/15 border border-emerald-500/20 text-emerald-300 text-[10px] font-black uppercase tracking-widest px-2 py-0.5 mb-2">
+                      Phonétique
+                    </span>
+                    <p className="text-sm leading-relaxed text-slate-300 italic font-medium">
+                      {AYAT_AL_KURSI.transliteration}
+                    </p>
+                  </div>
+
+                  <div>
+                    <span className="inline-block rounded-md bg-slate-800/80 border border-slate-750 text-slate-300 text-[10px] font-black uppercase tracking-widest px-2 py-0.5 mb-2">
+                      Traduction
+                    </span>
+                    <p className="text-sm leading-relaxed text-slate-400 font-medium">
+                      {AYAT_AL_KURSI.translation}
+                    </p>
+                  </div>
+                </div>
+              </>
+            ) : (
+              /* Segmented Learning View */
+              <div className="flex flex-col gap-3.5 max-h-[26rem] overflow-y-auto pr-1 scrollbar-thin scrollbar-thumb-slate-850 scrollbar-track-transparent">
+                {AYAT_AL_KURSI_SEGMENTS.map((seg) => (
+                  <div key={seg.id} className="p-4 rounded-2xl border border-slate-850 bg-slate-900/10 flex flex-col gap-3 relative">
+                    <div className="flex items-center">
+                      <span className="w-5 h-5 rounded-full bg-emerald-500/15 border border-emerald-400/20 text-emerald-300 text-[10px] font-black flex items-center justify-center">
+                        {seg.id}
+                      </span>
+                    </div>
+                    <p className="text-right font-serif leading-relaxed text-xl text-emerald-100 arabic-text select-none">
+                      {seg.arabic}
+                    </p>
+                    <div className="border-t border-slate-850/50 pt-2 flex flex-col gap-1.5">
+                      <p className="text-xs text-slate-200 font-bold italic">
+                        {seg.transliteration}
+                      </p>
+                      <p className="text-xs text-slate-400 leading-relaxed font-medium">
+                        {seg.translation}
+                      </p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
 
           {/* Controls Card */}
