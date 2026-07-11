@@ -1,7 +1,8 @@
 import React, { useState, useMemo } from 'react';
 import { useAudio } from '../context/AudioContext';
 import type { Surah } from '../types';
-import { Search, Play, Pause, Disc, Repeat1 } from 'lucide-react';
+import { Search, Play, Pause, Disc, Repeat1, Download, CheckCircle2 } from 'lucide-react';
+import { getAudioUrl } from '../utils/audioUrl';
 
 interface SurahListProps {
   mode?: 'listen' | 'ayah';
@@ -22,6 +23,10 @@ export const SurahList: React.FC<SurahListProps> = () => {
     setSelectedSurahIds,
     activeSurah,
     setActiveSurah,
+    cachedUrls,
+    downloadProgress,
+    downloadSurah,
+    deleteSurah
   } = useAudio();
 
   const [searchQuery, setSearchQuery] = useState('');
@@ -153,6 +158,11 @@ export const SurahList: React.FC<SurahListProps> = () => {
             // Dim sourates that are NOT in the active playlist
             const isDimmed   = playlistActive && !isChecked;
 
+            const url = getAudioUrl(activeMoshaf, surah);
+            const isDownloaded = cachedUrls.has(url);
+            const progress = downloadProgress[url];
+            const isDownloading = progress !== undefined;
+
             return (
               <div
                 key={surah.id}
@@ -238,14 +248,48 @@ export const SurahList: React.FC<SurahListProps> = () => {
                     {viewedSurah?.id === surah.id ? 'Texte ouvert' : 'Ouvrir les versets'}
                   </button>
                 </div>
-
                 {/* Arabic + Play button */}
-                <div className="flex items-center gap-2 min-[390px]:gap-4 shrink-0 text-right">
+                <div className="flex items-center gap-2 min-[390px]:gap-3 shrink-0 text-right">
                   <span className={`font-serif text-2xl tracking-wide select-none arabic-text transition-colors ${
                     isCurrent ? 'text-emerald-400 drop-shadow-[0_0_8px_rgba(16,185,129,0.4)]' : 'text-slate-300 group-hover:text-slate-100'
                   }`}>
                     {surah.arabicName}
                   </span>
+
+                  {/* Offline Download Button */}
+                  {isDownloading ? (
+                    <div className="flex flex-col items-center justify-center shrink-0 w-8 h-8 relative" title={`Téléchargement : ${progress}%`}>
+                      <div className="absolute inset-0 border border-slate-700 rounded-full" />
+                      <div className="absolute inset-0 border border-emerald-400 border-t-transparent rounded-full animate-spin" />
+                      <span className="text-[9px] font-black text-emerald-400 relative z-10">{progress}%</span>
+                    </div>
+                  ) : (
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        if (isDownloaded) {
+                          if (confirm(`Supprimer la sourate "${surah.name}" de votre espace hors-ligne ?`)) {
+                            deleteSurah(activeReciter, activeMoshaf, surah);
+                          }
+                        } else {
+                          downloadSurah(activeReciter, activeMoshaf, surah);
+                        }
+                      }}
+                      className={`w-8 h-8 rounded-full flex items-center justify-center transition-all ${
+                        isDownloaded
+                          ? 'bg-emerald-500/10 text-emerald-400 hover:bg-rose-500/20 hover:text-rose-400'
+                          : 'bg-slate-800/40 text-slate-400 hover:text-slate-100 hover:bg-slate-700/60'
+                      }`}
+                      title={isDownloaded ? 'Disponible hors-ligne (cliquez pour supprimer)' : 'Télécharger pour l\'écoute hors-ligne'}
+                    >
+                      {isDownloaded ? (
+                        <CheckCircle2 className="w-4 h-4" />
+                      ) : (
+                        <Download className="w-4 h-4" />
+                      )}
+                    </button>
+                  )}
 
                   <button
                     onClick={(e) => {

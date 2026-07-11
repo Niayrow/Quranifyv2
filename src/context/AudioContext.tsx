@@ -4,6 +4,13 @@ import { SURAHS } from '../data/surahs';
 import { SEEDED_RECITERS } from '../data/recitersSeed';
 import { getAudioUrl } from '../utils/audioUrl';
 import { syncWidgetPlayback } from '../utils/widgetSync';
+import {
+  getAudioCacheInfo,
+  downloadAndCacheUrl,
+  deleteCachedUrl,
+  getCachedBlobUrl,
+  clearAudioCache,
+} from '../utils/offlineManager';
 
 interface AudioContextType {
   // Playback state
@@ -16,6 +23,14 @@ interface AudioContextType {
   repeatMode: 'none' | 'one' | 'all';
   sleepTimer: number | null;
   playerTheme: string;
+
+  // Offline / Cache States & Actions
+  cachedUrls: Set<string>;
+  downloadProgress: Record<string, number>;
+  cacheInfo: { count: number; totalSizeMb: number } | null;
+  downloadSurah: (reciter: Reciter, moshaf: Moshaf, surah: Surah) => Promise<void>;
+  deleteSurah: (reciter: Reciter, moshaf: Moshaf, surah: Surah) => Promise<void>;
+  clearCache: () => Promise<void>;
   
   // Lists and loading states
   reciters: Reciter[];
@@ -195,6 +210,61 @@ export const AudioProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 
   // Audio HTML5 Reference
   const audioRef = useRef<HTMLAudioElement | null>(null);
+
+  // Offline / Cache States & Actions
+  const [cachedUrls, setCachedUrls] = useState<Set<string>>(new Set());
+  const [downloadProgress, setDownloadProgress] = useState<Record<string, number>>({});
+  const [cacheInfo, setCacheInfo] = useState<{ count: number; totalSizeMb: number } | null>(null);
+
+  const refreshCacheInfo = useCallback(async () => {
+    const info = await getAudioCacheInfo();
+    setCachedUrls(new Set(info.cachedUrls));
+    setCacheInfo({ count: info.count, totalSizeMb: info.totalSizeMb });
+  }, []);
+
+  useEffect(() => {
+    refreshCacheInfo();
+  }, [refreshCacheInfo]);
+  const downloadSurah = useCallback(async (_reciter: Reciter, moshaf: Moshaf, surah: Surah) => {
+    const url = getAudioUrl(moshaf, surah);
+    try {
+      setDownloadProgress(prev => ({ ...prev, [url]: 0 }));
+      await downloadAndCacheUrl(url, (progress) => {
+        setDownloadProgress(prev => ({ ...prev, [url]: progress }));
+      });
+      await refreshCacheInfo();
+    } catch (e) {
+      console.error('Failed to download surah', e);
+    } finally {
+      // Clear progress indicator shortly after completion
+      setTimeout(() => {
+        setDownloadProgress(prev => {
+          const next = { ...prev };
+          delete next[url];
+          return next;
+        });
+      }, 1500);
+    }
+  }, [refreshCacheInfo]);
+
+  const deleteSurah = useCallback(async (_reciter: Reciter, moshaf: Moshaf, surah: Surah) => {
+    const url = getAudioUrl(moshaf, surah);
+    try {
+      await deleteCachedUrl(url);
+      await refreshCacheInfo();
+    } catch (e) {
+      console.error('Failed to delete cached surah', e);
+    }
+  }, [refreshCacheInfo]);
+
+  const clearCache = useCallback(async () => {
+    try {
+      await clearAudioCache();
+      await refreshCacheInfo();
+    } catch (e) {
+      console.error('Failed to clear cache', e);
+    }
+  }, [refreshCacheInfo]);
 
   // 1. Fetch Reciters on Startup
   useEffect(() => {
@@ -504,9 +574,8 @@ export const AudioProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     setActiveSurahState(surah);
     persistSelection(activeReciter, activeMoshaf, surah);
   };
-
   // Play Actions
-  function playTrack(reciter: Reciter, moshaf: Moshaf, surah: Surah, startAt = 0) {
+  async function playTrack(reciter: Reciter, moshaf: Moshaf, surah: Surah, startAt = 0) {
     const audio = audioRef.current;
     if (!audio) return;
     if (!moshaf.server) {
@@ -514,7 +583,7 @@ export const AudioProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       return;
     }
     
-    // 1. Update State
+    // 1. Update State synchronously
     const newTrack: AudioTrack = { reciter, moshaf, surah };
     setCurrentTrack(newTrack);
     setActiveReciterState(reciter);
@@ -527,22 +596,39 @@ export const AudioProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     const safeStartAt = Number.isFinite(startAt) ? Math.max(0, startAt) : 0;
 
     audio.pause();
-    audio.src = audioUrl;
-    audio.playbackRate = playbackSpeed;
-    audio.load();
+    
+    // Clean up previous blob URL if any
+    if (audio.src && audio.src.startsWith('blob:')) {
+      URL.revokeObjectURL(audio.src);
+    }
+
+    setPlaybackStatus('buffering');
     setCurrentTime(safeStartAt);
     setDuration(0);
-    setPlaybackStatus('buffering');
+
+    let sourceToPlay = audioUrl;
+    try {
+      const cachedBlobUrl = await getCachedBlobUrl(audioUrl);
+      if (cachedBlobUrl) {
+        sourceToPlay = cachedBlobUrl;
+      }
+    } catch (e) {
+      console.warn('Failed to retrieve cached blob URL, playing online version', e);
+    }
+
+    audio.src = sourceToPlay;
+    audio.playbackRate = playbackSpeed;
+    audio.load();
+
+    const applyStartTime = () => {
+      try {
+        audio.currentTime = safeStartAt;
+      } catch {
+        // Some streams reject seeking before enough metadata is available.
+      }
+    };
 
     if (safeStartAt > 0) {
-      const applyStartTime = () => {
-        try {
-          audio.currentTime = safeStartAt;
-        } catch {
-          // Some streams reject seeking before enough metadata is available.
-        }
-      };
-
       if (audio.readyState >= HTMLMediaElement.HAVE_METADATA) {
         applyStartTime();
       } else {
@@ -558,8 +644,7 @@ export const AudioProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         console.error('Audio reproduction rejected:', err);
         setPlaybackStatus('error');
       });
-  };
-
+  }
   const togglePlay = () => {
     const audio = audioRef.current;
     if (!audio || !currentTrack || playbackStatus === 'buffering') return;
@@ -717,7 +802,6 @@ export const AudioProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     const prevSurah = playlist[prevIndex];
     playTrack(currentTrack.reciter, currentTrack.moshaf, prevSurah);
   };
-
   return (
     <AudioContext.Provider value={{
       currentTrack,
@@ -756,7 +840,14 @@ export const AudioProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       setPlayerTheme,
       playNextTrack,
       playPrevTrack,
-      getAvailableSurahs
+      getAvailableSurahs,
+
+      cachedUrls,
+      downloadProgress,
+      cacheInfo,
+      downloadSurah,
+      deleteSurah,
+      clearCache
     }}>
       {children}
     </AudioContext.Provider>
