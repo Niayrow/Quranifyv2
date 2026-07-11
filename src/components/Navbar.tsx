@@ -46,11 +46,11 @@ export const Navbar: React.FC<NavbarProps> = ({ activeTab, setActiveTab }) => {
                     strokeWidth={isActive ? 2.5 : 2}
                     className={`w-5 h-5 md:w-[22px] md:h-[22px] transition-all duration-300 ${
                       isActive 
-                        ? 'text-emerald-300 scale-110 drop-shadow-[0_0_6px_rgba(110,231,183,0.6)]' 
+                        ? 'text-white scale-110 drop-shadow-[0_0_6px_rgba(255,255,255,0.4)]' 
                         : 'group-hover:scale-110 group-hover:text-white'
                     }`} 
                   />
-                  <span className={`text-[10px] md:text-xs font-bold tracking-wide transition-colors ${isActive ? 'text-emerald-200' : ''}`}>
+                  <span className={`text-[10px] md:text-xs font-bold tracking-wide transition-colors ${isActive ? 'text-white' : ''}`}>
                     {tab.label}
                   </span>
                 </div>
@@ -76,10 +76,10 @@ export const Navbar: React.FC<NavbarProps> = ({ activeTab, setActiveTab }) => {
               <Settings 
                 strokeWidth={activeTab === 'more' ? 2.5 : 2}
                 className={`w-5 h-5 md:w-[22px] md:h-[22px] transition-transform duration-500 ${
-                  activeTab === 'more' ? 'text-emerald-300 rotate-90 scale-110 drop-shadow-[0_0_6px_rgba(110,231,183,0.6)]' : 'group-hover:rotate-45 group-hover:scale-110 group-hover:text-white'
+                  activeTab === 'more' ? 'text-white rotate-90 scale-110 drop-shadow-[0_0_6px_rgba(255,255,255,0.4)]' : 'group-hover:rotate-45 group-hover:scale-110 group-hover:text-white'
                 }`} 
               />
-              <span className={`text-[10px] md:text-xs font-bold tracking-wide transition-colors ${activeTab === 'more' ? 'text-emerald-200' : ''}`}>
+              <span className={`text-[10px] md:text-xs font-bold tracking-wide transition-colors ${activeTab === 'more' ? 'text-white' : ''}`}>
                 Options
               </span>
             </div>
