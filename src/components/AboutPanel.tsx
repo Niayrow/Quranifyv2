@@ -64,6 +64,18 @@ export const AboutPanel: React.FC = () => (
           Système de design épuré aux couleurs traditionnelles vertes émeraude et dorées, rendant hommage à la beauté de la calligraphie coranique.
         </p>
       </div>
+
+      <div className="border-t border-slate-900 pt-4 flex items-center justify-between text-[11px] text-slate-500">
+        <span>Quranify © {new Date().getFullYear()}</span>
+        <a 
+          href="https://sofianeweb.fr" 
+          target="_blank" 
+          rel="noopener noreferrer" 
+          className="text-emerald-400 hover:text-emerald-300 hover:underline font-bold transition-colors"
+        >
+          Créé par sofianeweb.fr
+        </a>
+      </div>
     </div>
   </div>
 );
