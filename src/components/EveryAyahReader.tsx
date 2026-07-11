@@ -15,7 +15,8 @@ import {
   Radio,
   SkipBack,
   SkipForward,
-  Sparkles
+  Sparkles,
+  Volume2
 } from 'lucide-react';
 
 const AYAT_AL_KURSI = {
@@ -91,6 +92,8 @@ const useAyatAlKursiPlayer = (pauseMainPlayer: () => void) => {
   const [playbackStatus, setPlaybackStatus] = useState<'idle' | 'buffering' | 'playing' | 'paused' | 'error'>('idle');
   const [currentTime, setCurrentTime] = useState(0);
   const [duration, setDuration] = useState(0);
+
+  const [volume, setVolume] = useState(1);
 
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const reciterIndexRef = useRef(0);
@@ -174,6 +177,7 @@ const useAyatAlKursiPlayer = (pauseMainPlayer: () => void) => {
   useEffect(() => {
     const audio = new Audio();
     audio.preload = 'metadata';
+    audio.volume = volume;
     audioRef.current = audio;
 
     const onPlay = () => {
@@ -226,6 +230,12 @@ const useAyatAlKursiPlayer = (pauseMainPlayer: () => void) => {
     };
   }, [playReciter]);
 
+  useEffect(() => {
+    if (audioRef.current) {
+      audioRef.current.volume = volume;
+    }
+  }, [volume]);
+
   return {
     reciters,
     currentReciterIndex,
@@ -236,6 +246,8 @@ const useAyatAlKursiPlayer = (pauseMainPlayer: () => void) => {
     duration,
     autoplayNext,
     setAutoplayNext,
+    volume,
+    setVolume,
     playReciter,
     togglePlayback,
   };
@@ -826,6 +838,23 @@ export const EveryAyahReader: React.FC = () => {
               </p>
             </div>
 
+            {/* Volume Control */}
+            <div className="hidden sm:flex items-center gap-2 w-20 md:w-28 mr-2 shrink-0">
+              <Volume2 className="w-4 h-4 text-emerald-400 shrink-0" />
+              <input
+                type="range"
+                min={0}
+                max={1}
+                step={0.05}
+                value={everyAyahPlayer.volume}
+                onChange={(e) => everyAyahPlayer.setVolume(parseFloat(e.target.value))}
+                className="w-full h-1 bg-slate-800 rounded-lg appearance-none cursor-pointer focus:outline-none transition-colors accent-emerald-400"
+                style={{
+                  background: `linear-gradient(to right, #34d399 0%, #34d399 ${everyAyahPlayer.volume * 100}%, #1e293b ${everyAyahPlayer.volume * 100}%, #1e293b 100%)`
+                }}
+              />
+            </div>
+
             <div className="flex items-center gap-2">
               <button
                 type="button"
@@ -895,6 +924,23 @@ export const EveryAyahReader: React.FC = () => {
               <p className="mt-0.5 truncate text-xs text-slate-400">
                 {AYAT_AL_KURSI.transliteration}
               </p>
+            </div>
+
+            {/* Volume Control */}
+            <div className="hidden sm:flex items-center gap-2 w-20 md:w-28 mr-2 shrink-0">
+              <Volume2 className="w-4 h-4 text-emerald-400 shrink-0" />
+              <input
+                type="range"
+                min={0}
+                max={1}
+                step={0.05}
+                value={ayatAlKursiPlayer.volume}
+                onChange={(e) => ayatAlKursiPlayer.setVolume(parseFloat(e.target.value))}
+                className="w-full h-1 bg-slate-800 rounded-lg appearance-none cursor-pointer focus:outline-none transition-colors accent-emerald-400"
+                style={{
+                  background: `linear-gradient(to right, #34d399 0%, #34d399 ${ayatAlKursiPlayer.volume * 100}%, #1e293b ${ayatAlKursiPlayer.volume * 100}%, #1e293b 100%)`
+                }}
+              />
             </div>
 
             <div className="flex items-center gap-2">

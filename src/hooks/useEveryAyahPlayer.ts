@@ -12,6 +12,7 @@ export const useEveryAyahPlayer = (surahId: number | null, verseCount: number, p
   const [playbackStatus, setPlaybackStatus] = useState<PlaybackStatus>('idle');
   const [currentTime, setCurrentTime] = useState(0);
   const [duration, setDuration] = useState(0);
+  const [volume, setVolume] = useState(1);
 
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const surahIdRef = useRef<number | null>(surahId);
@@ -59,6 +60,7 @@ export const useEveryAyahPlayer = (surahId: number | null, verseCount: number, p
   useEffect(() => {
     const audio = new Audio();
     audio.preload = 'metadata';
+    audio.volume = volume;
     audioRef.current = audio;
 
     const onPlay = () => setPlaybackStatus('playing');
@@ -99,6 +101,12 @@ export const useEveryAyahPlayer = (surahId: number | null, verseCount: number, p
       audioRef.current = null;
     };
   }, [loadVerse]);
+
+  useEffect(() => {
+    if (audioRef.current) {
+      audioRef.current.volume = volume;
+    }
+  }, [volume]);
 
   useEffect(() => {
     const preferredId = getPreferredEveryAyahReciterId(preferredAppReciterId);
@@ -168,6 +176,8 @@ export const useEveryAyahPlayer = (surahId: number | null, verseCount: number, p
     playbackStatus,
     currentTime,
     duration,
+    volume,
+    setVolume,
     playVerseAt,
     togglePlayback,
     selectVerse,
