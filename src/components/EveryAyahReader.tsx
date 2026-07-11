@@ -727,7 +727,7 @@ export const EveryAyahReader: React.FC = () => {
               </>
             ) : (
               /* Segmented Learning View */
-              <div className="flex flex-col gap-3.5 max-h-[26rem] overflow-y-auto pr-1 scrollbar-thin scrollbar-thumb-slate-850 scrollbar-track-transparent">
+              <div className="flex flex-col gap-3.5 max-h-[26rem] overflow-y-auto p-2 pb-8 scrollbar-thin scrollbar-thumb-slate-850 scrollbar-track-transparent">
                 {AYAT_AL_KURSI_SEGMENTS.map((seg) => {
                   const isActiveSegment = seg.id === activeSegmentId;
                   return (
