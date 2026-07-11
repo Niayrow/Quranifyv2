@@ -752,6 +752,7 @@ const AppContent: React.FC = () => {
 
       {/* 2. Main Tab Views */}
       <main className="flex-1 flex flex-col gap-5">
+        <div key={activeTab} className="animate-page-enter flex flex-col gap-5">
         
         {activeTab === 'home' && (
           <div className="flex flex-col gap-5">
@@ -1264,6 +1265,7 @@ const AppContent: React.FC = () => {
             )}
           </div>
         )}
+        </div>
       </main>
 
       {/* 3. Global Audio Player Sheet */}
