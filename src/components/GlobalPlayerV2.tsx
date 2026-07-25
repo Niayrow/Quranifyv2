@@ -225,9 +225,12 @@ export const GlobalPlayerV2: React.FC = () => {
                 <p className="text-[11px] font-semibold text-slate-100 truncate">
                   Écoute sur un autre appareil
                 </p>
-                {remoteSession.deviceLabel && (
-                  <p className="text-[10px] text-slate-400 truncate">{remoteSession.deviceLabel}</p>
-                )}
+                <p className="text-[10px] text-slate-400 truncate">
+                  <span className="font-mono text-emerald-300/90 tabular-nums">
+                    {formatTime(remoteSession.positionSeconds)}
+                  </span>
+                  {remoteSession.deviceLabel ? ` · ${remoteSession.deviceLabel}` : ''}
+                </p>
               </div>
               <button
                 type="button"
@@ -516,9 +519,12 @@ export const GlobalPlayerV2: React.FC = () => {
               <MonitorSmartphone className="w-4 h-4 text-emerald-400 shrink-0" />
               <div className="min-w-0 flex-1">
                 <p className="text-xs font-semibold text-slate-100">Écoute sur un autre appareil</p>
-                {remoteSession.deviceLabel && (
-                  <p className="text-[10px] text-slate-400 truncate">{remoteSession.deviceLabel}</p>
-                )}
+                <p className="text-[10px] text-slate-400 truncate">
+                  <span className="font-mono text-emerald-300/90 tabular-nums">
+                    {formatTime(remoteSession.positionSeconds)}
+                  </span>
+                  {remoteSession.deviceLabel ? ` · ${remoteSession.deviceLabel}` : ''}
+                </p>
               </div>
               <button
                 type="button"
