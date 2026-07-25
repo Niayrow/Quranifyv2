@@ -768,7 +768,7 @@ export const AudioProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   };
 
   const pause = () => {
-    if (audioRef.current && playbackStatus === 'playing') {
+    if (audioRef.current) {
       audioRef.current.pause();
     }
   };

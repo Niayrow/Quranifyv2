@@ -6,9 +6,10 @@ import { getLocalDeviceId, getLocalDeviceLabel } from '../lib/deviceId';
 import { SURAHS } from '../data/surahs';
 
 const FAVORITES_KEY = 'quran_streamer_favorites';
-const POLL_MS = 2000;
-const PAUSE_PUSH_DELAY_MS = 900;
-const TAKEOVER_GRACE_MS = 5000;
+const POLL_MS = 800;
+const PAUSE_PUSH_DELAY_MS = 500;
+const TAKEOVER_GRACE_MS = 3500;
+const HEARTBEAT_MS = 1000;
 
 interface CloudSyncProps {
   favorites: number[];
@@ -118,16 +119,23 @@ export const CloudSync: React.FC<CloudSyncProps> = ({ favorites, setFavorites })
 
     // Another device owns playback and is actively playing
     if (row.is_playing) {
+      const wasOwning = weOwnPlaybackRef.current;
       weOwnPlaybackRef.current = false;
 
       const remoteKey = `${row.device_id}:${row.reciter_id}:${row.surah_id}`;
       const isNewRemoteTrack = remoteKey !== lastRemoteKeyRef.current;
       const positionChanged =
         !remoteSessionRef.current ||
-        Math.abs((remoteSessionRef.current.positionSeconds || 0) - (row.position_seconds || 0)) > 1.25;
+        Math.abs((remoteSessionRef.current.positionSeconds || 0) - (row.position_seconds || 0)) > 0.75 ||
+        remoteSessionRef.current.updatedAt !== row.updated_at;
 
-      // Pause local only once when remote starts owning
-      if (playbackStatusRef.current === 'playing' && !pausedForRemoteRef.current) {
+      // Stop local audio ASAP whenever another device claims playback
+      if (
+        wasOwning ||
+        playbackStatusRef.current === 'playing' ||
+        playbackStatusRef.current === 'buffering' ||
+        !pausedForRemoteRef.current
+      ) {
         pausedForRemoteRef.current = true;
         pauseRef.current();
       }
@@ -165,6 +173,15 @@ export const CloudSync: React.FC<CloudSyncProps> = ({ favorites, setFavorites })
   const pushPlayback = (isPlaying: boolean, positionOverride?: number) => {
     const track = currentTrackRef.current;
     if (!user || !track) return;
+
+    // Another device already owns — never reclaim via heartbeat
+    if (
+      isPlaying &&
+      remoteSessionRef.current &&
+      remoteSessionRef.current.deviceId !== localDeviceId.current
+    ) {
+      return;
+    }
 
     if (!isPlaying && !weOwnPlaybackRef.current) return;
     if (!isPlaying && remoteSessionRef.current) return;
@@ -380,10 +397,11 @@ export const CloudSync: React.FC<CloudSyncProps> = ({ favorites, setFavorites })
 
     const timer = window.setInterval(() => {
       if (!weOwnPlaybackRef.current) return;
+      if (remoteSessionRef.current) return;
       if (playbackStatusRef.current !== 'playing') return;
       lastPushKey.current = ''; // force position write
       pushPlayback(true);
-    }, 1500);
+    }, HEARTBEAT_MS);
 
     return () => window.clearInterval(timer);
     // eslint-disable-next-line react-hooks/exhaustive-deps

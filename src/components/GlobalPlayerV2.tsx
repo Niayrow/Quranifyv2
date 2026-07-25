@@ -81,10 +81,46 @@ export const GlobalPlayerV2: React.FC = () => {
   const [prefs, setPrefs] = useState<PlayerV2Prefs>(() => loadPlayerV2Prefs());
   const currentSurahRowRef = useRef<HTMLButtonElement | null>(null);
   const volumeWrapRef = useRef<HTMLDivElement | null>(null);
+  const [liveRemotePos, setLiveRemotePos] = useState(0);
+  const remoteClockAnchorRef = useRef<{ pos: number; at: number; key: string } | null>(null);
 
   const theme = PLAYER_THEMES[(playerTheme as PlayerThemeId)] || PLAYER_THEMES.emerald;
   const progressPercent = duration > 0 ? (currentTime / duration) * 100 : 0;
   const speedOptions = [0.75, 0.9, 1, 1.25, 1.5, 1.75, 2];
+
+  // Smooth second-by-second clock for remote playback banner
+  useEffect(() => {
+    if (!remoteSession) {
+      remoteClockAnchorRef.current = null;
+      setLiveRemotePos(0);
+      return;
+    }
+
+    const key = `${remoteSession.deviceId}:${remoteSession.surahId}:${remoteSession.reciterId}`;
+    const serverPos = Math.max(0, remoteSession.positionSeconds || 0);
+    const serverAt = Date.parse(remoteSession.updatedAt) || Date.now();
+    const prev = remoteClockAnchorRef.current;
+
+    if (!prev || prev.key !== key) {
+      remoteClockAnchorRef.current = { pos: serverPos, at: serverAt, key };
+    } else {
+      const estimatedNow = prev.pos + (Date.now() - prev.at) / 1000;
+      // Resync only on meaningful drift to avoid second jumps
+      if (Math.abs(estimatedNow - serverPos) > 1.25) {
+        remoteClockAnchorRef.current = { pos: serverPos, at: serverAt, key };
+      }
+    }
+
+    const tick = () => {
+      const anchor = remoteClockAnchorRef.current;
+      if (!anchor) return;
+      setLiveRemotePos(Math.max(0, anchor.pos + (Date.now() - anchor.at) / 1000));
+    };
+
+    tick();
+    const id = window.setInterval(tick, 250);
+    return () => window.clearInterval(id);
+  }, [remoteSession]);
 
   const filteredSurahs = useMemo(() => {
     if (!currentTrack) return [];
@@ -227,7 +263,7 @@ export const GlobalPlayerV2: React.FC = () => {
                 </p>
                 <p className="text-[10px] text-slate-400 truncate">
                   <span className="font-mono text-emerald-300/90 tabular-nums">
-                    {formatTime(remoteSession.positionSeconds)}
+                    {formatTime(liveRemotePos)}
                   </span>
                   {remoteSession.deviceLabel ? ` · ${remoteSession.deviceLabel}` : ''}
                 </p>
@@ -521,7 +557,7 @@ export const GlobalPlayerV2: React.FC = () => {
                 <p className="text-xs font-semibold text-slate-100">Écoute sur un autre appareil</p>
                 <p className="text-[10px] text-slate-400 truncate">
                   <span className="font-mono text-emerald-300/90 tabular-nums">
-                    {formatTime(remoteSession.positionSeconds)}
+                    {formatTime(liveRemotePos)}
                   </span>
                   {remoteSession.deviceLabel ? ` · ${remoteSession.deviceLabel}` : ''}
                 </p>
