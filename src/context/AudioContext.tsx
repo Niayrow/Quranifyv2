@@ -292,10 +292,11 @@ export const AudioProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         if (!isCurrentRequest) return;
 
         if (data && data.reciters) {
-          setReciters(stabilizeFirstScreenReciters(data.reciters));
+          const stabilized = stabilizeFirstScreenReciters(data.reciters);
+          setReciters(stabilized);
           writeStorage(RECITERS_CACHE_KEY, JSON.stringify(data.reciters));
-          // Restore selected reciter from local storage if valid
-          restoreFromLocalStorage(data.reciters);
+          // Always restore from corrected names so the player matches the list
+          restoreFromLocalStorage(stabilized);
         } else {
           throw new Error('Unexpected API response structure.');
         }
@@ -307,8 +308,9 @@ export const AudioProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         if (cached) {
           try {
             const cachedReciters = JSON.parse(cached) as Reciter[];
-            setReciters(stabilizeFirstScreenReciters(cachedReciters));
-            restoreFromLocalStorage(cachedReciters);
+            const stabilized = stabilizeFirstScreenReciters(cachedReciters);
+            setReciters(stabilized);
+            restoreFromLocalStorage(stabilized);
             setError('Connexion instable : affichage des récitants sauvegardés localement.');
           } catch {
             setError('Impossible de charger les récitants. Vérifiez votre connexion puis réessayez.');
@@ -619,14 +621,20 @@ export const AudioProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       setPlaybackStatus('error');
       return;
     }
+
+    // Prefer the corrected catalog entry so the player name matches the list
+    const catalogReciter = reciters.find((r) => r.id === reciter.id) ?? reciter;
+    const displayReciter = RECITER_NAME_CORRECTIONS[catalogReciter.id]
+      ? { ...catalogReciter, name: RECITER_NAME_CORRECTIONS[catalogReciter.id] }
+      : catalogReciter;
     
     // 1. Update State synchronously
-    const newTrack: AudioTrack = { reciter, moshaf, surah };
+    const newTrack: AudioTrack = { reciter: displayReciter, moshaf, surah };
     setCurrentTrack(newTrack);
-    setActiveReciterState(reciter);
+    setActiveReciterState(displayReciter);
     setActiveMoshafState(moshaf);
     setActiveSurahState(surah);
-    persistSelection(reciter, moshaf, surah);
+    persistSelection(displayReciter, moshaf, surah);
 
     // 2. Play Audio File
     const audioUrl = getAudioUrl(moshaf, surah);

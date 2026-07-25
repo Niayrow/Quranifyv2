@@ -144,6 +144,20 @@ export const GlobalPlayerV2: React.FC = () => {
     };
   }, [showVolumePopover]);
 
+  useEffect(() => {
+    if (!isExpanded) return;
+    const previous = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setIsExpanded(false);
+    };
+    window.addEventListener('keydown', onKey);
+    return () => {
+      document.body.style.overflow = previous;
+      window.removeEventListener('keydown', onKey);
+    };
+  }, [isExpanded]);
+
   if (!currentTrack) return null;
 
   const updatePref = <K extends keyof PlayerV2Prefs>(key: K, value: PlayerV2Prefs[K]) => {
@@ -187,47 +201,66 @@ export const GlobalPlayerV2: React.FC = () => {
 
   return (
     <>
-      {/* ── Mini / Desktop bar V2 ── */}
+      {/* ── Mini bar: docks with navbar on mobile, full on desktop ── */}
       <div
-        className={`fixed z-50 transition-all duration-300
-          left-3 right-3 bottom-[calc(6.5rem+env(safe-area-inset-bottom,0px))]
-          md:left-6 md:right-6 md:mx-auto md:max-w-4xl md:bottom-6
-          rounded-2xl md:rounded-3xl ${density.padClass} ${density.barClass}
-          glass-panel-opaque border border-slate-800/80 md:border-slate-800/60
-          shadow-2xl flex flex-col gap-2 md:gap-0 md:grid md:grid-cols-[minmax(0,1.15fr)_minmax(0,1.35fr)_auto] md:items-center
-          overflow-visible
+        className={`fixed z-[51] transition-all duration-300
+          left-1/2 -translate-x-1/2 w-[95%] max-w-md
+          bottom-[calc(5.35rem+env(safe-area-inset-bottom,0px))]
+          md:left-6 md:right-6 md:translate-x-0 md:w-auto md:mx-auto md:max-w-4xl md:bottom-6
+          rounded-t-3xl rounded-b-none md:rounded-3xl p-2 md:px-5 md:py-3
+          glass-panel-opaque border border-slate-700/50 border-b-0 md:border md:border-slate-800/60
+          shadow-[0_-8px_24px_rgba(0,0,0,0.35)] md:shadow-2xl
+          flex items-center gap-2 md:gap-0 md:grid md:grid-cols-[minmax(0,1.15fr)_minmax(0,1.35fr)_auto] md:items-center
+          overflow-visible md:h-20
           ${prefs.showGlow ? `bg-gradient-to-r ${theme.accentGlow} via-transparent to-transparent` : ''}
-          ${isExpanded ? 'opacity-0 pointer-events-none translate-y-4 md:opacity-100 md:pointer-events-auto md:translate-y-0' : 'opacity-100'}
+          ${isExpanded ? 'opacity-0 pointer-events-none translate-y-3 md:opacity-100 md:pointer-events-auto md:translate-y-0' : 'opacity-100'}
         `}
       >
-        {/* Progress always visible on mobile */}
-        <div className="absolute top-0 left-0 right-0 h-0.5 bg-slate-900/70 md:hidden">
+        {/* Seam with navbar — mobile dock only */}
+        <div className="absolute bottom-0 left-3 right-3 h-px bg-slate-700/40 md:hidden" aria-hidden />
+        {/* Thin progress — mobile only */}
+        <div className="absolute top-0 left-3 right-3 h-[3px] rounded-full bg-slate-900/80 overflow-hidden md:hidden">
           <div
-            className="h-full transition-[width] duration-100"
+            className="h-full rounded-full transition-[width] duration-100"
             style={{ width: `${progressPercent}%`, backgroundColor: theme.sliderAccentColor }}
           />
         </div>
 
         {/* Track info */}
-        <div className="flex items-center gap-3 min-w-0 md:col-span-1">
+        <div className="flex items-center gap-2.5 min-w-0 flex-1 md:col-span-1 md:gap-3 pt-1 md:pt-0">
           <button
             type="button"
             onClick={() => setIsExpanded(true)}
-            className="relative shrink-0 tap-feedback md:cursor-default"
-            title="Agrandir"
+            className="relative shrink-0 tap-feedback md:pointer-events-none"
+            title="Agrandir le lecteur"
+            aria-label="Agrandir le lecteur"
           >
-            <div className="w-11 h-11 rounded-xl bg-slate-950 border border-slate-800 flex items-center justify-center">
+            <div className="w-11 h-11 md:w-11 md:h-11 rounded-xl bg-slate-950 border border-slate-800 flex items-center justify-center">
               <Disc className={`w-5 h-5 ${theme.glowDisc} ${playbackStatus === 'playing' ? 'animate-[spin_10s_linear_infinite]' : ''}`} />
             </div>
           </button>
 
           <button
             type="button"
+            onClick={() => setIsExpanded(true)}
+            className="min-w-0 flex-1 text-left rounded-xl px-0.5 py-1 tap-feedback md:hidden"
+            title="Ouvrir le lecteur"
+          >
+            <p className="text-sm font-semibold text-slate-100 truncate">
+              {currentTrack.surah.name}
+            </p>
+            <p className="text-[11px] text-slate-400 truncate mt-0.5">
+              {currentTrack.reciter.name}
+            </p>
+          </button>
+
+          <button
+            type="button"
             onClick={openPlaylist}
-            className="min-w-0 flex-1 text-left rounded-xl px-1 py-0.5 tap-feedback hover:bg-slate-900/50"
+            className="hidden md:block min-w-0 flex-1 text-left rounded-xl px-1 py-0.5 tap-feedback hover:bg-slate-900/50"
             title="Liste des sourates"
           >
-            <p className={`text-xs md:text-sm font-semibold text-slate-100 truncate ${theme.accentTextHover}`}>
+            <p className={`text-sm font-semibold text-slate-100 truncate ${theme.accentTextHover}`}>
               {String(currentTrack.surah.id).padStart(3, '0')}. {currentTrack.surah.name}
               {prefs.showArabic && (
                 <span className="ml-1.5 font-serif text-[10px] text-slate-450">
@@ -235,28 +268,54 @@ export const GlobalPlayerV2: React.FC = () => {
                 </span>
               )}
             </p>
-            <p className="text-[10px] md:text-xs text-slate-400 truncate mt-0.5">
+            <p className="text-xs text-slate-400 truncate mt-0.5">
               {currentTrack.reciter.name}
             </p>
           </button>
 
-          <button
-            type="button"
-            onClick={(e) => {
-              e.stopPropagation();
-              togglePlay();
-            }}
-            className={`md:hidden w-10 h-10 rounded-full ${theme.accent} text-slate-950 flex items-center justify-center shrink-0 tap-feedback shadow-md ${theme.accentShadow}`}
-          >
-            {playbackStatus === 'playing' ? (
-              <Pause className="w-4 h-4 fill-current" />
-            ) : (
-              <Play className="w-4 h-4 fill-current ml-0.5" />
-            )}
-          </button>
+          {/* Mobile primary controls — prev / play / next */}
+          <div className="flex items-center gap-1 shrink-0 md:hidden">
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                playPrevTrack();
+              }}
+              className="w-11 h-11 rounded-full bg-slate-900 border border-slate-800 text-slate-200 flex items-center justify-center tap-feedback"
+              aria-label="Précédent"
+            >
+              <SkipBack className="w-5 h-5 fill-current" />
+            </button>
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                togglePlay();
+              }}
+              className={`w-12 h-12 rounded-full ${theme.accent} text-slate-950 flex items-center justify-center tap-feedback shadow-md ${theme.accentShadow}`}
+              aria-label={playbackStatus === 'playing' ? 'Pause' : 'Lecture'}
+            >
+              {playbackStatus === 'playing' ? (
+                <Pause className="w-5 h-5 fill-current" />
+              ) : (
+                <Play className="w-5 h-5 fill-current ml-0.5" />
+              )}
+            </button>
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                playNextTrack();
+              }}
+              className="w-11 h-11 rounded-full bg-slate-900 border border-slate-800 text-slate-200 flex items-center justify-center tap-feedback"
+              aria-label="Suivant"
+            >
+              <SkipForward className="w-5 h-5 fill-current" />
+            </button>
+          </div>
         </div>
 
-        {/* Center controls */}
+        {/* Center controls — desktop */}
         <div className="hidden md:flex flex-col items-center gap-1.5 col-span-1 px-2">
           <div className="flex items-center gap-3">
             <button
@@ -309,8 +368,8 @@ export const GlobalPlayerV2: React.FC = () => {
           </div>
         </div>
 
-        {/* Right tools */}
-        <div className="flex items-center justify-end gap-1.5 shrink-0 md:col-span-1">
+        {/* Right tools — desktop only on mini bar */}
+        <div className="hidden md:flex items-center justify-end gap-1.5 shrink-0 md:col-span-1">
           {prefs.showQuickControls && (
             <div className="hidden xl:flex items-center gap-1 shrink-0">
               <button
@@ -349,19 +408,12 @@ export const GlobalPlayerV2: React.FC = () => {
             </div>
           )}
 
-          {/* Volume: inline on desktop, popover on mobile */}
           <div ref={volumeWrapRef} className="relative flex items-center gap-1.5 shrink-0">
             <button
               type="button"
-              onClick={() => {
-                if (window.matchMedia('(min-width: 768px)').matches) {
-                  toggleMute();
-                } else {
-                  setShowVolumePopover((open) => !open);
-                }
-              }}
+              onClick={toggleMute}
               className={`h-9 w-9 rounded-xl flex items-center justify-center border border-slate-800 text-slate-400 hover:text-slate-100 hover:bg-slate-900/70 shrink-0 ${
-                showVolumePopover || isMuted || volume === 0 ? theme.accentText : ''
+                isMuted || volume === 0 ? theme.accentText : ''
               }`}
               title="Volume"
             >
@@ -379,35 +431,10 @@ export const GlobalPlayerV2: React.FC = () => {
                 setVolume(v);
                 setIsMuted(v === 0);
               }}
-              className="hidden md:block w-16 lg:w-20 h-1.5 rounded appearance-none cursor-pointer bg-slate-800 shrink-0"
+              className="w-16 lg:w-20 h-1.5 rounded appearance-none cursor-pointer bg-slate-800 shrink-0"
               style={{ accentColor: theme.sliderAccentColor }}
               aria-label="Volume"
             />
-
-            {showVolumePopover && (
-              <div className="md:hidden absolute bottom-[calc(100%+0.6rem)] right-0 z-[80] w-48 rounded-2xl border border-slate-800 bg-slate-950 p-3 shadow-2xl">
-                <div className="flex items-center justify-between mb-2">
-                  <span className="text-[10px] font-black uppercase tracking-widest text-slate-500">Volume</span>
-                  <span className={`text-[11px] font-mono font-bold ${theme.accentText}`}>
-                    {Math.round((isMuted ? 0 : volume) * 100)}%
-                  </span>
-                </div>
-                <input
-                  type="range"
-                  min={0}
-                  max={1}
-                  step={0.01}
-                  value={isMuted || volume === 0 ? 0 : volume}
-                  onChange={(e) => {
-                    const v = parseFloat(e.target.value);
-                    setVolume(v);
-                    setIsMuted(v === 0);
-                  }}
-                  className="w-full h-1.5 rounded appearance-none cursor-pointer bg-slate-800"
-                  style={{ accentColor: theme.sliderAccentColor }}
-                />
-              </div>
-            )}
           </div>
 
           <button
@@ -428,71 +455,60 @@ export const GlobalPlayerV2: React.FC = () => {
           >
             <SlidersHorizontal className="w-4 h-4" />
           </button>
-          <button
-            type="button"
-            onClick={() => setIsExpanded(true)}
-            className="md:hidden h-9 w-9 rounded-xl flex items-center justify-center border border-slate-800 text-slate-400 shrink-0"
-            title="Plein écran"
-          >
-            <ChevronDown className="w-4 h-4 rotate-180" />
-          </button>
         </div>
-
-        {/* Mobile seek row */}
-        {prefs.density !== 'compact' && (
-          <div className="flex md:hidden items-center gap-2 px-0.5">
-            <button type="button" onClick={() => jumpBy(-prefs.seekStep)} className="text-slate-500 p-1">
-              <RotateCcw className="w-3.5 h-3.5" />
-            </button>
-            <input
-              type="range"
-              min={0}
-              max={duration || 100}
-              step={0.1}
-              value={currentTime}
-              onChange={(e) => seekTo(parseFloat(e.target.value))}
-              className="flex-1 h-1 rounded appearance-none cursor-pointer bg-slate-800"
-              style={{ background: theme.sliderBackground(progressPercent), accentColor: theme.sliderAccentColor }}
-            />
-            <button type="button" onClick={() => jumpBy(prefs.seekStep)} className="text-slate-500 p-1">
-              <RotateCw className="w-3.5 h-3.5" />
-            </button>
-            <button type="button" onClick={playNextTrack} className="text-slate-400 p-1">
-              <SkipForward className="w-4 h-4 fill-current" />
-            </button>
-          </div>
-        )}
       </div>
 
       {/* ── Expanded mobile sheet ── */}
       {isExpanded && (
-        <div className="fixed inset-0 z-[60] md:hidden flex flex-col bg-slate-950 animate-page-enter">
+        <div className="fixed inset-0 z-[60] md:hidden flex flex-col bg-slate-950">
           <div className={`absolute inset-0 bg-gradient-to-b ${theme.accentGlow} via-transparent to-transparent pointer-events-none`} />
-          <div className="relative flex items-center justify-between px-4 pt-[calc(0.75rem+env(safe-area-inset-top,0px))] pb-2">
-            <button type="button" onClick={() => setIsExpanded(false)} className="h-10 w-10 rounded-full border border-slate-800 flex items-center justify-center text-slate-300">
+
+          {/* Clear collapse header */}
+          <div className="relative z-10 flex items-center justify-between gap-3 px-4 pt-[calc(0.85rem+env(safe-area-inset-top,0px))] pb-3 border-b border-slate-900/80">
+            <button
+              type="button"
+              onClick={() => setIsExpanded(false)}
+              className="inline-flex items-center gap-2 h-11 px-4 rounded-full border border-slate-700 bg-slate-900 text-slate-100 font-bold text-sm tap-feedback"
+              aria-label="Réduire le lecteur"
+            >
               <ChevronDown className="w-5 h-5" />
+              Réduire
             </button>
-            <span className="text-[10px] font-black uppercase tracking-widest text-slate-500">Player V2</span>
-            <button type="button" onClick={openPersonalize} className="h-10 w-10 rounded-full border border-slate-800 flex items-center justify-center text-slate-300">
-              <Settings className="w-4 h-4" />
+            <button
+              type="button"
+              onClick={openPersonalize}
+              className="h-11 w-11 rounded-full border border-slate-800 flex items-center justify-center text-slate-300 tap-feedback"
+              aria-label="Options"
+            >
+              <Settings className="w-5 h-5" />
             </button>
           </div>
 
-          <div className="relative flex-1 flex flex-col items-center justify-center px-6 gap-6">
-            <div className={`w-44 h-44 rounded-full border ${theme.accentBorderActive} flex items-center justify-center bg-slate-900/50 ${playbackStatus === 'playing' ? 'animate-[spin_18s_linear_infinite]' : ''}`}>
-              <Disc className={`w-16 h-16 ${theme.glowDisc}`} />
-            </div>
-
-            <button type="button" onClick={openPlaylist} className="text-center w-full tap-feedback">
-              <p className={`text-[10px] font-bold uppercase tracking-widest ${theme.accentText}`}>Sourate {currentTrack.surah.id}</p>
-              <h2 className="text-2xl font-black text-slate-100 mt-1">{currentTrack.surah.name}</h2>
+          <div className="relative z-10 flex-1 flex flex-col px-5 pt-5 pb-[calc(1.25rem+env(safe-area-inset-bottom,0px))] overflow-y-auto">
+            <button
+              type="button"
+              onClick={openPlaylist}
+              className="text-center w-full tap-feedback mb-6"
+            >
+              <p className={`text-[11px] font-bold uppercase tracking-widest ${theme.accentText}`}>
+                Sourate {currentTrack.surah.id}
+              </p>
+              <h2 className="text-2xl font-black text-slate-100 mt-1.5 leading-tight">
+                {currentTrack.surah.name}
+              </h2>
               {prefs.showArabic && (
-                <p className={`font-serif text-xl mt-1 ${theme.accentText}`}>{currentTrack.surah.arabicName}</p>
+                <p className={`font-serif text-xl mt-1.5 ${theme.accentText}`}>
+                  {currentTrack.surah.arabicName}
+                </p>
               )}
               <p className="text-sm text-slate-400 mt-2">{currentTrack.reciter.name}</p>
             </button>
 
-            <div className="w-full max-w-sm">
+            <div className="mx-auto mb-7 w-28 h-28 rounded-full border border-slate-800 bg-slate-900/60 flex items-center justify-center">
+              <Disc className={`w-12 h-12 ${theme.glowDisc} ${playbackStatus === 'playing' ? 'animate-[spin_12s_linear_infinite]' : ''}`} />
+            </div>
+
+            <div className="w-full mb-6">
               <input
                 type="range"
                 min={0}
@@ -500,38 +516,146 @@ export const GlobalPlayerV2: React.FC = () => {
                 step={0.1}
                 value={currentTime}
                 onChange={(e) => seekTo(parseFloat(e.target.value))}
-                className="w-full h-1.5 rounded appearance-none cursor-pointer bg-slate-900"
+                className="w-full h-2 rounded-full appearance-none cursor-pointer bg-slate-900"
                 style={{ background: theme.sliderBackground(progressPercent), accentColor: theme.sliderAccentColor }}
               />
-              <div className="flex justify-between text-xs font-mono text-slate-500 mt-2">
+              <div className="flex justify-between text-xs font-mono text-slate-500 mt-2.5">
                 <span>{formatTime(currentTime)}</span>
                 <span>{formatTime(duration)}</span>
               </div>
             </div>
 
-            <div className="flex items-center gap-5">
-              <button type="button" onClick={() => jumpBy(-prefs.seekStep)} className="text-slate-400 p-2"><RotateCcw className="w-5 h-5" /></button>
-              <button type="button" onClick={playPrevTrack} className="text-slate-300 p-2"><SkipBack className="w-6 h-6 fill-current" /></button>
-              <button type="button" onClick={togglePlay} className={`w-16 h-16 rounded-full ${theme.accent} text-slate-950 flex items-center justify-center shadow-xl ${theme.accentShadow}`}>
-                {playbackStatus === 'playing' ? <Pause className="w-7 h-7 fill-current" /> : <Play className="w-7 h-7 fill-current ml-1" />}
+            <div className="flex items-center justify-center gap-4 mb-6">
+              <button
+                type="button"
+                onClick={() => jumpBy(-prefs.seekStep)}
+                className="w-12 h-12 rounded-full border border-slate-800 bg-slate-900 text-slate-300 flex items-center justify-center tap-feedback"
+                aria-label={`Reculer de ${prefs.seekStep} secondes`}
+              >
+                <RotateCcw className="w-5 h-5" />
               </button>
-              <button type="button" onClick={playNextTrack} className="text-slate-300 p-2"><SkipForward className="w-6 h-6 fill-current" /></button>
-              <button type="button" onClick={() => jumpBy(prefs.seekStep)} className="text-slate-400 p-2"><RotateCw className="w-5 h-5" /></button>
+              <button
+                type="button"
+                onClick={playPrevTrack}
+                className="w-12 h-12 rounded-full border border-slate-800 bg-slate-900 text-slate-200 flex items-center justify-center tap-feedback"
+                aria-label="Précédent"
+              >
+                <SkipBack className="w-6 h-6 fill-current" />
+              </button>
+              <button
+                type="button"
+                onClick={togglePlay}
+                className={`w-[4.25rem] h-[4.25rem] rounded-full ${theme.accent} text-slate-950 flex items-center justify-center shadow-xl ${theme.accentShadow} tap-feedback`}
+                aria-label={playbackStatus === 'playing' ? 'Pause' : 'Lecture'}
+              >
+                {playbackStatus === 'playing' ? (
+                  <Pause className="w-8 h-8 fill-current" />
+                ) : (
+                  <Play className="w-8 h-8 fill-current ml-1" />
+                )}
+              </button>
+              <button
+                type="button"
+                onClick={playNextTrack}
+                className="w-12 h-12 rounded-full border border-slate-800 bg-slate-900 text-slate-200 flex items-center justify-center tap-feedback"
+                aria-label="Suivant"
+              >
+                <SkipForward className="w-6 h-6 fill-current" />
+              </button>
+              <button
+                type="button"
+                onClick={() => jumpBy(prefs.seekStep)}
+                className="w-12 h-12 rounded-full border border-slate-800 bg-slate-900 text-slate-300 flex items-center justify-center tap-feedback"
+                aria-label={`Avancer de ${prefs.seekStep} secondes`}
+              >
+                <RotateCw className="w-5 h-5" />
+              </button>
             </div>
 
-            <div className="flex items-center gap-2 flex-wrap justify-center">
-              <button type="button" onClick={cycleRepeat} className={`px-3 py-2 rounded-xl border text-xs font-bold flex items-center gap-1.5 ${repeatMode !== 'all' ? `${theme.accentBgLight} ${theme.accentBorderActive} ${theme.accentText}` : 'border-slate-800 text-slate-400'}`}>
-                <RepeatIcon className="w-3.5 h-3.5" /> {repeatMode}
+            <div className="grid grid-cols-3 gap-2 mt-auto">
+              <button
+                type="button"
+                onClick={cycleRepeat}
+                className={`h-12 rounded-2xl border text-xs font-bold flex items-center justify-center gap-1.5 tap-feedback ${
+                  repeatMode !== 'all'
+                    ? `${theme.accentBgLight} ${theme.accentBorderActive} ${theme.accentText}`
+                    : 'border-slate-800 text-slate-400'
+                }`}
+              >
+                <RepeatIcon className="w-4 h-4" />
+                {repeatMode === 'one' ? '1' : repeatMode === 'none' ? 'Off' : 'All'}
               </button>
-              <button type="button" onClick={openPlaylist} className="px-3 py-2 rounded-xl border border-slate-800 text-xs font-bold text-slate-300 flex items-center gap-1.5">
-                <ListMusic className="w-3.5 h-3.5" /> Sourates
+              <button
+                type="button"
+                onClick={openPlaylist}
+                className="h-12 rounded-2xl border border-slate-800 text-xs font-bold text-slate-300 flex items-center justify-center gap-1.5 tap-feedback"
+              >
+                <ListMusic className="w-4 h-4" />
+                Liste
               </button>
-              <button type="button" onClick={toggleMute} className="px-3 py-2 rounded-xl border border-slate-800 text-xs font-bold text-slate-300 flex items-center gap-1.5">
-                {isMuted || volume === 0 ? <VolumeX className="w-3.5 h-3.5" /> : <Volume2 className="w-3.5 h-3.5" />}
+              <button
+                type="button"
+                onClick={() => setShowVolumePopover(true)}
+                className="h-12 rounded-2xl border border-slate-800 text-xs font-bold text-slate-300 flex items-center justify-center gap-1.5 tap-feedback"
+              >
+                {isMuted || volume === 0 ? <VolumeX className="w-4 h-4" /> : <Volume2 className="w-4 h-4" />}
                 Volume
               </button>
             </div>
+
+            {/* Always-visible collapse CTA at bottom */}
+            <button
+              type="button"
+              onClick={() => setIsExpanded(false)}
+              className="mt-4 w-full h-12 rounded-2xl border border-slate-700 bg-slate-900/80 text-slate-100 font-bold text-sm flex items-center justify-center gap-2 tap-feedback"
+            >
+              <ChevronDown className="w-5 h-5" />
+              Réduire le lecteur
+            </button>
           </div>
+
+          {/* Mobile volume sheet */}
+          {showVolumePopover && (
+            <div className="absolute inset-0 z-20 flex items-end bg-slate-950/60" onClick={() => setShowVolumePopover(false)}>
+              <div
+                className="w-full rounded-t-3xl border border-slate-800 bg-slate-950 p-5 pb-[calc(1.25rem+env(safe-area-inset-bottom,0px))]"
+                onClick={(e) => e.stopPropagation()}
+              >
+                <div className="flex items-center justify-between mb-4">
+                  <span className="text-sm font-bold text-slate-100">Volume</span>
+                  <span className={`text-sm font-mono font-bold ${theme.accentText}`}>
+                    {Math.round((isMuted ? 0 : volume) * 100)}%
+                  </span>
+                </div>
+                <div className="flex items-center gap-3">
+                  <button type="button" onClick={toggleMute} className="h-11 w-11 rounded-full border border-slate-800 flex items-center justify-center text-slate-300">
+                    {isMuted || volume === 0 ? <VolumeX className="w-5 h-5" /> : <Volume2 className="w-5 h-5" />}
+                  </button>
+                  <input
+                    type="range"
+                    min={0}
+                    max={1}
+                    step={0.01}
+                    value={isMuted || volume === 0 ? 0 : volume}
+                    onChange={(e) => {
+                      const v = parseFloat(e.target.value);
+                      setVolume(v);
+                      setIsMuted(v === 0);
+                    }}
+                    className="flex-1 h-2 rounded appearance-none cursor-pointer bg-slate-800"
+                    style={{ accentColor: theme.sliderAccentColor }}
+                  />
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setShowVolumePopover(false)}
+                  className="mt-4 w-full h-11 rounded-xl border border-slate-700 text-sm font-bold text-slate-200"
+                >
+                  Fermer
+                </button>
+              </div>
+            </div>
+          )}
         </div>
       )}
 

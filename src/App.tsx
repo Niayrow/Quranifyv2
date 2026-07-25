@@ -1276,6 +1276,7 @@ const AppContent: React.FC = () => {
       <Navbar
         activeTab={activeTab}
         setActiveTab={handleSetActiveTab}
+        dockWithPlayer={Boolean(currentTrack && activeTab !== 'ayah')}
       />
 
     </div>

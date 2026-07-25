@@ -83,7 +83,8 @@
   }
 
   .mobile-shell-padding {
-    padding-bottom: calc(9.75rem + env(safe-area-inset-bottom, 0px));
+    /* Player + navbar docked as one block (~5rem bar + ~5rem nav + margin) */
+    padding-bottom: calc(11.25rem + env(safe-area-inset-bottom, 0px));
   }
 
   @media (min-width: 768px) {

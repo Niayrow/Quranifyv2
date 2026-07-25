@@ -6,9 +6,15 @@ type NavTabId = 'home' | 'listen' | 'ayah' | 'favorites' | 'more';
 interface NavbarProps {
   activeTab: NavTabId;
   setActiveTab: (tab: NavTabId) => void;
+  /** When true on mobile, navbar visually docks with the player bar */
+  dockWithPlayer?: boolean;
 }
 
-export const Navbar: React.FC<NavbarProps> = ({ activeTab, setActiveTab }) => {
+export const Navbar: React.FC<NavbarProps> = ({
+  activeTab,
+  setActiveTab,
+  dockWithPlayer = false,
+}) => {
   const mainTabs: Array<{ id: NavTabId; label: string; icon: typeof Home }> = [
     { id: 'home', label: 'Accueil', icon: Home },
     { id: 'listen', label: 'Écouter', icon: LayoutGrid },
@@ -17,10 +23,14 @@ export const Navbar: React.FC<NavbarProps> = ({ activeTab, setActiveTab }) => {
   ];
 
   return (
-    <nav className="fixed z-50 bottom-6 left-1/2 -translate-x-1/2 w-[95%] max-w-md md:max-w-4xl md:w-auto md:top-6 md:bottom-auto glass-panel-opaque rounded-3xl md:rounded-full border border-slate-700/50 shadow-2xl shadow-emerald-500/10 px-2.5 py-2.5 backdrop-blur-2xl">
+    <nav
+      className={`fixed z-50 left-1/2 -translate-x-1/2 w-[95%] max-w-md md:max-w-4xl md:w-auto md:top-6 md:bottom-auto glass-panel-opaque border shadow-2xl shadow-emerald-500/10 px-2.5 py-2.5 backdrop-blur-2xl transition-all duration-300 ${
+        dockWithPlayer
+          ? 'bottom-[calc(0.65rem+env(safe-area-inset-bottom,0px))] rounded-t-none rounded-b-3xl border-slate-700/50 border-t-0 shadow-[0_12px_28px_rgba(0,0,0,0.4)] md:rounded-full md:border md:border-slate-700/50 md:shadow-2xl md:shadow-emerald-500/10'
+          : 'bottom-6 rounded-3xl md:rounded-full border-slate-700/50'
+      }`}
+    >
       <div className="flex items-center justify-between gap-1 md:gap-6">
-        
-        {/* Main Navigation */}
         <div className="flex items-center justify-between w-full md:w-auto md:gap-2">
           {mainTabs.map((tab) => {
             const Icon = tab.icon;
@@ -40,15 +50,15 @@ export const Navbar: React.FC<NavbarProps> = ({ activeTab, setActiveTab }) => {
                 {isActive && (
                   <span className="absolute -top-3 md:-top-0.5 md:-bottom-0.5 md:left-0 md:right-0 md:h-auto md:w-full h-1 w-8 bg-emerald-400 rounded-full shadow-[0_0_10px_rgba(52,211,153,0.9)]" />
                 )}
-                
+
                 <div className="flex flex-col md:flex-row items-center gap-1.5 md:gap-2 relative z-10">
-                  <Icon 
+                  <Icon
                     strokeWidth={isActive ? 2.5 : 2}
                     className={`w-5 h-5 md:w-[22px] md:h-[22px] transition-all duration-300 ${
-                      isActive 
-                        ? 'text-white scale-110 drop-shadow-[0_0_6px_rgba(255,255,255,0.4)]' 
+                      isActive
+                        ? 'text-white scale-110 drop-shadow-[0_0_6px_rgba(255,255,255,0.4)]'
                         : 'group-hover:scale-110 group-hover:text-white'
-                    }`} 
+                    }`}
                   />
                   <span className={`text-[10px] md:text-xs font-bold tracking-wide transition-colors ${isActive ? 'text-white' : ''}`}>
                     {tab.label}
@@ -57,10 +67,9 @@ export const Navbar: React.FC<NavbarProps> = ({ activeTab, setActiveTab }) => {
               </button>
             );
           })}
-          
+
           <div className="w-px h-10 bg-slate-700/50 hidden md:block mx-2" />
-          
-          {/* Action / Settings */}
+
           <button
             onClick={() => setActiveTab('more')}
             className={`group relative flex flex-col md:flex-row items-center justify-center flex-1 md:flex-none rounded-2xl md:rounded-full px-2 md:px-4 py-2 transition-all duration-300 tap-feedback ${
@@ -73,11 +82,13 @@ export const Navbar: React.FC<NavbarProps> = ({ activeTab, setActiveTab }) => {
               <span className="absolute -top-3 md:-top-0.5 md:-bottom-0.5 md:left-0 md:right-0 md:h-auto md:w-full h-1 w-8 bg-emerald-400 rounded-full shadow-[0_0_10px_rgba(52,211,153,0.9)]" />
             )}
             <div className="flex flex-col md:flex-row items-center gap-1.5 md:gap-2 relative z-10">
-              <Settings 
+              <Settings
                 strokeWidth={activeTab === 'more' ? 2.5 : 2}
                 className={`w-5 h-5 md:w-[22px] md:h-[22px] transition-transform duration-500 ${
-                  activeTab === 'more' ? 'text-white rotate-90 scale-110 drop-shadow-[0_0_6px_rgba(255,255,255,0.4)]' : 'group-hover:rotate-45 group-hover:scale-110 group-hover:text-white'
-                }`} 
+                  activeTab === 'more'
+                    ? 'text-white rotate-90 scale-110 drop-shadow-[0_0_6px_rgba(255,255,255,0.4)]'
+                    : 'group-hover:rotate-45 group-hover:scale-110 group-hover:text-white'
+                }`}
               />
               <span className={`text-[10px] md:text-xs font-bold tracking-wide transition-colors ${activeTab === 'more' ? 'text-white' : ''}`}>
                 Options
