@@ -13,6 +13,7 @@ import {
   type PlayerV2Prefs,
   type SeekStepSeconds,
 } from './player/playerV2Prefs';
+import { SURAHS } from '../data/surahs';
 
 const formatTime = (time: number) => {
   if (!Number.isFinite(time) || time < 0) return '0:00';
@@ -69,6 +70,7 @@ export const GlobalPlayerV2: React.FC = () => {
     setPlayerTheme,
     remoteSession,
     takeOverRemoteSession,
+    reciters,
   } = useAudio();
 
   const [isExpanded, setIsExpanded] = useState(false);
@@ -236,6 +238,18 @@ export const GlobalPlayerV2: React.FC = () => {
 
   const RepeatIcon = repeatMode === 'one' ? Repeat1 : Repeat;
 
+  const remoteSurahName = remoteSession
+    ? currentTrack?.surah.id === remoteSession.surahId
+      ? currentTrack.surah.name
+      : SURAHS.find((s) => s.id === remoteSession.surahId)?.name
+    : null;
+  const remoteReciterName = remoteSession
+    ? currentTrack?.reciter.id === remoteSession.reciterId
+      ? currentTrack.reciter.name
+      : reciters.find((r) => r.id === remoteSession.reciterId)?.name
+    : null;
+  const remoteTrackLabel = [remoteSurahName, remoteReciterName].filter(Boolean).join(' · ');
+
   return (
     <>
       {/* ── Mini bar: docks with navbar on mobile, full on desktop ── */}
@@ -244,48 +258,57 @@ export const GlobalPlayerV2: React.FC = () => {
           left-1/2 -translate-x-1/2 w-[95%] max-w-md
           bottom-[calc(5.35rem+env(safe-area-inset-bottom,0px))]
           md:left-6 md:right-6 md:translate-x-0 md:w-auto md:mx-auto md:max-w-4xl md:bottom-6
-          rounded-t-3xl rounded-b-none md:rounded-3xl p-2 md:px-5 md:py-3
+          rounded-t-3xl rounded-b-none md:rounded-3xl
           glass-panel-opaque border border-slate-700/50 border-b-0 md:border md:border-slate-800/60
           shadow-[0_-8px_24px_rgba(0,0,0,0.35)] md:shadow-2xl
-          flex items-center gap-2 md:gap-0 md:grid md:grid-cols-[minmax(0,1.15fr)_minmax(0,1.35fr)_auto] md:items-center
-          overflow-visible md:h-20
+          overflow-hidden md:overflow-hidden
+          ${remoteSession && !isExpanded ? 'md:min-h-0' : 'md:h-20'}
           ${prefs.showGlow ? `bg-gradient-to-r ${theme.accentGlow} via-transparent to-transparent` : ''}
           ${isExpanded ? 'opacity-0 pointer-events-none translate-y-3 md:opacity-100 md:pointer-events-auto md:translate-y-0' : 'opacity-100'}
         `}
       >
+        {/* Integrated remote strip — part of the player (mobile + desktop) */}
         {remoteSession && !isExpanded && (
-          <div className="absolute -top-[2.85rem] left-0 right-0 z-10 px-0.5">
-            <div className="flex items-center gap-2 rounded-2xl border border-emerald-500/25 bg-slate-950/95 px-3 py-2 shadow-lg backdrop-blur-xl">
-              <MonitorSmartphone className="w-4 h-4 text-emerald-400 shrink-0" />
-              <div className="min-w-0 flex-1">
-                <p className="text-[11px] font-semibold text-slate-100 truncate">
-                  Écoute sur un autre appareil
-                </p>
-                <p className="text-[10px] text-slate-400 truncate">
-                  <span className="font-mono text-emerald-300/90 tabular-nums">
-                    {formatTime(liveRemotePos)}
-                  </span>
-                  {remoteSession.deviceLabel ? ` · ${remoteSession.deviceLabel}` : ''}
-                </p>
-              </div>
-              <button
-                type="button"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  void takeOverRemoteSession();
-                }}
-                className={`shrink-0 rounded-full px-3 py-1.5 text-[11px] font-bold text-slate-950 tap-feedback ${theme.accent}`}
-              >
-                Basculer ici
-              </button>
+          <div className="flex items-center gap-2 px-3 md:px-5 pt-2.5 md:pt-2.5 pb-1.5 md:pb-2 border-b border-emerald-500/15 bg-emerald-500/[0.07]">
+            <span className="relative flex h-2 w-2 shrink-0">
+              <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400/50" />
+              <span className="relative inline-flex h-2 w-2 rounded-full bg-emerald-400" />
+            </span>
+            <MonitorSmartphone className="w-3.5 h-3.5 md:w-4 md:h-4 text-emerald-400 shrink-0" />
+            <div className="min-w-0 flex-1 leading-tight">
+              <p className="text-[11px] md:text-xs font-semibold text-emerald-100/95 truncate">
+                {remoteTrackLabel || 'Autre appareil'}
+                <span className="font-mono text-emerald-300/90 tabular-nums font-medium">
+                  {' · '}{formatTime(liveRemotePos)}
+                </span>
+              </p>
+              <p className="text-[9px] md:text-[10px] text-slate-400 truncate">
+                Autre appareil
+                {remoteSession.deviceLabel ? ` · ${remoteSession.deviceLabel}` : ''}
+              </p>
             </div>
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                void takeOverRemoteSession();
+              }}
+              className={`shrink-0 rounded-full px-2.5 md:px-3 py-1 md:py-1.5 text-[10px] md:text-[11px] font-bold text-slate-950 tap-feedback ${theme.accent}`}
+            >
+              Basculer ici
+            </button>
           </div>
         )}
 
+        <div
+          className={`relative flex items-center gap-2 md:gap-0 md:grid md:grid-cols-[minmax(0,1.15fr)_minmax(0,1.35fr)_auto] md:items-center p-2 md:px-5 md:py-3 ${
+            remoteSession ? 'pt-1.5 md:pt-2.5' : ''
+          }`}
+        >
         {/* Seam with navbar — mobile dock only */}
         <div className="absolute bottom-0 left-3 right-3 h-px bg-slate-700/40 md:hidden" aria-hidden />
         {/* Thin progress — mobile only */}
-        <div className="absolute top-0 left-3 right-3 h-[3px] rounded-full bg-slate-900/80 overflow-hidden md:hidden">
+        <div className={`absolute left-3 right-3 h-[3px] rounded-full bg-slate-900/80 overflow-hidden md:hidden ${remoteSession ? 'top-0 opacity-70' : 'top-0'}`}>
           <div
             className="h-full rounded-full transition-[width] duration-100"
             style={{ width: `${progressPercent}%`, backgroundColor: theme.sliderAccentColor }}
@@ -522,6 +545,7 @@ export const GlobalPlayerV2: React.FC = () => {
             <SlidersHorizontal className="w-4 h-4" />
           </button>
         </div>
+        </div>
       </div>
 
       {/* ── Expanded mobile sheet ── */}
@@ -551,14 +575,21 @@ export const GlobalPlayerV2: React.FC = () => {
           </div>
 
           {remoteSession && (
-            <div className="relative z-10 mx-4 mt-3 flex items-center gap-2 rounded-2xl border border-emerald-500/25 bg-slate-900/90 px-3 py-2.5">
+            <div className="relative z-10 flex items-center gap-2.5 px-4 py-2.5 border-b border-emerald-500/15 bg-emerald-500/[0.07]">
+              <span className="relative flex h-2 w-2 shrink-0">
+                <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400/50" />
+                <span className="relative inline-flex h-2 w-2 rounded-full bg-emerald-400" />
+              </span>
               <MonitorSmartphone className="w-4 h-4 text-emerald-400 shrink-0" />
-              <div className="min-w-0 flex-1">
-                <p className="text-xs font-semibold text-slate-100">Écoute sur un autre appareil</p>
-                <p className="text-[10px] text-slate-400 truncate">
-                  <span className="font-mono text-emerald-300/90 tabular-nums">
-                    {formatTime(liveRemotePos)}
+              <div className="min-w-0 flex-1 leading-tight">
+                <p className="text-xs font-semibold text-emerald-100/95 truncate">
+                  {remoteTrackLabel || 'Autre appareil'}
+                  <span className="font-mono text-emerald-300/90 tabular-nums font-medium">
+                    {' · '}{formatTime(liveRemotePos)}
                   </span>
+                </p>
+                <p className="text-[10px] text-slate-400 truncate">
+                  Autre appareil
                   {remoteSession.deviceLabel ? ` · ${remoteSession.deviceLabel}` : ''}
                 </p>
               </div>

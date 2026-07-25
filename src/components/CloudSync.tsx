@@ -170,28 +170,46 @@ export const CloudSync: React.FC<CloudSyncProps> = ({ favorites, setFavorites })
     setRemoteSessionRef.current(null);
   };
 
-  const pushPlayback = (isPlaying: boolean, positionOverride?: number) => {
+  const pushPlayback = (
+    isPlaying: boolean,
+    options?: { positionOverride?: number; allowSteal?: boolean }
+  ) => {
     const track = currentTrackRef.current;
     if (!user || !track) return;
 
-    // Another device already owns — never reclaim via heartbeat
-    if (
-      isPlaying &&
+    const allowSteal = Boolean(options?.allowSteal);
+    const remoteOwns =
       remoteSessionRef.current &&
-      remoteSessionRef.current.deviceId !== localDeviceId.current
-    ) {
+      remoteSessionRef.current.deviceId !== localDeviceId.current;
+
+    // Heartbeat must not steal; explicit local Play / new track may steal
+    if (isPlaying && remoteOwns && !allowSteal) {
       return;
     }
 
     if (!isPlaying && !weOwnPlaybackRef.current) return;
     if (!isPlaying && remoteSessionRef.current) return;
 
-    let position = typeof positionOverride === 'number' ? positionOverride : readPosition();
+    // User started playback here → take ownership from the other device
+    if (isPlaying && allowSteal) {
+      const graceUntil = Date.now() + TAKEOVER_GRACE_MS;
+      suppressRemoteUntilRef.current = graceUntil;
+      setSuppressRef.current(graceUntil);
+      lastRemoteKeyRef.current = '';
+      pausedForRemoteRef.current = false;
+      setRemoteSessionRef.current(null);
+    }
 
-    // Avoid clobbering a known mid-track position with 0 right after load/takeover
+    let position =
+      typeof options?.positionOverride === 'number'
+        ? options.positionOverride
+        : readPosition();
+
+    // Avoid clobbering a known mid-track position with 0 right after load
     const remotePos = remoteSessionRef.current?.positionSeconds ?? 0;
     if (
       isPlaying &&
+      !allowSteal &&
       position < 1 &&
       remotePos > 2 &&
       remoteSessionRef.current?.surahId === track.surah.id &&
@@ -203,7 +221,7 @@ export const CloudSync: React.FC<CloudSyncProps> = ({ favorites, setFavorites })
     const key = `${isPlaying ? 1 : 0}:${track.reciter.id}:${track.surah.id}:${Math.floor(position)}`;
     const now = Date.now();
     // Allow ownership flips immediately; throttle same-key spam
-    if (key === lastPushKey.current && now - lastPushAtRef.current < 1200) return;
+    if (key === lastPushKey.current && now - lastPushAtRef.current < 800) return;
     lastPushKey.current = key;
     lastPushAtRef.current = now;
 
@@ -374,7 +392,8 @@ export const CloudSync: React.FC<CloudSyncProps> = ({ favorites, setFavorites })
 
     if (playbackStatus === 'playing') {
       clearPauseTimer();
-      pushPlayback(true);
+      // Explicit local play steals ownership (like Spotify)
+      pushPlayback(true, { allowSteal: true });
       return;
     }
 
