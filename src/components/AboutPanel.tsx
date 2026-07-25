@@ -1,8 +1,11 @@
 import React from 'react';
-import { Compass, Cloud, HardDrive, Headphones, Shield, Sparkles, Trash2, Wifi } from 'lucide-react';
+import {
+  Compass, Cloud, HardDrive, Headphones, Shield, Sparkles, Trash2, Wifi,
+  MonitorSmartphone, ListMusic, Smartphone, BookOpenText, ExternalLink,
+} from 'lucide-react';
 import { useAudio } from '../context/AudioContext';
 
-const APP_VERSION = '1.0.1';
+const APP_VERSION = '1.1.0';
 
 export const AboutPanel: React.FC = () => {
   const { cacheInfo, clearCache } = useAudio();
@@ -13,130 +16,140 @@ export const AboutPanel: React.FC = () => {
     }
   };
 
+  const features = [
+    {
+      icon: Headphones,
+      title: 'Écoute en streaming',
+      body: 'Des centaines de récitateurs, lecteur personnalisable, reprise automatique et contrôles depuis l’écran de verrouillage.',
+    },
+    {
+      icon: MonitorSmartphone,
+      title: 'Multi-appareils',
+      body: 'Lecture en temps réel entre téléphone et ordinateur : basculez ici, reprise de position, arrêt automatique sur l’autre appareil.',
+    },
+    {
+      icon: ListMusic,
+      title: 'Boucle de sourates',
+      body: 'Sélectionnez les sourates à répéter. La sélection, le thème, le volume et la vitesse suivent votre compte cloud.',
+    },
+    {
+      icon: HardDrive,
+      title: 'Mode hors-ligne',
+      body: 'Téléchargez des sourates pour les écouter sans connexion. Vos réglages locaux restent mémorisés sur l’appareil.',
+    },
+    {
+      icon: BookOpenText,
+      title: 'Lecture ayah par ayah',
+      body: 'Parcourez le texte du Coran sourate par sourate dans l’onglet dédié, en complément de l’écoute audio.',
+    },
+    {
+      icon: Cloud,
+      title: 'Compte GoMuslimLife',
+      body: 'Un seul compte pour Quranify et GoMuslimLife.com : favoris, reprise d’écoute et préférences synchronisés.',
+    },
+    {
+      icon: Smartphone,
+      title: 'Applications mobiles',
+      body: 'Versions iOS et Android en préparation (bientôt sur l’App Store et Google Play).',
+    },
+    {
+      icon: Shield,
+      title: 'Données & confidentialité',
+      body: 'Sans compte, tout reste local. Avec un compte : favoris, reprise et préférences — pas de pub ni d’historique commercialisé.',
+    },
+  ];
+
   return (
-    <div className="flex flex-col gap-5">
-      <div className="glass-panel p-6 rounded-3xl flex flex-col gap-6 relative overflow-hidden">
-        <div className="absolute top-0 right-0 w-32 h-32 bg-amber-500/5 blur-3xl rounded-full" />
-
-        <div className="border-b border-slate-900 pb-4">
-          <h2 className="text-xl font-bold text-slate-100 flex items-center gap-2">
-            <Compass className="w-5 h-5 text-emerald-400" />
-            À propos de Quranify
-          </h2>
-          <p className="text-xs text-slate-400 mt-1.5 leading-relaxed">
-            Lecteur coranique simple et rapide : choisissez un récitateur, une sourate, et écoutez —
-            sur mobile comme sur ordinateur. Version {APP_VERSION}.
+    <div className="flex flex-col gap-5 pb-8">
+      <div className="relative overflow-hidden rounded-3xl border border-white/[0.08] bg-gradient-to-b from-slate-500/[0.08] to-slate-950/40 p-6">
+        <div className="absolute -top-16 -right-10 h-40 w-40 rounded-full bg-slate-500/15 blur-3xl pointer-events-none" />
+        <div className="relative">
+          <div className="flex items-center gap-2">
+            <Compass className="w-5 h-5 text-slate-300" />
+            <h2 className="text-xl font-bold text-slate-100">À propos de Quranify</h2>
+          </div>
+          <p className="mt-2 text-sm leading-relaxed text-slate-400 max-w-lg">
+            Lecteur coranique simple et rapide — sur le web et bientôt en application.
+            Version <span className="text-slate-200 font-semibold">{APP_VERSION}</span>.
           </p>
-        </div>
-
-        <div className="flex flex-col gap-4">
-          <div className="flex gap-3">
-            <Headphones className="w-5 h-5 text-emerald-400 shrink-0 mt-0.5" />
-            <div>
-              <h4 className="text-sm font-semibold text-slate-200">Écoute en streaming</h4>
-              <p className="text-xs text-slate-400 mt-0.5 leading-relaxed">
-                Des centaines de récitateurs et riwayates, reprise automatique de la lecture,
-                contrôles depuis l’écran de verrouillage et les notifications.
-              </p>
-            </div>
-          </div>
-
-          <div className="flex gap-3">
-            <HardDrive className="w-5 h-5 text-emerald-400 shrink-0 mt-0.5" />
-            <div>
-              <h4 className="text-sm font-semibold text-slate-200">Mode hors-ligne</h4>
-              <p className="text-xs text-slate-400 mt-0.5 leading-relaxed">
-                Téléchargez des sourates pour les écouter sans connexion. Volume, vitesse et
-                position d’écoute sont aussi mémorisés sur l’appareil.
-              </p>
-            </div>
-          </div>
-
-          <div className="flex gap-3">
-            <Cloud className="w-5 h-5 text-emerald-400 shrink-0 mt-0.5" />
-            <div>
-              <h4 className="text-sm font-semibold text-slate-200">Compte cloud</h4>
-              <p className="text-xs text-slate-400 mt-0.5 leading-relaxed">
-                Connectez-vous avec le même compte que{' '}
-                <a
-                  href="https://gomuslimlife.com"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-emerald-400 hover:text-emerald-300 underline underline-offset-2"
-                >
-                  GoMuslimLife.com
-                </a>{' '}
-                pour synchroniser vos favoris et reprendre votre lecture sur un autre appareil.
-              </p>
-            </div>
-          </div>
-
-          <div className="flex gap-3">
-            <Shield className="w-5 h-5 text-emerald-400 shrink-0 mt-0.5" />
-            <div>
-              <h4 className="text-sm font-semibold text-slate-200">Données &amp; confidentialité</h4>
-              <p className="text-xs text-slate-400 mt-0.5 leading-relaxed">
-                Sans compte, tout reste local sur votre appareil. Avec un compte, seuls les favoris
-                et la reprise de lecture sont synchronisés — pas d’historique de navigation commercialisé.
-              </p>
-            </div>
-          </div>
-        </div>
-
-        <div className="bg-slate-950/60 border border-slate-900 p-4 rounded-2xl flex flex-col gap-3">
-          <div className="flex items-center justify-between border-b border-slate-900 pb-2">
-            <div className="flex items-center gap-2">
-              <Wifi className="w-4 h-4 text-emerald-400" />
-              <h4 className="text-sm font-semibold text-slate-200">Cache hors-ligne</h4>
-            </div>
-            <span className="text-[10px] bg-emerald-500/10 text-emerald-400 font-bold px-2.5 py-0.5 rounded-full uppercase tracking-wider">
-              Actif
-            </span>
-          </div>
-
-          <div className="flex justify-between items-center text-xs">
-            <div className="flex flex-col gap-0.5">
-              <span className="text-slate-400">Sourates téléchargées</span>
-              <span className="text-slate-200 font-bold">{cacheInfo?.count ?? 0} sourate(s)</span>
-            </div>
-            <div className="flex flex-col items-end gap-0.5">
-              <span className="text-slate-400">Espace utilisé</span>
-              <span className="text-slate-200 font-bold">{cacheInfo?.totalSizeMb ?? 0} Mo</span>
-            </div>
-          </div>
-
-          {cacheInfo && cacheInfo.count > 0 && (
-            <button
-              type="button"
-              onClick={handleClear}
-              className="mt-1 flex items-center justify-center gap-2 w-full py-2.5 bg-rose-500/10 border border-rose-500/20 hover:bg-rose-500/20 hover:border-rose-500/40 text-rose-400 text-xs font-semibold rounded-xl transition-all duration-200 cursor-pointer"
-            >
-              <Trash2 className="w-4 h-4" />
-              <span>Vider le cache hors-ligne</span>
-            </button>
-          )}
-        </div>
-
-        <div className="bg-slate-950/60 border border-slate-900 p-4 rounded-2xl flex items-center gap-3">
-          <Sparkles className="w-5 h-5 text-amber-400 shrink-0" />
-          <p className="text-[11px] text-slate-400 leading-relaxed">
-            Conçu pour une écoute sereine : interface claire, navigation rapide, et respect du
-            Coran au centre de l’expérience.
-          </p>
-        </div>
-
-        <div className="border-t border-slate-900 pt-4 flex items-center justify-between text-[11px] text-slate-500 gap-3 flex-wrap">
-          <span>Quranify © {new Date().getFullYear()} · v{APP_VERSION}</span>
           <a
-            href="https://sofianeweb.fr"
+            href="https://gomuslimlife.com"
             target="_blank"
             rel="noopener noreferrer"
-            className="group flex items-center gap-1.5 rounded-full border border-emerald-500/20 bg-emerald-500/5 px-2.5 py-1 text-[10px] font-black uppercase tracking-widest text-emerald-400 transition-all duration-300 hover:border-emerald-500/40 hover:bg-emerald-500/10 hover:text-emerald-300"
+            className="mt-4 inline-flex items-center gap-2 rounded-xl border border-white/15 bg-white/[0.04] px-3.5 py-2 text-xs font-semibold text-slate-300 hover:bg-white/[0.07] hover:text-slate-100 transition-colors"
           >
-            <span>Créé par sofianeweb.fr</span>
-            <span className="inline-block transition-transform duration-300 group-hover:translate-x-0.5 group-hover:-translate-y-0.5">↗</span>
+            Découvrir GoMuslimLife.com
+            <ExternalLink className="h-3.5 w-3.5 opacity-70" />
           </a>
         </div>
+      </div>
+
+      <div className="glass-panel rounded-3xl border border-slate-800/70 p-5 flex flex-col gap-4">
+        {features.map(({ icon: Icon, title, body }) => (
+          <div key={title} className="flex gap-3">
+            <span className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-slate-500/10 text-slate-300">
+              <Icon className="w-4 h-4" />
+            </span>
+            <div>
+              <h4 className="text-sm font-semibold text-slate-200">{title}</h4>
+              <p className="text-xs text-slate-400 mt-0.5 leading-relaxed">{body}</p>
+            </div>
+          </div>
+        ))}
+      </div>
+
+      <div className="glass-panel rounded-3xl border border-slate-800/70 p-4 flex flex-col gap-3">
+        <div className="flex items-center justify-between border-b border-slate-900 pb-2">
+          <div className="flex items-center gap-2">
+            <Wifi className="w-4 h-4 text-slate-300" />
+            <h4 className="text-sm font-semibold text-slate-200">Cache hors-ligne</h4>
+          </div>
+          <span className="text-[10px] bg-slate-500/10 text-slate-300 font-bold px-2.5 py-0.5 rounded-full uppercase tracking-wider">
+            Actif
+          </span>
+        </div>
+
+        <div className="flex justify-between items-center text-xs">
+          <div className="flex flex-col gap-0.5">
+            <span className="text-slate-400">Sourates téléchargées</span>
+            <span className="text-slate-200 font-bold">{cacheInfo?.count ?? 0} sourate(s)</span>
+          </div>
+          <div className="flex flex-col items-end gap-0.5">
+            <span className="text-slate-400">Espace utilisé</span>
+            <span className="text-slate-200 font-bold">{cacheInfo?.totalSizeMb ?? 0} Mo</span>
+          </div>
+        </div>
+
+        {cacheInfo && cacheInfo.count > 0 && (
+          <button
+            type="button"
+            onClick={handleClear}
+            className="mt-1 flex items-center justify-center gap-2 w-full py-2.5 bg-rose-500/10 border border-rose-500/20 hover:bg-rose-500/20 hover:border-rose-500/40 text-rose-400 text-xs font-semibold rounded-xl transition-all duration-200 cursor-pointer"
+          >
+            <Trash2 className="w-4 h-4" />
+            <span>Vider le cache hors-ligne</span>
+          </button>
+        )}
+      </div>
+
+      <div className="rounded-2xl border border-white/[0.08] bg-white/[0.03] p-4 flex items-center gap-3">
+        <Sparkles className="w-5 h-5 text-slate-400 shrink-0" />
+        <p className="text-[11px] text-slate-400 leading-relaxed">
+          Conçu pour une écoute sereine : interface claire, sync entre appareils, et le Coran au centre.
+        </p>
+      </div>
+
+      <div className="flex items-center justify-between text-[11px] text-slate-500 gap-3 flex-wrap px-1">
+        <span>Quranify © {new Date().getFullYear()} · v{APP_VERSION}</span>
+        <a
+          href="https://sofianeweb.fr"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="group flex items-center gap-1.5 rounded-full border border-white/10 bg-white/[0.03] px-2.5 py-1 text-[10px] font-black uppercase tracking-widest text-slate-400 transition-all duration-300 hover:border-white/20 hover:bg-white/[0.06] hover:text-slate-200"
+        >
+          <span>Créé par sofianeweb.fr</span>
+          <span className="inline-block transition-transform duration-300 group-hover:translate-x-0.5 group-hover:-translate-y-0.5">↗</span>
+        </a>
       </div>
     </div>
   );

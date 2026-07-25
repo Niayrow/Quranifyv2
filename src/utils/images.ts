@@ -1,4 +1,4 @@
-import type { Reciter } from '../types';
+﻿import type { Reciter } from '../types';
 
 export const RECITER_IMAGES: Record<number, string> = {
   123: "https://upload.wikimedia.org/wikipedia/commons/e/e4/%D0%9C%D0%B8%D1%88%D0%B0%D1%80%D0%B8_%D0%A0%D0%B0%D1%88%D0%B8%D0%B4.jpg",
@@ -11,11 +11,11 @@ export const RECITER_IMAGES: Record<number, string> = {
 const AVATAR_PALETTES = [
   ['#0f766e', '#22c55e', '#f59e0b'],
   ['#155e75', '#06b6d4', '#fbbf24'],
-  ['#1d4ed8', '#38bdf8', '#34d399'],
+  ['#1d4ed8', '#38bdf8', '#8fa3b0'],
   ['#6d28d9', '#a78bfa', '#f59e0b'],
   ['#9f1239', '#fb7185', '#fbbf24'],
   ['#166534', '#4ade80', '#fde68a'],
-  ['#7c2d12', '#fb923c', '#34d399'],
+  ['#7c2d12', '#fb923c', '#8fa3b0'],
   ['#312e81', '#818cf8', '#22c55e'],
 ];
 

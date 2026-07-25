@@ -1,4 +1,4 @@
-import React from 'react';
+﻿import React from 'react';
 import { Cloud, Heart, Headphones, X, LogIn } from 'lucide-react';
 
 interface AuthPromptModalProps {
@@ -29,7 +29,7 @@ export const AuthPromptModal: React.FC<AuthPromptModalProps> = ({
       />
 
       <div className="relative z-10 w-full max-w-md overflow-hidden rounded-t-3xl sm:rounded-3xl border border-emerald-500/25 bg-slate-950 shadow-[0_20px_60px_rgba(0,0,0,0.55)] animate-[slide-up_0.28s_cubic-bezier(0.16,1,0.3,1)]">
-        <div className="absolute inset-0 bg-[radial-gradient(circle_at_20%_0%,rgba(16,185,129,0.18),transparent_50%)] pointer-events-none" />
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_20%_0%,rgba(122, 145, 159,0.18),transparent_50%)] pointer-events-none" />
 
         <div className="relative px-5 pt-4 pb-5">
           <div className="flex justify-center sm:hidden mb-3">

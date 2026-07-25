@@ -1,4 +1,4 @@
-import React from 'react';
+﻿import React from 'react';
 import type { Reciter } from '../types';
 import { useAudio } from '../context/AudioContext';
 import { Play, Volume2, Heart } from 'lucide-react';
@@ -51,7 +51,7 @@ export const ReciterCard: React.FC<ReciterCardProps> = ({
     return (
       <span>
         {before}
-        <span className="text-emerald-400 font-extrabold bg-emerald-400/10 px-0.5 rounded border-b border-emerald-500/30 shadow-[0_0_8px_rgba(16,185,129,0.2)]">
+        <span className="text-emerald-400 font-extrabold bg-emerald-400/10 px-0.5 rounded border-b border-emerald-500/30 shadow-[0_0_8px_rgba(122, 145, 159,0.2)]">
           {match}
         </span>
         {after}
@@ -78,7 +78,7 @@ export const ReciterCard: React.FC<ReciterCardProps> = ({
       }}
       className={`glass-panel-interactive content-visibility-auto cursor-pointer p-4 rounded-2xl flex items-center justify-between gap-4 tap-feedback relative overflow-hidden group ${
         isSelected
-          ? 'border-emerald-500/40 bg-slate-900/80 shadow-[0_0_20px_rgba(16,185,129,0.1)] ring-1 ring-emerald-500/20'
+          ? 'border-emerald-500/40 bg-slate-900/80 shadow-[0_0_20px_rgba(122, 145, 159,0.1)] ring-1 ring-emerald-500/20'
           : 'hover:border-slate-800'
       }`}
     >

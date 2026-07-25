@@ -275,16 +275,16 @@ export const GlobalPlayerV2: React.FC = () => {
       >
         {/* Integrated remote strip — part of the player (mobile + desktop) */}
         {remoteSession && !isExpanded && (
-          <div className="flex items-center gap-2 px-3 md:px-5 pt-2.5 md:pt-2.5 pb-1.5 md:pb-2 border-b border-emerald-500/15 bg-emerald-500/[0.07]">
+          <div className="flex items-center gap-2 px-3 md:px-5 pt-2.5 md:pt-2.5 pb-1.5 md:pb-2 border-b border-[#2dd4a0]/25 bg-[#2dd4a0]/[0.1]">
             <span className="relative flex h-2 w-2 shrink-0">
-              <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400/50" />
-              <span className="relative inline-flex h-2 w-2 rounded-full bg-emerald-400" />
+              <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-[#2dd4a0]/50" />
+              <span className="relative inline-flex h-2 w-2 rounded-full bg-[#2dd4a0]" />
             </span>
-            <MonitorSmartphone className="w-3.5 h-3.5 md:w-4 md:h-4 text-emerald-400 shrink-0" />
+            <MonitorSmartphone className="w-3.5 h-3.5 md:w-4 md:h-4 text-[#2dd4a0] shrink-0" />
             <div className="min-w-0 flex-1 leading-tight">
-              <p className="text-[11px] md:text-xs font-semibold text-emerald-100/95 truncate">
+              <p className="text-[11px] md:text-xs font-semibold text-slate-100 truncate">
                 {remoteTrackLabel || 'Autre appareil'}
-                <span className="font-mono text-emerald-300/90 tabular-nums font-medium">
+                <span className="font-mono text-[#6ee7b7] tabular-nums font-medium">
                   {' · '}{formatTime(liveRemotePos)}
                 </span>
               </p>
@@ -299,7 +299,7 @@ export const GlobalPlayerV2: React.FC = () => {
                 e.stopPropagation();
                 void takeOverRemoteSession();
               }}
-              className={`shrink-0 rounded-full px-2.5 md:px-3 py-1 md:py-1.5 text-[10px] md:text-[11px] font-bold text-slate-950 tap-feedback ${theme.accent}`}
+              className="shrink-0 rounded-full px-2.5 md:px-3 py-1 md:py-1.5 text-[10px] md:text-[11px] font-bold text-slate-950 bg-[#2dd4a0] hover:bg-[#34d399] tap-feedback"
             >
               Basculer ici
             </button>
@@ -581,16 +581,16 @@ export const GlobalPlayerV2: React.FC = () => {
           </div>
 
           {remoteSession && (
-            <div className="relative z-10 flex items-center gap-2.5 px-4 py-2.5 border-b border-emerald-500/15 bg-emerald-500/[0.07]">
+            <div className="relative z-10 flex items-center gap-2.5 px-4 py-2.5 border-b border-[#2dd4a0]/25 bg-[#2dd4a0]/[0.1]">
               <span className="relative flex h-2 w-2 shrink-0">
-                <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400/50" />
-                <span className="relative inline-flex h-2 w-2 rounded-full bg-emerald-400" />
+                <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-[#2dd4a0]/50" />
+                <span className="relative inline-flex h-2 w-2 rounded-full bg-[#2dd4a0]" />
               </span>
-              <MonitorSmartphone className="w-4 h-4 text-emerald-400 shrink-0" />
+              <MonitorSmartphone className="w-4 h-4 text-[#2dd4a0] shrink-0" />
               <div className="min-w-0 flex-1 leading-tight">
-                <p className="text-xs font-semibold text-emerald-100/95 truncate">
+                <p className="text-xs font-semibold text-slate-100 truncate">
                   {remoteTrackLabel || 'Autre appareil'}
-                  <span className="font-mono text-emerald-300/90 tabular-nums font-medium">
+                  <span className="font-mono text-[#6ee7b7] tabular-nums font-medium">
                     {' · '}{formatTime(liveRemotePos)}
                   </span>
                 </p>
@@ -604,7 +604,7 @@ export const GlobalPlayerV2: React.FC = () => {
                 onClick={() => {
                   void takeOverRemoteSession();
                 }}
-                className={`shrink-0 rounded-full px-3 py-1.5 text-[11px] font-bold text-slate-950 tap-feedback ${theme.accent}`}
+                className="shrink-0 rounded-full px-3 py-1.5 text-[11px] font-bold text-slate-950 bg-[#2dd4a0] hover:bg-[#34d399] tap-feedback"
               >
                 Basculer ici
               </button>

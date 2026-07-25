@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+﻿import React, { useState, useMemo } from 'react';
 import { useAudio } from '../context/AudioContext';
 import type { Surah } from '../types';
 import {
@@ -181,39 +181,50 @@ export const SurahList: React.FC<SurahListProps> = ({ onChooseReciter }) => {
                 key={surah.id}
                 className={`group relative p-3 min-[390px]:p-4 rounded-2xl flex items-center gap-2.5 transition-all duration-200 border ${
                   isCurrent
-                    ? 'border-emerald-500/40 bg-emerald-500/10 shadow-[0_8px_24px_rgba(16,185,129,0.15)] ring-1 ring-emerald-500/20'
+                    ? 'surah-row-active'
                     : isDimmed
                       ? 'border-slate-800/20 bg-slate-900/15 opacity-45'
                       : inLoop
-                        ? 'border-emerald-500/30 bg-emerald-500/5'
+                        ? 'border-[#2dd4a0]/20 bg-[#2dd4a0]/[0.04]'
                         : 'border-slate-800/40 bg-slate-900/30 hover:bg-slate-900/80 hover:border-slate-700/60'
                 }`}
               >
-                {isCurrent && (
-                  <div className="absolute left-0 top-1/2 -translate-y-1/2 w-1.5 h-1/2 bg-emerald-400 rounded-r-full shadow-[0_0_10px_rgba(16,185,129,0.8)]" />
-                )}
-
                 <button
                   type="button"
                   onClick={() => handlePlay(surah)}
                   className="flex items-center gap-3 min-w-0 flex-1 text-left tap-feedback"
                 >
                   <div className="relative flex items-center justify-center w-10 h-10 min-[390px]:w-11 min-[390px]:h-11 shrink-0">
-                    <div className={`absolute inset-0 rotate-45 rounded-lg border transition-all duration-500 ${
-                      isCurrent
-                        ? 'bg-emerald-500/20 border-emerald-400 shadow-[0_0_15px_rgba(16,185,129,0.3)] scale-105'
-                        : 'bg-slate-950 border-slate-700 group-hover:border-slate-500'
-                    }`} />
-                    <span className={`relative z-10 text-xs font-bold transition-colors ${
-                      isCurrent ? 'text-emerald-300' : 'text-slate-400 group-hover:text-slate-200'
-                    }`}>
+                    <div
+                      className={`absolute inset-0 rotate-45 rounded-lg border transition-all duration-500 ${
+                        isCurrent
+                          ? 'border-transparent bg-slate-950/80 shadow-[0_0_0_1px_rgba(45,212,160,0.35)]'
+                          : 'bg-slate-950 border-slate-700 group-hover:border-slate-500'
+                      }`}
+                      style={
+                        isCurrent
+                          ? {
+                              backgroundImage:
+                                'linear-gradient(rgba(15,23,42,0.92), rgba(15,23,42,0.92)), linear-gradient(135deg, rgba(45,212,160,0.65) 0%, rgba(45,212,160,0.4) 75%, rgba(255,255,255,0.45) 100%)',
+                              backgroundOrigin: 'border-box',
+                              backgroundClip: 'padding-box, border-box',
+                              border: '1px solid transparent',
+                            }
+                          : undefined
+                      }
+                    />
+                    <span
+                      className={`relative z-10 text-xs font-bold transition-colors ${
+                        isCurrent ? 'text-[#7decc4]' : 'text-slate-400 group-hover:text-slate-200'
+                      }`}
+                    >
                       {isBuffering ? (
-                        <div className="w-4 h-4 border-2 border-emerald-400 border-t-transparent rounded-full animate-spin" />
+                        <div className="w-4 h-4 border-2 border-[#2dd4a0]/80 border-t-transparent rounded-full animate-spin" />
                       ) : isPlaying ? (
                         <div className="flex gap-0.5 items-end justify-center h-3.5 w-3.5">
-                          <div className="w-0.5 bg-emerald-300 animate-[shimmer_0.6s_infinite_alternate] h-full rounded-full" style={{ animationDelay: '0.1s' }} />
-                          <div className="w-0.5 bg-emerald-300 animate-[shimmer_0.6s_infinite_alternate] h-2/3 rounded-full" style={{ animationDelay: '0.3s' }} />
-                          <div className="w-0.5 bg-emerald-300 animate-[shimmer_0.6s_infinite_alternate] h-full rounded-full" style={{ animationDelay: '0.5s' }} />
+                          <div className="w-0.5 bg-[#2dd4a0] animate-[shimmer_0.6s_infinite_alternate] h-full rounded-full" style={{ animationDelay: '0.1s' }} />
+                          <div className="w-0.5 bg-white/80 animate-[shimmer_0.6s_infinite_alternate] h-2/3 rounded-full" style={{ animationDelay: '0.3s' }} />
+                          <div className="w-0.5 bg-[#2dd4a0] animate-[shimmer_0.6s_infinite_alternate] h-full rounded-full" style={{ animationDelay: '0.5s' }} />
                         </div>
                       ) : (
                         surah.id
@@ -222,9 +233,11 @@ export const SurahList: React.FC<SurahListProps> = ({ onChooseReciter }) => {
                   </div>
 
                   <div className="min-w-0 flex-1 py-1">
-                    <h5 className={`font-bold text-base transition-colors ${
-                      isCurrent ? 'text-emerald-400' : 'text-slate-100 group-hover:text-emerald-400'
-                    }`}>
+                    <h5
+                      className={`font-bold text-base transition-colors ${
+                        isCurrent ? 'text-slate-50' : 'text-slate-100 group-hover:text-slate-50'
+                      }`}
+                    >
                       {surah.name}
                     </h5>
                     <p className="text-xs text-slate-400/80 truncate mt-0.5 font-medium">
@@ -232,9 +245,11 @@ export const SurahList: React.FC<SurahListProps> = ({ onChooseReciter }) => {
                     </p>
                   </div>
 
-                  <span className={`font-serif text-2xl tracking-wide select-none arabic-text transition-colors shrink-0 hidden min-[420px]:inline ${
-                    isCurrent ? 'text-emerald-400 drop-shadow-[0_0_8px_rgba(16,185,129,0.4)]' : 'text-slate-300 group-hover:text-slate-100'
-                  }`}>
+                  <span
+                    className={`font-serif text-2xl tracking-wide select-none arabic-text transition-colors shrink-0 hidden min-[420px]:inline ${
+                      isCurrent ? 'text-[#9ae6c8]' : 'text-slate-300 group-hover:text-slate-100'
+                    }`}
+                  >
                     {surah.arabicName}
                   </span>
                 </button>
@@ -244,8 +259,8 @@ export const SurahList: React.FC<SurahListProps> = ({ onChooseReciter }) => {
                   onClick={() => toggleInLoop(surah.id)}
                   className={`shrink-0 inline-flex items-center gap-1.5 h-9 px-2.5 rounded-full text-[11px] font-semibold tracking-wide transition-all tap-feedback ${
                     inLoop
-                      ? 'bg-emerald-500 text-slate-950 shadow-[0_0_14px_rgba(16,185,129,0.35)]'
-                      : 'bg-transparent text-slate-400 ring-1 ring-inset ring-slate-700/80 hover:text-emerald-300 hover:ring-emerald-500/40'
+                      ? 'bg-[#2dd4a0]/90 text-slate-950'
+                      : 'bg-transparent text-slate-400 ring-1 ring-inset ring-slate-700/80 hover:text-[#9ae6c8] hover:ring-[#2dd4a0]/35'
                   }`}
                   title={inLoop ? 'Retirer de la boucle' : 'Ajouter à la boucle de répétition'}
                   aria-pressed={inLoop}
@@ -260,9 +275,17 @@ export const SurahList: React.FC<SurahListProps> = ({ onChooseReciter }) => {
                   onClick={() => handlePlay(surah)}
                   className={`w-10 h-10 rounded-full flex items-center justify-center transition-all shrink-0 tap-feedback ${
                     isCurrent
-                      ? 'bg-emerald-500 text-slate-950 shadow-[0_0_15px_rgba(16,185,129,0.4)]'
-                      : 'bg-slate-800 text-slate-300 group-hover:text-slate-950 group-hover:bg-emerald-400 border border-slate-700'
+                      ? 'text-slate-950 shadow-[0_4px_14px_rgba(45,212,160,0.25)]'
+                      : 'bg-slate-800 text-slate-300 group-hover:text-slate-950 group-hover:bg-[#2dd4a0] border border-slate-700'
                   }`}
+                  style={
+                    isCurrent
+                      ? {
+                          background:
+                            'linear-gradient(135deg, #2dd4a0 0%, #34d399 72%, #f8fafc 100%)',
+                        }
+                      : undefined
+                  }
                   aria-label={isPlaying ? 'Pause' : 'Lire'}
                 >
                   {isPlaying ? (

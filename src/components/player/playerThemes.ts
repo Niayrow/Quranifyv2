@@ -1,4 +1,4 @@
-export type PlayerThemeId = 'emerald' | 'amber' | 'blue' | 'purple' | 'oled';
+﻿export type PlayerThemeId = 'emerald' | 'amber' | 'blue' | 'purple' | 'oled';
 
 export interface PlayerThemeTokens {
   name: string;
@@ -19,7 +19,7 @@ export interface PlayerThemeTokens {
 
 export const PLAYER_THEMES: Record<PlayerThemeId, PlayerThemeTokens> = {
   emerald: {
-    name: 'Spiritual Émeraude',
+    name: 'Acier Marine',
     accent: 'bg-emerald-500 hover:bg-emerald-400',
     accentText: 'text-emerald-400',
     accentTextHover: 'hover:text-emerald-400',
@@ -30,10 +30,10 @@ export const PLAYER_THEMES: Record<PlayerThemeId, PlayerThemeTokens> = {
     accentRing: 'ring-emerald-500/20',
     accentShadow: 'shadow-emerald-500/20',
     accentGlow: 'from-emerald-500/5',
-    glowDisc: 'text-emerald-400 drop-shadow-[0_0_8px_rgba(52,211,153,0.5)]',
-    sliderAccentColor: '#10b981',
+    glowDisc: 'text-emerald-400 drop-shadow-[0_0_8px_rgba(122,145,159,0.35)]',
+    sliderAccentColor: '#7a919f',
     sliderBackground: (percent) =>
-      `linear-gradient(to right, #10b981 0%, #10b981 ${percent}%, #1e293b ${percent}%, #1e293b 100%)`,
+      `linear-gradient(to right, #7a919f 0%, #7a919f ${percent}%, #1e293b ${percent}%, #1e293b 100%)`,
   },
   amber: {
     name: 'Or Sacré',

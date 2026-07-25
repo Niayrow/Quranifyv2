@@ -1,11 +1,11 @@
-import React, { useEffect, useState, useMemo, lazy, Suspense, useDeferredValue, useCallback, useRef } from 'react';
+﻿import React, { useEffect, useState, useMemo, lazy, Suspense, useDeferredValue, useCallback, useRef } from 'react';
 import { useAudio, AudioProvider } from './context/AudioContext';
 import { AuthProvider } from './context/AuthContext';
 import { ReciterCard } from './components/ReciterCard';
 import { Navbar } from './components/Navbar';
 import { 
-  Search, Heart, AlertTriangle, Crown, Headphones, Play, ArrowRight, BookOpenText,
-  Bookmark, Download, GitCompare, Sparkles, Disc
+  Search, Heart, AlertTriangle, Headphones, Play, ArrowRight, BookOpenText,
+  Bookmark, Download, Disc, ExternalLink
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import type { Reciter } from './types';
@@ -85,17 +85,8 @@ const getInitialTab = (): TabId => {
   return mapLegacyTab(tab);
 };
 
-const FEATURED_RECITER_IDS = [123, 54, 31, 30, 102, 5, 112, 118];
-const FEATURED_RECITER_COPY: Record<number, { badge: string; note: string }> = {
-  123: { badge: 'Top mondial', note: 'Voix moderne, claire et très écoutée' },
-  54: { badge: 'Imam de La Mecque', note: 'Récitation iconique du Haram' },
-  31: { badge: 'Grand classique', note: 'Voix puissante, très connue en prière' },
-  30: { badge: 'Très demandé', note: 'Lecture douce, stable et facile à suivre' },
-  102: { badge: 'Voix majeure', note: 'Ton posé, fluide et reconnaissable' },
-  5: { badge: 'Style marquant', note: 'Récitation expressive et populaire' },
-  112: { badge: 'Classique égyptien', note: 'Style profond et récitation historique' },
-  118: { badge: 'Référence tajwid', note: 'École lente, précise et pédagogique' },
-};
+const FEATURED_RECITER_IDS = [123, 54, 31, 30, 102, 5];
+const GOMUSLIMLIFE_URL = 'https://gomuslimlife.com';
 
 // Dictionary of phonetic synonyms & aliases for the most famous reciters
 const RECITER_ALIASES: Record<number, string[]> = {
@@ -313,16 +304,16 @@ const LoadingHome: React.FC<{ progress: number; reciterCount: number }> = ({ pro
 
   return (
     <div className="min-h-[100dvh] w-full bg-slate-950 text-slate-100 flex items-center justify-center px-6 py-10 overflow-hidden">
-      <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_0%,rgba(16,185,129,0.12),transparent_45%),radial-gradient(circle_at_10%_90%,rgba(245,158,11,0.06),transparent_35%)] pointer-events-none" />
+      <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_0%,rgba(100,116,139,0.1),transparent_45%),radial-gradient(circle_at_10%_90%,rgba(71,85,105,0.08),transparent_35%)] pointer-events-none" />
       <main className="relative w-full max-w-sm flex flex-col items-center text-center gap-8">
         <div className="flex flex-col items-center gap-4">
           <img
             src="/icons/logo.png"
             alt="Quranify"
-            className="w-32 h-32 object-contain drop-shadow-[0_0_24px_rgba(16,185,129,0.35)]"
+            className="w-32 h-32 object-contain drop-shadow-[0_0_24px_rgba(0,0,0,0.45)]"
           />
           <div>
-            <h1 className="text-3xl font-black tracking-tight text-emerald-100 m-0">QURANIFY</h1>
+            <h1 className="text-3xl font-black tracking-tight text-slate-100 m-0">QURANIFY</h1>
             <p className="text-[11px] tracking-[0.22em] text-slate-400 font-bold uppercase mt-1">
               Lecteur Coranique Premium
             </p>
@@ -332,11 +323,11 @@ const LoadingHome: React.FC<{ progress: number; reciterCount: number }> = ({ pro
         <div className="w-full flex flex-col gap-4">
           <div className="flex items-center justify-between text-xs font-bold uppercase tracking-widest text-slate-400">
             <span>{statusText}</span>
-            <span className="text-emerald-400">{Math.round(progress)}%</span>
+            <span className="text-slate-300">{Math.round(progress)}%</span>
           </div>
           <div className="h-3 w-full rounded-full bg-slate-900 border border-slate-800 overflow-hidden shadow-inner">
             <div
-              className="h-full rounded-full bg-gradient-to-r from-emerald-500 via-emerald-300 to-amber-400 transition-[width] duration-500 ease-out shadow-[0_0_18px_rgba(16,185,129,0.45)]"
+              className="h-full rounded-full bg-gradient-to-r from-slate-500 via-slate-400 to-slate-300 transition-[width] duration-500 ease-out"
               style={{ width: `${progress}%` }}
             />
           </div>
@@ -365,34 +356,6 @@ const LoadingHome: React.FC<{ progress: number; reciterCount: number }> = ({ pro
   );
 };
 
-interface ShortcutCardProps {
-  title: string;
-  description: string;
-  icon: LucideIcon;
-  onClick: () => void;
-}
-
-const ShortcutCard: React.FC<ShortcutCardProps> = ({ title, description, icon: Icon, onClick }) => (
-  <button
-    onClick={onClick}
-    className="group rounded-2xl border border-slate-800/80 bg-slate-900/55 p-4 text-left transition-all hover:border-emerald-500/35 hover:bg-slate-900/80 tap-feedback"
-  >
-    <div className="flex items-start justify-between gap-3">
-      <div>
-        <h3 className="text-sm font-black text-slate-100">{title}</h3>
-        <p className="mt-1 text-xs leading-relaxed text-slate-400">{description}</p>
-      </div>
-      <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-emerald-500/10 text-emerald-300">
-        <Icon className="h-4.5 w-4.5" />
-      </span>
-    </div>
-    <span className="mt-4 inline-flex items-center gap-1 text-[11px] font-black uppercase tracking-wider text-emerald-400">
-      Ouvrir
-      <ArrowRight className="h-3.5 w-3.5 transition-transform group-hover:translate-x-0.5" />
-    </span>
-  </button>
-);
-
 interface ProductPriorityCardProps {
   title: string;
   summary: string;
@@ -415,71 +378,48 @@ const ProductPriorityCard: React.FC<ProductPriorityCardProps> = ({ title, summar
   </div>
 );
 
-interface FeaturedReciterCardProps {
+interface HomeFeaturedReciterProps {
   reciter: Reciter;
   isSelected: boolean;
   onSelect: () => void;
 }
 
-const FeaturedReciterCard: React.FC<FeaturedReciterCardProps> = ({ reciter, isSelected, onSelect }) => {
-  const profile = FEATURED_RECITER_COPY[reciter.id] || {
-    badge: 'Récitateur reconnu',
-    note: 'Sélection recommandée pour commencer',
-  };
+const HomeFeaturedReciter: React.FC<HomeFeaturedReciterProps> = ({ reciter, isSelected, onSelect }) => {
   const imageUrl = getReciterImage(reciter);
   const fallbackImage = getGeneratedReciterAvatar(reciter);
-  const moshaf = reciter.moshaf.find((item) => item.surah_list.split(',').length >= 100) || reciter.moshaf[0];
-  const surahCount = moshaf?.surah_list.split(',').length || 0;
 
   return (
     <button
+      type="button"
       onClick={onSelect}
-      className={`group relative overflow-hidden rounded-2xl border p-4 text-left transition-all tap-feedback ${
+      className={`shrink-0 w-[6.5rem] flex flex-col items-center gap-2.5 rounded-2xl p-2.5 text-center transition-all tap-feedback ${
         isSelected
-          ? 'border-emerald-500/50 bg-emerald-500/10 shadow-[0_12px_28px_rgba(16,185,129,0.16)]'
-          : 'border-slate-800/70 bg-slate-900/55 hover:border-emerald-500/35 hover:bg-slate-900/85'
+          ? 'bg-emerald-500/15 ring-1 ring-emerald-400/40'
+          : 'hover:bg-slate-900/70'
       }`}
     >
-      <div className="absolute inset-0 bg-[radial-gradient(circle_at_20%_0%,rgba(16,185,129,0.14),transparent_38%)] opacity-70 pointer-events-none" />
-      <div className="relative flex gap-4">
-        <div className="w-20 h-20 shrink-0 rounded-2xl overflow-hidden border border-slate-700/70 bg-slate-950 shadow-xl">
-          <img
-            src={imageUrl}
-            alt={reciter.name}
-            width="80"
-            height="80"
-            loading="lazy"
-            decoding="async"
-            className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
-            onError={(e) => {
-              const img = e.currentTarget;
-              if (img.src !== fallbackImage) {
-                img.src = fallbackImage;
-              }
-            }}
-          />
-        </div>
-
-        <div className="min-w-0 flex-1">
-          <div className="flex items-center gap-2 mb-2">
-            <span className="inline-flex items-center gap-1 rounded-full bg-amber-400/10 border border-amber-400/20 px-2 py-0.5 text-[10px] font-black uppercase tracking-widest text-amber-300">
-              <Crown className="w-3 h-3" />
-              {profile.badge}
-            </span>
-          </div>
-          <h3 className="text-base font-black text-slate-100 leading-tight truncate">{reciter.name}</h3>
-          <p className="text-xs text-slate-400 mt-1 leading-snug line-clamp-2">{profile.note}</p>
-          <div className="mt-3 flex items-center justify-between gap-3">
-            <span className="inline-flex items-center gap-1.5 text-[11px] font-semibold text-emerald-300">
-              <Headphones className="w-3.5 h-3.5" />
-              {surahCount} sourates
-            </span>
-            <span className="w-9 h-9 rounded-full bg-emerald-500 text-slate-950 flex items-center justify-center shadow-lg shadow-emerald-500/20">
-              <Play className="w-4 h-4 fill-current ml-0.5" />
-            </span>
-          </div>
-        </div>
-      </div>
+      <span className={`relative h-16 w-16 overflow-hidden rounded-full border-2 bg-slate-950 ${
+        isSelected ? 'border-emerald-400 shadow-[0_0_16px_rgba(122, 145, 159,0.35)]' : 'border-slate-700'
+      }`}>
+        <img
+          src={imageUrl}
+          alt=""
+          width="64"
+          height="64"
+          loading="lazy"
+          decoding="async"
+          className="h-full w-full object-cover"
+          onError={(e) => {
+            const img = e.currentTarget;
+            if (img.src !== fallbackImage) img.src = fallbackImage;
+          }}
+        />
+      </span>
+      <span className={`w-full text-[11px] font-semibold leading-tight line-clamp-2 ${
+        isSelected ? 'text-emerald-300' : 'text-slate-300'
+      }`}>
+        {reciter.name}
+      </span>
     </button>
   );
 };
@@ -493,7 +433,9 @@ const AppContent: React.FC = () => {
     activeMoshaf,
     setActiveReciter,
     setActiveMoshaf,
-    currentTrack
+    currentTrack,
+    playbackStatus,
+    play,
   } = useAudio();
   const { user, loading: authLoading } = useAuth();
 
@@ -744,6 +686,20 @@ const AppContent: React.FC = () => {
     }, 80);
   };
 
+  const handleResumeListening = () => {
+    if (!currentTrack) {
+      handleNavigate('listen');
+      return;
+    }
+    setActiveReciter(currentTrack.reciter);
+    setActiveMoshaf(currentTrack.moshaf);
+    setActiveTab('listen');
+    setListenStep('surahs');
+    if (playbackStatus !== 'playing') {
+      play();
+    }
+  };
+
   const activeCategory = categoryModalId ? getReciterCategory(categoryModalId) : undefined;
 
   const handleChangeReciter = () => {
@@ -783,21 +739,15 @@ const AppContent: React.FC = () => {
         onClose={dismissAuthPrompt}
         onConnect={openAuthFromPrompt}
       />
-      {/* 1. App Header with Gold and Emerald Accents */}
-      <header className="mb-6 flex items-center justify-between">
+      {/* 1. App Header */}
+      <header className="mb-6 flex items-center">
         <div className="flex items-center">
           <h1 className="sr-only">Quranify — Lecteur Coranique Premium</h1>
           <img
             src="/icons/logo.png"
             alt="Quranify"
-            className="h-16 w-auto object-contain drop-shadow-[0_0_16px_rgba(16,185,129,0.35)]"
+            className="h-16 w-auto object-contain drop-shadow-[0_0_16px_rgba(122, 145, 159,0.35)]"
           />
-        </div>
-
-        {/* Sync Status Badge */}
-        <div className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-slate-900/60 border border-slate-800 text-[10px] font-bold text-emerald-400">
-          <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
-          API V3 En Ligne
         </div>
       </header>
 
@@ -806,71 +756,157 @@ const AppContent: React.FC = () => {
         <div key={activeTab} className="animate-page-enter flex flex-col gap-5">
         
         {activeTab === 'home' && (
-          <div className="flex flex-col gap-5">
-            <section className="glass-panel rounded-3xl border border-emerald-500/15 bg-[radial-gradient(circle_at_top,rgba(16,185,129,0.16),transparent_50%)] p-5">
-              <div className="flex items-start justify-between gap-4">
-                <div className="min-w-0">
-                  <span className="inline-flex items-center gap-2 rounded-full border border-emerald-400/20 bg-emerald-400/10 px-3 py-1 text-[10px] font-black uppercase tracking-widest text-emerald-300">
-                    <Sparkles className="h-3.5 w-3.5" />
-                    Démarrage rapide
-                  </span>
-                  <h2 className="mt-3 text-xl font-black text-slate-100">Accueil Quranify</h2>
-                  <p className="mt-2 max-w-md text-sm leading-relaxed text-slate-400">
-                    Reprenez votre lecture ou choisissez une voix connue — le catalogue complet est dans Écouter.
-                  </p>
-                </div>
-              </div>
+          <div className="flex flex-col gap-7 pb-16 sm:pb-20">
+            <section className="relative overflow-hidden rounded-3xl border border-white/[0.08] shadow-[0_20px_50px_-28px_rgba(0,0,0,0.55)]">
+              <div
+                className="absolute inset-0 bg-[linear-gradient(145deg,#0a1220_0%,#0f172a_45%,#0a1628_100%)]"
+                aria-hidden="true"
+              />
+              <div
+                className="absolute -top-16 -right-10 h-44 w-44 rounded-full bg-slate-500/15 blur-3xl"
+                aria-hidden="true"
+              />
+              <div
+                className="absolute -bottom-20 -left-12 h-40 w-40 rounded-full bg-slate-600/10 blur-3xl"
+                aria-hidden="true"
+              />
+              <div
+                className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-slate-400/25 to-transparent"
+                aria-hidden="true"
+              />
 
-              <div className="mt-5 grid grid-cols-1 gap-3 sm:grid-cols-2">
-                <ShortcutCard
-                  title={currentTrack ? 'Reprendre la lecture' : 'Commencer à écouter'}
-                  description={currentTrack
-                    ? `${currentTrack.surah.name} avec ${currentTrack.reciter.name}`
-                    : activeReciter
-                      ? `Retourner aux sourates de ${activeReciter.name}`
-                      : 'Choisissez un récitateur puis une sourate.'}
-                  icon={Play}
-                  onClick={() => handleNavigate('listen')}
-                />
-                <ShortcutCard
-                  title="Comparer deux récitateurs"
-                  description="Basculez entre deux voix sur la même sourate depuis l'espace Plus."
-                  icon={GitCompare}
-                  onClick={() => handleNavigate('more', 'compare')}
-                />
+              <div className="relative z-10 px-5 py-6 sm:px-7 sm:py-7">
+                <p className="font-serif text-xl text-slate-300/80 arabic-text leading-none select-none" dir="rtl">
+                  القرآن الكريم
+                </p>
+                <h2 className="mt-2.5 text-3xl sm:text-[2.15rem] font-black tracking-tight text-white">
+                  Quranify
+                </h2>
+                <p className="mt-2 max-w-md text-[13px] leading-relaxed text-slate-400">
+                  Écoutez le Coran avec les plus belles voix, où que vous soyez.
+                </p>
+
+                <div className="mt-5 flex flex-col gap-2.5">
+                  <button
+                    type="button"
+                    onClick={() => handleNavigate('listen')}
+                    className="group w-full inline-flex items-center justify-center gap-2 rounded-2xl bg-gradient-to-b from-slate-200 to-slate-300 px-5 py-3 text-[13px] font-bold text-slate-950 shadow-[0_8px_24px_rgba(0,0,0,0.35)] hover:from-white hover:to-slate-200 transition-all tap-feedback"
+                  >
+                    <Headphones className="h-4 w-4" />
+                    Écouter maintenant
+                    <ArrowRight className="h-3.5 w-3.5 transition-transform group-hover:translate-x-0.5" />
+                  </button>
+
+                  {currentTrack && (
+                    <button
+                      type="button"
+                      onClick={handleResumeListening}
+                      className="w-full inline-flex items-center gap-3 rounded-2xl border border-white/[0.08] bg-white/[0.04] px-3.5 py-2.5 text-left hover:bg-white/[0.07] transition-colors tap-feedback"
+                    >
+                      <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-slate-200 text-slate-950">
+                        <Play className="h-3.5 w-3.5 fill-current ml-0.5" />
+                      </span>
+                      <span className="min-w-0 flex-1">
+                        <span className="block text-[9px] font-bold uppercase tracking-[0.14em] text-slate-400">
+                          Continuer
+                        </span>
+                        <span className="block text-[13px] font-semibold text-slate-100 truncate">
+                          {currentTrack.surah.name}
+                          <span className="font-normal text-slate-400"> · {currentTrack.reciter.name}</span>
+                        </span>
+                      </span>
+                    </button>
+                  )}
+
+                  <div className="grid grid-cols-2 gap-2 mt-0.5">
+                    <button
+                      type="button"
+                      disabled
+                      aria-disabled="true"
+                      title="Bientôt disponible sur l’App Store"
+                      className="relative flex items-center gap-2.5 overflow-hidden rounded-2xl border border-white/[0.1] bg-gradient-to-b from-white/[0.08] to-white/[0.02] px-3 py-2.5 text-left cursor-not-allowed"
+                    >
+                      <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-slate-950/60 text-slate-100 ring-1 ring-white/10">
+                        <svg viewBox="0 0 24 24" className="h-4 w-4 fill-current" aria-hidden="true">
+                          <path d="M18.71 19.5C17.88 20.74 17 21.95 15.66 21.97C14.32 22 13.89 21.18 12.37 21.18C10.84 21.18 10.37 21.95 9.1 22C7.79 22.05 6.8 20.68 5.96 19.47C4.25 16.76 2.93 11.84 4.7 8.55C5.57 6.91 7.24 5.95 9.03 5.9C10.32 5.86 11.53 6.79 12.3 6.79C13.06 6.79 14.54 5.7 16.14 5.87C16.82 5.9 18.69 6.15 19.9 7.9C19.8 7.97 17.23 9.5 17.27 12.53C17.32 16.07 20.33 17.27 20.4 17.3C20.36 17.42 19.91 18.98 18.71 19.5ZM13 3.5C13.73 2.67 14.94 2.04 15.94 2C16.07 3.17 15.6 4.35 14.9 5.19C14.21 6.04 13.07 6.7 11.95 6.61C11.8 5.46 12.36 4.26 13 3.5Z" />
+                        </svg>
+                      </span>
+                      <span className="min-w-0">
+                        <span className="block text-[9px] font-medium text-slate-400">App Store</span>
+                        <span className="block text-xs font-semibold text-slate-200">Bientôt</span>
+                      </span>
+                      <span className="absolute top-1.5 right-1.5 rounded-full bg-amber-400/15 px-1.5 py-0.5 text-[8px] font-bold uppercase tracking-wide text-amber-200/90">
+                        Soon
+                      </span>
+                    </button>
+
+                    <button
+                      type="button"
+                      disabled
+                      aria-disabled="true"
+                      title="Bientôt disponible sur Google Play"
+                      className="relative flex items-center gap-2.5 overflow-hidden rounded-2xl border border-white/[0.1] bg-gradient-to-b from-white/[0.08] to-white/[0.02] px-3 py-2.5 text-left cursor-not-allowed"
+                    >
+                      <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-slate-950/60 text-slate-100 ring-1 ring-white/10">
+                        <svg viewBox="0 0 24 24" className="h-4 w-4 fill-current" aria-hidden="true">
+                          <path d="M3.18 23.04c-.34-.17-.55-.5-.55-.88V1.84c0-.38.21-.71.55-.88l10.8 11.04L3.18 23.04zm12.04-7.13l-2.45-2.5 2.45-2.5 4.66 2.66c.55.31.55 1.07 0 1.38l-4.66.96zm.7-8.3L4.14.4C4.4.25 4.73.22 5.02.36l12.46 7.12-1.56 1.13zM5.02 23.64c-.29.14-.62.11-.88-.04l11.9-7.25 1.56 1.13L5.02 23.64z" />
+                        </svg>
+                      </span>
+                      <span className="min-w-0">
+                        <span className="block text-[9px] font-medium text-slate-400">Google Play</span>
+                        <span className="block text-xs font-semibold text-slate-200">Bientôt</span>
+                      </span>
+                      <span className="absolute top-1.5 right-1.5 rounded-full bg-amber-400/15 px-1.5 py-0.5 text-[8px] font-bold uppercase tracking-wide text-amber-200/90">
+                        Soon
+                      </span>
+                    </button>
+                  </div>
+
+                  <a
+                    href={GOMUSLIMLIFE_URL}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="mt-0.5 w-full inline-flex items-center justify-center gap-2 rounded-2xl border border-white/[0.08] bg-transparent px-4 py-2.5 text-[12px] font-semibold text-slate-300 hover:text-slate-100 hover:border-white/20 hover:bg-white/[0.04] transition-all tap-feedback"
+                  >
+                    Apprenez-en plus sur votre religion
+                    <ExternalLink className="h-3.5 w-3.5 opacity-60" />
+                  </a>
+                </div>
               </div>
             </section>
 
-            {isLoadingReciters ? (
-              <RecitersLoadingSkeleton />
-            ) : featuredReciters.length > 0 && (
-              <section className="flex flex-col gap-3">
-                <div className="flex items-end justify-between gap-3">
-                  <div>
-                    <h2 className="text-lg font-black text-slate-100 flex items-center gap-2">
-                      <Crown className="w-5 h-5 text-amber-400" />
-                      Grands récitateurs
-                    </h2>
-                    <p className="text-xs text-slate-400 mt-1">
-                      1 clic pour ouvrir leurs sourates.
-                    </p>
-                  </div>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setActiveTab('listen');
-                      setListenStep('reciters');
-                    }}
-                    className="hidden min-[390px]:inline-flex items-center gap-1 text-[10px] font-black uppercase tracking-widest text-emerald-400 bg-emerald-400/10 border border-emerald-400/20 rounded-full px-3 py-1"
-                  >
-                    Tous les récitateurs
-                    <ArrowRight className="h-3.5 w-3.5" />
-                  </button>
+            <section className="flex flex-col gap-3">
+              <div className="flex items-end justify-between gap-3 px-0.5">
+                <div>
+                  <h3 className="text-sm font-bold text-slate-100">Voix recommandées</h3>
+                  <p className="text-xs text-slate-500 mt-0.5">Un appui pour ouvrir leurs sourates.</p>
                 </div>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setActiveTab('listen');
+                    setListenStep('reciters');
+                  }}
+                  className="text-[11px] font-semibold text-slate-300 hover:text-slate-100 inline-flex items-center gap-1"
+                >
+                  Tous
+                  <ArrowRight className="h-3.5 w-3.5" />
+                </button>
+              </div>
 
-                <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
+              {isLoadingReciters ? (
+                <div className="flex gap-2 overflow-hidden px-0.5">
+                  {Array.from({ length: 5 }).map((_, i) => (
+                    <div key={i} className="shrink-0 w-[6.5rem] flex flex-col items-center gap-2.5 p-2.5">
+                      <div className="h-16 w-16 rounded-full bg-slate-800/80 animate-pulse" />
+                      <div className="h-3 w-14 rounded bg-slate-800/80 animate-pulse" />
+                    </div>
+                  ))}
+                </div>
+              ) : featuredReciters.length > 0 ? (
+                <div className="-mx-1 flex gap-1 overflow-x-auto px-1 pb-1 scrollbar-thin scrollbar-thumb-slate-800 scrollbar-track-transparent">
                   {featuredReciters.map((reciter) => (
-                    <FeaturedReciterCard
+                    <HomeFeaturedReciter
                       key={reciter.id}
                       reciter={reciter}
                       isSelected={activeReciter?.id === reciter.id}
@@ -878,8 +914,8 @@ const AppContent: React.FC = () => {
                     />
                   ))}
                 </div>
-              </section>
-            )}
+              ) : null}
+            </section>
           </div>
         )}
 
@@ -1123,7 +1159,7 @@ const AppContent: React.FC = () => {
 
         {/* 2.2 Tab Favorites View */}
         {activeTab === 'favorites' && (
-          <div className="flex flex-col gap-5">
+          <div className="flex flex-col gap-5 pb-16 sm:pb-20">
             <h2 className="text-lg font-bold text-slate-200 flex items-center gap-2">
               <Heart className="w-5 h-5 text-red-500 fill-current" />
               Vos Récitateurs Favoris

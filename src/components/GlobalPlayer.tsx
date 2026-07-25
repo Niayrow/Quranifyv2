@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useEffect, useRef } from 'react';
+﻿import React, { useState, useMemo, useEffect, useRef } from 'react';
 import { useAudio } from '../context/AudioContext';
 import { 
   Play, Pause, SkipForward, SkipBack, 
@@ -25,7 +25,7 @@ const THEMES: Record<string, {
   sliderBackground: (percent: number) => string;
 }> = {
   emerald: {
-    name: 'Spiritual Émeraude',
+    name: 'Acier Marine',
     accent: 'bg-emerald-500 hover:bg-emerald-400',
     accentText: 'text-emerald-400',
     accentTextHover: 'hover:text-emerald-400',
@@ -36,9 +36,9 @@ const THEMES: Record<string, {
     accentRing: 'ring-emerald-500/20',
     accentShadow: 'shadow-emerald-500/20',
     accentGlow: 'from-emerald-500/5',
-    glowDisc: 'text-emerald-400 drop-shadow-[0_0_8px_rgba(52,211,153,0.5)]',
-    sliderAccentColor: '#10b981',
-    sliderBackground: (percent) => `linear-gradient(to right, #10b981 0%, #10b981 ${percent}%, #1e293b ${percent}%, #1e293b 100%)`
+    glowDisc: 'text-emerald-400 drop-shadow-[0_0_8px_rgba(122,145,159,0.35)]',
+    sliderAccentColor: '#7a919f',
+    sliderBackground: (percent) => `linear-gradient(to right, #7a919f 0%, #7a919f ${percent}%, #1e293b ${percent}%, #1e293b 100%)`
   },
   amber: {
     name: 'Or Sacré',
@@ -243,7 +243,7 @@ export const GlobalPlayer: React.FC = () => {
         {/* Mobile top progress bar */}
         <div className="absolute top-0 left-0 right-0 h-0.5 bg-slate-900/60 md:hidden">
           <div 
-            className={`h-full ${theme.accent} transition-all duration-100 ease-linear shadow-[0_0_8px_rgba(16,185,129,0.8)]`}
+            className={`h-full ${theme.accent} transition-all duration-100 ease-linear shadow-[0_0_8px_rgba(122, 145, 159,0.8)]`}
             style={{ width: `${progressPercent}%`, backgroundColor: theme.sliderAccentColor }}
           />
         </div>

@@ -1,4 +1,4 @@
-import type { LucideIcon } from 'lucide-react';
+﻿import type { LucideIcon } from 'lucide-react';
 import { Landmark, MoonStar, Building2, Sparkles } from 'lucide-react';
 
 export type ReciterCategoryId = 'makkah' | 'madinah' | 'riyadh' | 'quranify';
@@ -62,7 +62,7 @@ export const RECITER_CATEGORIES: ReciterCategory[] = [
     accent: {
       border: 'border-emerald-400/35',
       bg: 'bg-gradient-to-br from-emerald-500/15 via-slate-900/80 to-slate-950',
-      glow: 'shadow-[0_12px_40px_rgba(16,185,129,0.18)]',
+      glow: 'shadow-[0_12px_40px_rgba(122, 145, 159,0.18)]',
       text: 'text-emerald-300',
       badge: 'bg-emerald-400/10 border-emerald-400/25 text-emerald-300',
       iconBg: 'bg-emerald-400/15 text-emerald-300',

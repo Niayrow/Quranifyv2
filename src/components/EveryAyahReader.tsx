@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useEffect, useRef, useCallback } from 'react';
+﻿import React, { useState, useMemo, useEffect, useRef, useCallback } from 'react';
 import type { Surah } from '../types';
 import { SURAHS } from '../data/surahs';
 import { useSurahVerses } from '../hooks/useSurahVerses';
@@ -393,7 +393,7 @@ export const EveryAyahReader: React.FC = () => {
           onClick={() => setIsAyatAlKursiMode(false)}
           className={`flex-1 py-2.5 rounded-xl text-xs font-black uppercase tracking-wider transition-all ${
             !isAyatAlKursiMode
-              ? 'bg-emerald-500 text-slate-950 shadow-[0_0_12px_rgba(16,185,129,0.25)] font-extrabold'
+              ? 'bg-emerald-500 text-slate-950 shadow-[0_0_12px_rgba(122, 145, 159,0.25)] font-extrabold'
               : 'text-slate-400 hover:text-slate-200'
           }`}
         >
@@ -403,7 +403,7 @@ export const EveryAyahReader: React.FC = () => {
           onClick={() => setIsAyatAlKursiMode(true)}
           className={`flex-1 py-2.5 rounded-xl text-xs font-black uppercase tracking-wider transition-all flex items-center justify-center gap-1.5 ${
             isAyatAlKursiMode
-              ? 'bg-emerald-500 text-slate-950 shadow-[0_0_12px_rgba(16,185,129,0.25)] font-extrabold'
+              ? 'bg-emerald-500 text-slate-950 shadow-[0_0_12px_rgba(122, 145, 159,0.25)] font-extrabold'
               : 'text-slate-400 hover:text-slate-200'
           }`}
         >
@@ -537,7 +537,7 @@ export const EveryAyahReader: React.FC = () => {
                           pauseMainPlayer();
                           everyAyahPlayer.togglePlayback();
                         }}
-                        className="flex h-11 w-11 items-center justify-center rounded-full bg-emerald-500 text-slate-950 shadow-[0_0_15px_rgba(16,185,129,0.3)] transition-colors hover:bg-emerald-400"
+                        className="flex h-11 w-11 items-center justify-center rounded-full bg-emerald-500 text-slate-950 shadow-[0_0_15px_rgba(122, 145, 159,0.3)] transition-colors hover:bg-emerald-400"
                         title="Lecture EveryAyah"
                       >
                         {everyAyahPlayer.playbackStatus === 'playing' ? (
@@ -591,7 +591,7 @@ export const EveryAyahReader: React.FC = () => {
                         ref={isActiveVerse ? activeVerseRef : null}
                         className={`rounded-2xl border px-4 py-4 transition-all ${
                           isActiveVerse
-                            ? 'border-emerald-500/40 bg-emerald-500/10 shadow-[0_10px_24px_rgba(16,185,129,0.15)]'
+                            ? 'border-emerald-500/40 bg-emerald-500/10 shadow-[0_10px_24px_rgba(122, 145, 159,0.15)]'
                             : isPastVerse
                               ? 'border-slate-800/50 bg-slate-900/60'
                               : 'border-slate-800/40 bg-slate-950/40'
@@ -699,7 +699,7 @@ export const EveryAyahReader: React.FC = () => {
               <>
                 {/* Arabic */}
                 <div className="py-4">
-                  <p className="text-right font-serif leading-[2.5] text-3xl text-emerald-100 drop-shadow-[0_0_12px_rgba(16,185,129,0.2)] arabic-text select-none">
+                  <p className="text-right font-serif leading-[2.5] text-3xl text-emerald-100 drop-shadow-[0_0_12px_rgba(122, 145, 159,0.2)] arabic-text select-none">
                     {AYAT_AL_KURSI.arabicText}
                   </p>
                 </div>
@@ -737,14 +737,14 @@ export const EveryAyahReader: React.FC = () => {
                       onClick={() => ayatAlKursiPlayer.seekToPercent(seg.startPercent)}
                       className={`p-4 rounded-2xl border flex flex-col gap-3 relative cursor-pointer transition-all duration-300 transform ${
                         isActiveSegment
-                          ? 'border-emerald-500 bg-emerald-950/20 shadow-[0_4px_20px_rgba(16,185,129,0.15)] scale-[1.01]'
+                          ? 'border-emerald-500 bg-emerald-950/20 shadow-[0_4px_20px_rgba(122, 145, 159,0.15)] scale-[1.01]'
                           : 'border-slate-850 bg-slate-900/10 hover:border-slate-700/50 hover:bg-slate-900/20'
                       }`}
                     >
                       <div className="flex items-center justify-between">
                         <span className={`w-5 h-5 rounded-full text-[10px] font-black flex items-center justify-center transition-all ${
                           isActiveSegment
-                            ? 'bg-emerald-500 text-slate-950 shadow-[0_0_10px_rgba(16,185,129,0.5)] font-bold'
+                            ? 'bg-emerald-500 text-slate-950 shadow-[0_0_10px_rgba(122, 145, 159,0.5)] font-bold'
                             : 'bg-emerald-500/15 border border-emerald-400/20 text-emerald-300'
                         }`}>
                           {seg.id}
@@ -792,7 +792,7 @@ export const EveryAyahReader: React.FC = () => {
 
                 <div className="relative h-2 w-full overflow-hidden rounded-full bg-slate-900/80 border border-slate-800">
                   <div
-                    className="h-full bg-emerald-400 rounded-full transition-[width] duration-100 shadow-[0_0_10px_rgba(52,211,153,0.5)]"
+                    className="h-full bg-emerald-400 rounded-full transition-[width] duration-100 shadow-[0_0_10px_rgba(122, 145, 159,0.5)]"
                     style={{
                       width: ayatAlKursiPlayer.duration > 0
                         ? `${(ayatAlKursiPlayer.currentTime / ayatAlKursiPlayer.duration) * 100}%`
@@ -843,7 +843,7 @@ export const EveryAyahReader: React.FC = () => {
                   <button
                     type="button"
                     onClick={ayatAlKursiPlayer.togglePlayback}
-                    className="flex h-14 w-14 items-center justify-center rounded-full bg-emerald-500 text-slate-950 shadow-[0_0_20px_rgba(16,185,129,0.4)] transition-all hover:scale-105 hover:bg-emerald-400"
+                    className="flex h-14 w-14 items-center justify-center rounded-full bg-emerald-500 text-slate-950 shadow-[0_0_20px_rgba(122, 145, 159,0.4)] transition-all hover:scale-105 hover:bg-emerald-400"
                     title="Lecture"
                   >
                     {ayatAlKursiPlayer.playbackStatus === 'playing' ? (
@@ -885,7 +885,7 @@ export const EveryAyahReader: React.FC = () => {
                     onClick={() => ayatAlKursiPlayer.playReciter(idx, true)}
                     className={`flex items-center justify-between p-3.5 rounded-2xl border text-left transition-all ${
                       isActive
-                        ? 'border-emerald-500 bg-emerald-500/10 text-emerald-300 shadow-[0_4px_16px_rgba(16,185,129,0.1)]'
+                        ? 'border-emerald-500 bg-emerald-500/10 text-emerald-300 shadow-[0_4px_16px_rgba(122, 145, 159,0.1)]'
                         : 'border-slate-850 bg-slate-900/30 text-slate-300 hover:border-slate-700 hover:bg-slate-900/60'
                     }`}
                   >
@@ -954,7 +954,7 @@ export const EveryAyahReader: React.FC = () => {
                 onChange={(e) => everyAyahPlayer.setVolume(parseFloat(e.target.value))}
                 className="w-full h-1 bg-slate-800 rounded-lg appearance-none cursor-pointer focus:outline-none transition-colors accent-emerald-400"
                 style={{
-                  background: `linear-gradient(to right, #34d399 0%, #34d399 ${everyAyahPlayer.volume * 100}%, #1e293b ${everyAyahPlayer.volume * 100}%, #1e293b 100%)`
+                  background: `linear-gradient(to right, #8fa3b0 0%, #8fa3b0 ${everyAyahPlayer.volume * 100}%, #1e293b ${everyAyahPlayer.volume * 100}%, #1e293b 100%)`
                 }}
               />
             </div>
@@ -977,7 +977,7 @@ export const EveryAyahReader: React.FC = () => {
                   pauseMainPlayer();
                   everyAyahPlayer.togglePlayback();
                 }}
-                className="flex h-12 w-12 items-center justify-center rounded-full bg-emerald-500 text-slate-950 shadow-[0_0_18px_rgba(16,185,129,0.35)] transition-colors hover:bg-emerald-400"
+                className="flex h-12 w-12 items-center justify-center rounded-full bg-emerald-500 text-slate-950 shadow-[0_0_18px_rgba(122, 145, 159,0.35)] transition-colors hover:bg-emerald-400"
                 aria-label={everyAyahPlayer.playbackStatus === 'playing' ? 'Mettre en pause' : 'Lire'}
               >
                 {everyAyahPlayer.playbackStatus === 'playing' ? (
@@ -1042,7 +1042,7 @@ export const EveryAyahReader: React.FC = () => {
                 onChange={(e) => ayatAlKursiPlayer.setVolume(parseFloat(e.target.value))}
                 className="w-full h-1 bg-slate-800 rounded-lg appearance-none cursor-pointer focus:outline-none transition-colors accent-emerald-400"
                 style={{
-                  background: `linear-gradient(to right, #34d399 0%, #34d399 ${ayatAlKursiPlayer.volume * 100}%, #1e293b ${ayatAlKursiPlayer.volume * 100}%, #1e293b 100%)`
+                  background: `linear-gradient(to right, #8fa3b0 0%, #8fa3b0 ${ayatAlKursiPlayer.volume * 100}%, #1e293b ${ayatAlKursiPlayer.volume * 100}%, #1e293b 100%)`
                 }}
               />
             </div>
@@ -1062,7 +1062,7 @@ export const EveryAyahReader: React.FC = () => {
               <button
                 type="button"
                 onClick={ayatAlKursiPlayer.togglePlayback}
-                className="flex h-12 w-12 items-center justify-center rounded-full bg-emerald-500 text-slate-950 shadow-[0_0_18px_rgba(16,185,129,0.35)] transition-colors hover:bg-emerald-400"
+                className="flex h-12 w-12 items-center justify-center rounded-full bg-emerald-500 text-slate-950 shadow-[0_0_18px_rgba(122, 145, 159,0.35)] transition-colors hover:bg-emerald-400"
                 aria-label={ayatAlKursiPlayer.playbackStatus === 'playing' ? 'Mettre en pause' : 'Lire'}
               >
                 {ayatAlKursiPlayer.playbackStatus === 'playing' ? (
