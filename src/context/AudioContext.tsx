@@ -37,7 +37,12 @@ interface AudioContextType {
   /** Another signed-in device is currently playing */
   remoteSession: RemotePlaybackSession | null;
   setRemoteSession: (session: RemotePlaybackSession | null) => void;
-  takeOverRemoteSession: () => boolean;
+  takeOverRemoteSession: () => Promise<boolean>;
+  registerTakeOverHandler: (handler: (() => Promise<boolean>) | null) => void;
+  /** Ignore remote takeover signals until this timestamp (ms) */
+  suppressRemoteUntil: number;
+  setSuppressRemoteUntil: (ts: number) => void;
+  getAccurateCurrentTime: () => number;
 
   // Offline / Cache States & Actions
   cachedUrls: Set<string>;
@@ -214,6 +219,9 @@ export const AudioProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   const [volume, setVolumeState] = useState<number>(0.8);
   const [playbackSpeed, setPlaybackSpeedState] = useState<number>(1.0);
   const [remoteSession, setRemoteSession] = useState<RemotePlaybackSession | null>(null);
+  const [suppressRemoteUntil, setSuppressRemoteUntil] = useState(0);
+  const takeOverHandlerRef = useRef<(() => Promise<boolean>) | null>(null);
+  const suppressRemoteUntilRef = useRef(0);
   const [repeatMode, setRepeatModeState] = useState<'none' | 'one' | 'all'>(() => {
     const saved = readStorage(`${LOCAL_STORAGE_PREFIX}repeat_mode`);
     return (saved === 'none' || saved === 'one' || saved === 'all') ? saved : 'all';
@@ -683,29 +691,66 @@ export const AudioProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 
     const applyStartTime = () => {
       try {
-        audio.currentTime = safeStartAt;
+        if (safeStartAt > 0) {
+          audio.currentTime = safeStartAt;
+        }
+        setCurrentTime(safeStartAt);
       } catch {
         // Some streams reject seeking before enough metadata is available.
       }
     };
 
+    // Seek before play so takeover doesn't resume at 0
     if (safeStartAt > 0) {
-      if (audio.readyState >= HTMLMediaElement.HAVE_METADATA) {
-        applyStartTime();
-      } else {
-        audio.addEventListener('loadedmetadata', applyStartTime, { once: true });
-      }
+      await new Promise<void>((resolve) => {
+        let done = false;
+        const finish = () => {
+          if (done) return;
+          done = true;
+          applyStartTime();
+          resolve();
+        };
+        if (audio.readyState >= HTMLMediaElement.HAVE_METADATA) {
+          finish();
+          return;
+        }
+        audio.addEventListener('loadedmetadata', finish, { once: true });
+        window.setTimeout(finish, 2500);
+      });
     }
     
-    audio.play()
-      .then(() => {
-        setPlaybackStatus('playing');
-      })
-      .catch(err => {
-        console.error('Audio reproduction rejected:', err);
-        setPlaybackStatus('error');
-      });
+    try {
+      await audio.play();
+      setPlaybackStatus('playing');
+    } catch (err) {
+      console.error('Audio reproduction rejected:', err);
+      setPlaybackStatus('error');
+    }
   }
+
+  const getAccurateCurrentTime = () => {
+    const audio = audioRef.current;
+    if (audio && Number.isFinite(audio.currentTime) && audio.currentTime > 0) {
+      return audio.currentTime;
+    }
+    return currentTime;
+  };
+
+  const registerTakeOverHandler = (handler: (() => Promise<boolean>) | null) => {
+    takeOverHandlerRef.current = handler;
+  };
+
+  const takeOverRemoteSession = async () => {
+    if (takeOverHandlerRef.current) {
+      return takeOverHandlerRef.current();
+    }
+    return false;
+  };
+
+  const setSuppressRemoteUntilSafe = (ts: number) => {
+    suppressRemoteUntilRef.current = ts;
+    setSuppressRemoteUntil(ts);
+  };
   const togglePlay = () => {
     const audio = audioRef.current;
     if (!audio || !currentTrack || playbackStatus === 'buffering') return;
@@ -864,24 +909,6 @@ export const AudioProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     playTrack(currentTrack.reciter, currentTrack.moshaf, prevSurah);
   };
 
-  const takeOverRemoteSession = () => {
-    if (!remoteSession) return false;
-    const reciter = reciters.find((r) => r.id === remoteSession.reciterId);
-    if (!reciter) return false;
-    const moshaf =
-      reciter.moshaf.find((m) => m.id === remoteSession.moshafId) || reciter.moshaf[0];
-    if (!moshaf) return false;
-    const surah = SURAHS.find((s) => s.id === remoteSession.surahId);
-    if (!surah) return false;
-
-    const startAt = Number.isFinite(remoteSession.positionSeconds)
-      ? Math.max(0, remoteSession.positionSeconds)
-      : 0;
-    setRemoteSession(null);
-    void playTrack(reciter, moshaf, surah, startAt);
-    return true;
-  };
-
   return (
     <AudioContext.Provider value={{
       currentTrack,
@@ -896,6 +923,10 @@ export const AudioProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       remoteSession,
       setRemoteSession,
       takeOverRemoteSession,
+      registerTakeOverHandler,
+      suppressRemoteUntil,
+      setSuppressRemoteUntil: setSuppressRemoteUntilSafe,
+      getAccurateCurrentTime,
       
       reciters,
       isLoadingReciters,

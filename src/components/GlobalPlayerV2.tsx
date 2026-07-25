@@ -233,7 +233,7 @@ export const GlobalPlayerV2: React.FC = () => {
                 type="button"
                 onClick={(e) => {
                   e.stopPropagation();
-                  takeOverRemoteSession();
+                  void takeOverRemoteSession();
                 }}
                 className={`shrink-0 rounded-full px-3 py-1.5 text-[11px] font-bold text-slate-950 tap-feedback ${theme.accent}`}
               >
@@ -522,7 +522,9 @@ export const GlobalPlayerV2: React.FC = () => {
               </div>
               <button
                 type="button"
-                onClick={takeOverRemoteSession}
+                onClick={() => {
+                  void takeOverRemoteSession();
+                }}
                 className={`shrink-0 rounded-full px-3 py-1.5 text-[11px] font-bold text-slate-950 tap-feedback ${theme.accent}`}
               >
                 Basculer ici

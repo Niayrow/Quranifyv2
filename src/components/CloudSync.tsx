@@ -3,10 +3,12 @@ import { useAuth } from '../context/AuthContext';
 import { useAudio } from '../context/AudioContext';
 import { supabase, type QuranifyPlaybackRow } from '../lib/supabase';
 import { getLocalDeviceId, getLocalDeviceLabel } from '../lib/deviceId';
+import { SURAHS } from '../data/surahs';
 
 const FAVORITES_KEY = 'quran_streamer_favorites';
-const POLL_MS = 2500;
-const PAUSE_PUSH_DELAY_MS = 700;
+const POLL_MS = 2000;
+const PAUSE_PUSH_DELAY_MS = 900;
+const TAKEOVER_GRACE_MS = 5000;
 
 interface CloudSyncProps {
   favorites: number[];
@@ -14,8 +16,7 @@ interface CloudSyncProps {
 }
 
 /**
- * Syncs Quranify favorites + playback resume with Supabase when logged in.
- * Also keeps multi-device "now playing" presence via Realtime + polling fallback.
+ * Syncs Quranify favorites + multi-device playback presence.
  */
 export const CloudSync: React.FC<CloudSyncProps> = ({ favorites, setFavorites }) => {
   const {
@@ -34,6 +35,11 @@ export const CloudSync: React.FC<CloudSyncProps> = ({ favorites, setFavorites })
     remoteSession,
     setRemoteSession,
     pause,
+    playTrack,
+    registerTakeOverHandler,
+    setSuppressRemoteUntil,
+    getAccurateCurrentTime,
+    reciters,
   } = useAudio();
 
   const lastPushedFavorites = useRef<string>('');
@@ -49,14 +55,19 @@ export const CloudSync: React.FC<CloudSyncProps> = ({ favorites, setFavorites })
   playbackStatusRef.current = playbackStatus;
   const remoteSessionRef = useRef(remoteSession);
   remoteSessionRef.current = remoteSession;
+  const recitersRef = useRef(reciters);
+  recitersRef.current = reciters;
 
   const localDeviceId = useRef(getLocalDeviceId());
   const localDeviceLabel = useRef(getLocalDeviceLabel());
-  /** True only after THIS device successfully claimed is_playing=true */
   const weOwnPlaybackRef = useRef(false);
-  const lastPushSignature = useRef('');
+  const lastPushKey = useRef('');
+  const lastPushAtRef = useRef(0);
   const pausePushTimer = useRef<number | null>(null);
-  const applyingRemoteRef = useRef(false);
+  const suppressRemoteUntilRef = useRef(0);
+  const lastRemoteKeyRef = useRef('');
+  const pausedForRemoteRef = useRef(false);
+
   const pauseRef = useRef(pause);
   pauseRef.current = pause;
   const hydrateRef = useRef(hydratePlaybackState);
@@ -67,6 +78,12 @@ export const CloudSync: React.FC<CloudSyncProps> = ({ favorites, setFavorites })
   fetchPlaybackRef.current = fetchPlaybackState;
   const upsertRef = useRef(upsertPlaybackState);
   upsertRef.current = upsertPlaybackState;
+  const playTrackRef = useRef(playTrack);
+  playTrackRef.current = playTrack;
+  const getAccurateTimeRef = useRef(getAccurateCurrentTime);
+  getAccurateTimeRef.current = getAccurateCurrentTime;
+  const setSuppressRef = useRef(setSuppressRemoteUntil);
+  setSuppressRef.current = setSuppressRemoteUntil;
 
   const clearPauseTimer = () => {
     if (pausePushTimer.current !== null) {
@@ -75,70 +92,107 @@ export const CloudSync: React.FC<CloudSyncProps> = ({ favorites, setFavorites })
     }
   };
 
+  const readPosition = () => {
+    const accurate = getAccurateTimeRef.current();
+    if (Number.isFinite(accurate) && accurate > 0) return accurate;
+    return Math.max(0, currentTimeRef.current || 0);
+  };
+
   const applyRemoteRow = (row: QuranifyPlaybackRow) => {
     if (!row.device_id) return;
+
+    if (Date.now() < suppressRemoteUntilRef.current) {
+      // During takeover grace, ignore other devices
+      if (row.device_id !== localDeviceId.current) return;
+    }
 
     // Echo from this device
     if (row.device_id === localDeviceId.current) {
       weOwnPlaybackRef.current = Boolean(row.is_playing);
-      setRemoteSessionRef.current(null);
+      if (row.is_playing) {
+        pausedForRemoteRef.current = false;
+        setRemoteSessionRef.current(null);
+      }
       return;
     }
 
+    // Another device owns playback and is actively playing
     if (row.is_playing) {
-      applyingRemoteRef.current = true;
       weOwnPlaybackRef.current = false;
-      if (playbackStatusRef.current === 'playing') {
+
+      const remoteKey = `${row.device_id}:${row.reciter_id}:${row.surah_id}`;
+      const isNewRemoteTrack = remoteKey !== lastRemoteKeyRef.current;
+      const positionChanged =
+        !remoteSessionRef.current ||
+        Math.abs((remoteSessionRef.current.positionSeconds || 0) - (row.position_seconds || 0)) > 1.25;
+
+      // Pause local only once when remote starts owning
+      if (playbackStatusRef.current === 'playing' && !pausedForRemoteRef.current) {
+        pausedForRemoteRef.current = true;
         pauseRef.current();
       }
-      hydrateRef.current({
-        reciterId: row.reciter_id,
-        moshafId: row.moshaf_id,
-        surahId: row.surah_id,
-        positionSeconds: row.position_seconds,
-      });
-      setRemoteSessionRef.current({
-        reciterId: row.reciter_id,
-        moshafId: row.moshaf_id,
-        surahId: row.surah_id,
-        positionSeconds: row.position_seconds,
-        deviceId: row.device_id,
-        deviceLabel: row.device_label,
-        updatedAt: row.updated_at,
-      });
-      window.setTimeout(() => {
-        applyingRemoteRef.current = false;
-      }, 900);
+
+      if (isNewRemoteTrack) {
+        lastRemoteKeyRef.current = remoteKey;
+        hydrateRef.current({
+          reciterId: row.reciter_id,
+          moshafId: row.moshaf_id,
+          surahId: row.surah_id,
+          positionSeconds: row.position_seconds,
+        });
+      }
+
+      if (isNewRemoteTrack || positionChanged) {
+        setRemoteSessionRef.current({
+          reciterId: row.reciter_id,
+          moshafId: row.moshaf_id,
+          surahId: row.surah_id,
+          positionSeconds: Math.max(0, row.position_seconds || 0),
+          deviceId: row.device_id,
+          deviceLabel: row.device_label,
+          updatedAt: row.updated_at,
+        });
+      }
       return;
     }
 
-    // Other device paused — clear banner only
+    // Other device paused
+    lastRemoteKeyRef.current = '';
+    pausedForRemoteRef.current = false;
     setRemoteSessionRef.current(null);
   };
 
-  const pushPlayback = (isPlaying: boolean) => {
+  const pushPlayback = (isPlaying: boolean, positionOverride?: number) => {
     const track = currentTrackRef.current;
     if (!user || !track) return;
-    if (applyingRemoteRef.current) return;
 
-    // Never let a passive/idle tab steal ownership with is_playing=false
     if (!isPlaying && !weOwnPlaybackRef.current) return;
-    // Don't overwrite another device while we are only watching
     if (!isPlaying && remoteSessionRef.current) return;
 
-    const signature = [
-      isPlaying ? '1' : '0',
-      track.reciter.id,
-      track.moshaf.id,
-      track.surah.id,
-      Math.floor(currentTimeRef.current),
-    ].join(':');
+    let position = typeof positionOverride === 'number' ? positionOverride : readPosition();
 
-    if (signature === lastPushSignature.current) return;
-    lastPushSignature.current = signature;
+    // Avoid clobbering a known mid-track position with 0 right after load/takeover
+    const remotePos = remoteSessionRef.current?.positionSeconds ?? 0;
+    if (
+      isPlaying &&
+      position < 1 &&
+      remotePos > 2 &&
+      remoteSessionRef.current?.surahId === track.surah.id &&
+      remoteSessionRef.current?.reciterId === track.reciter.id
+    ) {
+      position = remotePos;
+    }
+
+    const key = `${isPlaying ? 1 : 0}:${track.reciter.id}:${track.surah.id}:${Math.floor(position)}`;
+    const now = Date.now();
+    // Allow ownership flips immediately; throttle same-key spam
+    if (key === lastPushKey.current && now - lastPushAtRef.current < 1200) return;
+    lastPushKey.current = key;
+    lastPushAtRef.current = now;
 
     if (isPlaying) {
       weOwnPlaybackRef.current = true;
+      pausedForRemoteRef.current = false;
       setRemoteSessionRef.current(null);
     } else {
       weOwnPlaybackRef.current = false;
@@ -148,12 +202,64 @@ export const CloudSync: React.FC<CloudSyncProps> = ({ favorites, setFavorites })
       reciterId: track.reciter.id,
       moshafId: track.moshaf.id,
       surahId: track.surah.id,
-      positionSeconds: currentTimeRef.current,
+      positionSeconds: position,
       isPlaying,
       deviceId: localDeviceId.current,
       deviceLabel: localDeviceLabel.current,
     });
   };
+
+  // Register takeover handler: fetch fresh position, claim cloud, then play from there
+  useEffect(() => {
+    registerTakeOverHandler(async () => {
+      const session = remoteSessionRef.current;
+      const fresh = await fetchPlaybackRef.current();
+
+      const reciterId = fresh?.reciter_id ?? session?.reciterId;
+      const moshafId = fresh?.moshaf_id ?? session?.moshafId;
+      const surahId = fresh?.surah_id ?? session?.surahId;
+      if (!reciterId || !moshafId || !surahId) return false;
+
+      const startAt = Math.max(
+        0,
+        fresh?.position_seconds ?? 0,
+        session?.positionSeconds ?? 0
+      );
+
+      const catalog = recitersRef.current.find((r) => r.id === reciterId);
+      if (!catalog) return false;
+      const moshaf = catalog.moshaf.find((m) => m.id === moshafId) || catalog.moshaf[0];
+      if (!moshaf) return false;
+      const surah = SURAHS.find((s) => s.id === surahId);
+      if (!surah) return false;
+
+      const graceUntil = Date.now() + TAKEOVER_GRACE_MS;
+      suppressRemoteUntilRef.current = graceUntil;
+      setSuppressRef.current(graceUntil);
+      weOwnPlaybackRef.current = true;
+      pausedForRemoteRef.current = false;
+      lastRemoteKeyRef.current = '';
+      setRemoteSessionRef.current(null);
+
+      // Claim ownership in cloud BEFORE audio starts (keeps position)
+      await upsertRef.current({
+        reciterId,
+        moshafId: moshaf.id,
+        surahId,
+        positionSeconds: startAt,
+        isPlaying: true,
+        deviceId: localDeviceId.current,
+        deviceLabel: localDeviceLabel.current,
+      });
+      lastPushKey.current = `1:${reciterId}:${surahId}:${Math.floor(startAt)}`;
+      lastPushAtRef.current = Date.now();
+
+      await playTrackRef.current(catalog, moshaf, surah, startAt);
+      return true;
+    });
+
+    return () => registerTakeOverHandler(null);
+  }, [registerTakeOverHandler]);
 
   // On login: merge favorites + restore cloud playback metadata
   useEffect(() => {
@@ -205,14 +311,15 @@ export const CloudSync: React.FC<CloudSyncProps> = ({ favorites, setFavorites })
     setFavorites,
     fetchPlaybackState,
     hydratePlaybackState,
-    setRemoteSession,
   ]);
 
   useEffect(() => {
     if (!user) {
       didHydrateCloud.current = false;
       weOwnPlaybackRef.current = false;
-      lastPushSignature.current = '';
+      lastPushKey.current = '';
+      lastRemoteKeyRef.current = '';
+      pausedForRemoteRef.current = false;
       setRemoteSession(null);
       clearPauseTimer();
     }
@@ -244,10 +351,9 @@ export const CloudSync: React.FC<CloudSyncProps> = ({ favorites, setFavorites })
     });
   }, [favorites, user, setFavoriteReciter]);
 
-  // Claim ownership only when truly playing; release after a short pause debounce
+  // Claim / release ownership from local transport state
   useEffect(() => {
     if (!user || !currentTrack) return;
-    if (applyingRemoteRef.current) return;
 
     if (playbackStatus === 'playing') {
       clearPauseTimer();
@@ -268,37 +374,31 @@ export const CloudSync: React.FC<CloudSyncProps> = ({ favorites, setFavorites })
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user, playbackStatus, currentTrack?.reciter.id, currentTrack?.surah.id, currentTrack?.moshaf.id]);
 
-  // Heartbeat position while this device owns playback
+  // Heartbeat while owning — use audio element time, not stale React state
   useEffect(() => {
     if (!user || !currentTrack || playbackStatus !== 'playing') return;
-    if (!weOwnPlaybackRef.current) return;
 
-    const timer = window.setTimeout(() => {
-      lastPushSignature.current = ''; // force position refresh
+    const timer = window.setInterval(() => {
+      if (!weOwnPlaybackRef.current) return;
+      if (playbackStatusRef.current !== 'playing') return;
+      lastPushKey.current = ''; // force position write
       pushPlayback(true);
-    }, 2000);
+    }, 1500);
 
-    return () => window.clearTimeout(timer);
+    return () => window.clearInterval(timer);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [user, currentTrack, currentTime, playbackStatus]);
+  }, [user, currentTrack?.reciter.id, currentTrack?.surah.id, playbackStatus]);
 
-  // Realtime + polling fallback (polling makes presence reliable across devices)
+  // Realtime + polling
   useEffect(() => {
     if (!user || !supabase) return;
     const client = supabase;
     const userId = user.id;
 
-    // Ensure Realtime websocket uses the user JWT (required for RLS-filtered changes)
     void client.auth.getSession().then(({ data }) => {
       const token = data.session?.access_token;
-      if (token) {
-        client.realtime.setAuth(token);
-      }
+      if (token) client.realtime.setAuth(token);
     });
-
-    const onRow = (row: QuranifyPlaybackRow) => {
-      applyRemoteRow(row);
-    };
 
     const channel = client
       .channel(`quranify-playback-${userId}`)
@@ -317,7 +417,7 @@ export const CloudSync: React.FC<CloudSyncProps> = ({ favorites, setFavorites })
             setRemoteSessionRef.current(null);
             return;
           }
-          onRow(row);
+          applyRemoteRow(row);
         }
       )
       .subscribe();
@@ -325,7 +425,7 @@ export const CloudSync: React.FC<CloudSyncProps> = ({ favorites, setFavorites })
     const poll = async () => {
       const remote = await fetchPlaybackRef.current();
       if (!remote) return;
-      onRow(remote);
+      applyRemoteRow(remote);
     };
 
     void poll();
@@ -337,7 +437,6 @@ export const CloudSync: React.FC<CloudSyncProps> = ({ favorites, setFavorites })
       window.clearInterval(pollId);
       void client.removeChannel(channel);
     };
-    // Stable subscription for the logged-in user only
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user?.id]);
 
