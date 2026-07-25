@@ -1,5 +1,6 @@
 import React, { useEffect, useState, useMemo, lazy, Suspense, useDeferredValue, useCallback, useRef } from 'react';
 import { useAudio, AudioProvider } from './context/AudioContext';
+import { AuthProvider } from './context/AuthContext';
 import { ReciterCard } from './components/ReciterCard';
 import { Navbar } from './components/Navbar';
 import { 
@@ -11,6 +12,9 @@ import type { Reciter } from './types';
 import { getGeneratedReciterAvatar, getReciterImage } from './utils/images';
 import { getReciterCategory, type ReciterCategoryId } from './data/reciterCategories';
 import { ReciterCategoryGrid, ReciterCategoryModal } from './components/ReciterCategoryModal';
+import { CloudSync } from './components/CloudSync';
+import { AuthPromptModal } from './components/AuthPromptModal';
+import { useAuth } from './context/AuthContext';
 
 const SurahList = lazy(() => import('./components/SurahList').then((module) => ({ default: module.SurahList })));
 const EveryAyahReader = lazy(() => import('./components/EveryAyahReader').then((module) => ({ default: module.EveryAyahReader })));
@@ -18,9 +22,10 @@ const GlobalPlayerV2 = lazy(() => import('./components/GlobalPlayerV2').then((mo
 // Legacy player kept for reference: ./components/GlobalPlayer
 const AboutPanel = lazy(() => import('./components/AboutPanel').then((module) => ({ default: module.AboutPanel })));
 const ReciterCompare = lazy(() => import('./components/ReciterCompare').then((module) => ({ default: module.ReciterCompare })));
+const AccountPanel = lazy(() => import('./components/AccountPanel').then((module) => ({ default: module.AccountPanel })));
 const TAB_IDS = ['home', 'listen', 'ayah', 'favorites', 'more'] as const;
 type TabId = typeof TAB_IDS[number];
-type MorePanel = 'priorities' | 'compare' | 'about';
+type MorePanel = 'account' | 'priorities' | 'compare' | 'about';
 type ListenStep = 'reciters' | 'surahs';
 
 const PRODUCT_PRIORITIES: Array<{
@@ -490,18 +495,20 @@ const AppContent: React.FC = () => {
     setActiveMoshaf,
     currentTrack
   } = useAudio();
-
+  const { user, loading: authLoading } = useAuth();
 
   const [activeTab, setActiveTab] = useState<TabId>(() => getInitialTab());
-  const [morePanel, setMorePanel] = useState<MorePanel>('priorities');
+  const [morePanel, setMorePanel] = useState<MorePanel>('account');
   const [listenStep, setListenStep] = useState<ListenStep>('reciters');
   const [categoryModalId, setCategoryModalId] = useState<ReciterCategoryId | null>(null);
   const [reciterSearch, setReciterSearch] = useState<string>('');
   const deferredReciterSearch = useDeferredValue(reciterSearch);
   const [loadingProgress, setLoadingProgress] = useState(8);
   const [showLoadingHome, setShowLoadingHome] = useState(true);
+  const [showAuthPrompt, setShowAuthPrompt] = useState(false);
   const surahSectionRef = useRef<HTMLElement | null>(null);
   const didRestoreListenStep = useRef(false);
+  const authPromptShownRef = useRef(false);
 
   const applyDeepLink = useCallback((rawUrl: string) => {
     try {
@@ -514,6 +521,11 @@ const AppContent: React.FC = () => {
       }
       if (tab === 'about') {
         setMorePanel('about');
+        setActiveTab('more');
+        return;
+      }
+      if (tab === 'account') {
+        setMorePanel('account');
         setActiveTab('more');
         return;
       }
@@ -614,6 +626,10 @@ const AppContent: React.FC = () => {
 
   const toggleFavorite = (id: number, e: React.MouseEvent) => {
     e.stopPropagation();
+    if (!user && !authLoading) {
+      setShowAuthPrompt(true);
+      authPromptShownRef.current = true;
+    }
     setFavorites((prev) => {
       const updated = prev.includes(id) ? prev.filter((fId) => fId !== id) : [...prev, id];
       try {
@@ -624,6 +640,42 @@ const AppContent: React.FC = () => {
       return updated;
     });
   };
+
+  const dismissAuthPrompt = () => {
+    setShowAuthPrompt(false);
+    try {
+      sessionStorage.setItem('quranify_auth_prompt_dismissed', '1');
+    } catch {
+      // ignore
+    }
+  };
+
+  const openAuthFromPrompt = () => {
+    dismissAuthPrompt();
+    setMorePanel('account');
+    setActiveTab('more');
+  };
+
+  // Soft prompt once per session if logged out
+  useEffect(() => {
+    if (authLoading || user || showLoadingHome || authPromptShownRef.current) return;
+    try {
+      if (sessionStorage.getItem('quranify_auth_prompt_dismissed') === '1') return;
+    } catch {
+      // ignore
+    }
+    const timer = window.setTimeout(() => {
+      if (!user) {
+        setShowAuthPrompt(true);
+        authPromptShownRef.current = true;
+      }
+    }, 4500);
+    return () => window.clearTimeout(timer);
+  }, [authLoading, user, showLoadingHome]);
+
+  useEffect(() => {
+    if (user) setShowAuthPrompt(false);
+  }, [user]);
 
   const featuredReciters = useMemo(() => {
     if (!reciters) return [];
@@ -725,6 +777,12 @@ const AppContent: React.FC = () => {
 
   return (
     <div className="flex-1 flex flex-col pt-4 px-4 max-w-lg mx-auto w-full mobile-shell-padding md:pt-28 md:pb-12 md:max-w-4xl md:px-8">
+      <CloudSync favorites={favorites} setFavorites={setFavorites} />
+      <AuthPromptModal
+        open={showAuthPrompt && !user}
+        onClose={dismissAuthPrompt}
+        onConnect={openAuthFromPrompt}
+      />
       {/* 1. App Header with Gold and Emerald Accents */}
       <header className="mb-6 flex items-center justify-between">
         <div className="flex items-center">
@@ -1120,7 +1178,17 @@ const AppContent: React.FC = () => {
                 </div>
               </div>
 
-              <div className="mt-5 grid grid-cols-3 gap-2">
+              <div className="mt-5 grid grid-cols-2 gap-2 sm:grid-cols-4">
+                <button
+                  onClick={() => setMorePanel('account')}
+                  className={`rounded-2xl border px-3 py-3 text-xs font-bold transition-all ${
+                    morePanel === 'account'
+                      ? 'border-emerald-500/40 bg-emerald-500/10 text-emerald-300'
+                      : 'border-slate-800 bg-slate-900/60 text-slate-400 hover:text-slate-200'
+                  }`}
+                >
+                  Compte
+                </button>
                 <button
                   onClick={() => setMorePanel('priorities')}
                   className={`rounded-2xl border px-3 py-3 text-xs font-bold transition-all ${
@@ -1153,6 +1221,12 @@ const AppContent: React.FC = () => {
                 </button>
               </div>
             </section>
+
+            {morePanel === 'account' && (
+              <Suspense fallback={<div className="shimmer-loader h-40 rounded-2xl border border-slate-900" />}>
+                <AccountPanel />
+              </Suspense>
+            )}
 
             {morePanel === 'priorities' && (
               <div className="grid grid-cols-1 gap-3">
@@ -1210,9 +1284,11 @@ const AppContent: React.FC = () => {
 
 function App() {
   return (
-    <AudioProvider>
-      <AppContent />
-    </AudioProvider>
+    <AuthProvider>
+      <AudioProvider>
+        <AppContent />
+      </AudioProvider>
+    </AuthProvider>
   );
 }
 

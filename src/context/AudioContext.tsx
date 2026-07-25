@@ -50,7 +50,13 @@ interface AudioContextType {
   setActiveReciter: (reciter: Reciter | null) => void;
   setActiveMoshaf: (moshaf: Moshaf | null) => void;
   setActiveSurah: (surah: Surah | null) => void;
-  playTrack: (reciter: Reciter, moshaf: Moshaf, surah: Surah) => void;
+  playTrack: (reciter: Reciter, moshaf: Moshaf, surah: Surah, startAt?: number) => void;
+  hydratePlaybackState: (payload: {
+    reciterId: number;
+    moshafId: number;
+    surahId: number;
+    positionSeconds: number;
+  }) => boolean;
   togglePlay: () => void;
   pause: () => void;
   play: () => void;
@@ -549,6 +555,33 @@ export const AudioProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     if (surah) writeStorage(`${LOCAL_STORAGE_PREFIX}surah_id`, String(surah.id));
   };
 
+  const hydratePlaybackState = useCallback((payload: {
+    reciterId: number;
+    moshafId: number;
+    surahId: number;
+    positionSeconds: number;
+  }) => {
+    const reciter = reciters.find((r) => r.id === payload.reciterId);
+    if (!reciter) return false;
+    const moshaf =
+      reciter.moshaf.find((m) => m.id === payload.moshafId) || reciter.moshaf[0];
+    if (!moshaf) return false;
+    const surah = SURAHS.find((s) => s.id === payload.surahId);
+    if (!surah) return false;
+
+    setActiveReciterState(reciter);
+    setActiveMoshafState(moshaf);
+    setActiveSurahState(surah);
+    setCurrentTrack({ reciter, moshaf, surah });
+    const safeTime = Number.isFinite(payload.positionSeconds)
+      ? Math.max(0, payload.positionSeconds)
+      : 0;
+    setCurrentTime(safeTime);
+    persistSelection(reciter, moshaf, surah);
+    writeStorage(`${LOCAL_STORAGE_PREFIX}timestamp`, String(safeTime));
+    return true;
+  }, [reciters]);
+
   // State mutators with automatic persistence
   const setActiveReciter = (reciter: Reciter | null) => {
     setActiveReciterState(reciter);
@@ -833,6 +866,7 @@ export const AudioProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       setActiveMoshaf,
       setActiveSurah,
       playTrack,
+      hydratePlaybackState,
       togglePlay,
       pause,
       play,
