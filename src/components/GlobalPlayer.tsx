@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect, useRef } from 'react';
 import { useAudio } from '../context/AudioContext';
 import { 
   Play, Pause, SkipForward, SkipBack, 
@@ -137,6 +137,8 @@ export const GlobalPlayer: React.FC = () => {
   const [showPlaylistDrawer, setShowPlaylistDrawer] = useState(false);
   const [showSettingsMenu, setShowSettingsMenu] = useState(false);
   const [drawerSearch, setDrawerSearch] = useState('');
+  const drawerListRef = useRef<HTMLDivElement | null>(null);
+  const currentSurahRowRef = useRef<HTMLButtonElement | null>(null);
 
   // Active Theme resolver
   const theme = THEMES[playerTheme] || THEMES.emerald;
@@ -196,6 +198,28 @@ export const GlobalPlayer: React.FC = () => {
     );
   }, [currentTrack, drawerSearch, getAvailableSurahs]);
 
+  useEffect(() => {
+    if (!showPlaylistDrawer) return;
+
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') setShowPlaylistDrawer(false);
+    };
+    window.addEventListener('keydown', onKeyDown);
+
+    const frame = window.requestAnimationFrame(() => {
+      currentSurahRowRef.current?.scrollIntoView({ block: 'center', behavior: 'smooth' });
+    });
+
+    return () => {
+      document.body.style.overflow = previousOverflow;
+      window.removeEventListener('keydown', onKeyDown);
+      window.cancelAnimationFrame(frame);
+    };
+  }, [showPlaylistDrawer]);
+
   if (!currentTrack) return null;
 
   return (
@@ -243,9 +267,18 @@ export const GlobalPlayer: React.FC = () => {
             )}
           </div>
 
-          <div className="min-w-0 flex-1">
+          <button
+            type="button"
+            onClick={(e) => {
+              e.stopPropagation();
+              setShowSettingsMenu(false);
+              setShowPlaylistDrawer(true);
+            }}
+            className="min-w-0 flex-1 text-left rounded-xl -mx-1 px-1 py-0.5 tap-feedback hover:bg-slate-900/40 transition-colors"
+            title="Voir la liste des sourates"
+          >
             <div className="flex items-baseline gap-1.5 md:gap-2">
-              <h4 className={`font-semibold text-xs md:text-sm text-slate-100 truncate hover:${theme.accentText} transition-colors`}>
+              <h4 className={`font-semibold text-xs md:text-sm text-slate-100 truncate ${theme.accentTextHover} transition-colors`}>
                 {String(currentTrack.surah.id).padStart(3, '0')}. {currentTrack.surah.name}
               </h4>
               <span className="text-[9px] md:text-[10px] text-slate-450 font-serif shrink-0">
@@ -253,10 +286,10 @@ export const GlobalPlayer: React.FC = () => {
               </span>
             </div>
             <p className="text-[10px] md:text-xs text-slate-400 truncate mt-0.5">
-              {currentTrack.reciter.name} <span className="md:hidden">•</span> <span className="hidden md:inline-block mx-1.5">•</span> 
+              {currentTrack.reciter.name} <span className="md:hidden">•</span> <span className="hidden md:inline-block mx-1.5">•</span>
               <span className={`text-[9px] ${theme.accentText} ${theme.accentBgLight} px-1.5 py-0.2 rounded border ${theme.accentBorderLight} font-semibold uppercase tracking-wider`}>{currentTrack.moshaf.name}</span>
             </p>
-          </div>
+          </button>
         </div>
 
         <div className="flex items-center gap-2.5 shrink-0 ml-2 md:col-span-1 md:justify-center md:flex-col md:gap-1.5 md:ml-0" onClick={e => e.stopPropagation()}>
@@ -554,24 +587,31 @@ export const GlobalPlayer: React.FC = () => {
           )}
         </div>
 
-        {/* 2.3 Audio Metadata & Titles */}
-        <div className="text-center max-w-md mx-auto w-full mb-3">
-          <div className="flex items-center justify-center gap-2 mb-1.5">
-            <span className={`text-[10px] font-bold px-2 py-0.5 rounded-md bg-slate-900 border border-slate-800 ${theme.accentText} uppercase`}>
-              Sourate {currentTrack.surah.id}
-            </span>
-            <span className="text-xs font-semibold px-2 py-0.5 rounded-md bg-slate-900 border border-slate-800 text-slate-400">
-              {currentTrack.moshaf.name}
-            </span>
-          </div>
-          <h2 className="text-2xl md:text-3xl font-bold text-slate-100 flex items-center justify-center gap-2 flex-wrap leading-tight">
-            {currentTrack.surah.name}
-            <span className={`font-serif text-xl ${theme.accentText} select-none arabic-text`}>
-              ({currentTrack.surah.arabicName})
-            </span>
-          </h2>
-          <p className="text-slate-400 text-sm mt-1.5 md:text-base">{currentTrack.reciter.name}</p>
-        </div>
+          <button
+            type="button"
+            onClick={() => {
+              setShowSettingsMenu(false);
+              setShowPlaylistDrawer(true);
+            }}
+            className="text-center max-w-md mx-auto w-full mb-3 rounded-2xl px-2 py-1 tap-feedback hover:bg-slate-900/40 transition-colors"
+            title="Voir la liste des sourates"
+          >
+            <div className="flex items-center justify-center gap-2 mb-1.5">
+              <span className={`text-[10px] font-bold px-2 py-0.5 rounded-md bg-slate-900 border border-slate-800 ${theme.accentText} uppercase`}>
+                Sourate {currentTrack.surah.id}
+              </span>
+              <span className="text-xs font-semibold px-2 py-0.5 rounded-md bg-slate-900 border border-slate-800 text-slate-400">
+                {currentTrack.moshaf.name}
+              </span>
+            </div>
+            <h2 className={`text-2xl md:text-3xl font-bold text-slate-100 flex items-center justify-center gap-2 flex-wrap leading-tight ${theme.accentTextHover} transition-colors`}>
+              {currentTrack.surah.name}
+              <span className={`font-serif text-xl ${theme.accentText} select-none arabic-text`}>
+                ({currentTrack.surah.arabicName})
+              </span>
+            </h2>
+            <p className="text-slate-400 text-sm mt-1.5 md:text-base">{currentTrack.reciter.name}</p>
+          </button>
 
         {/* 2.4 Scrubbing slider & Timers */}
         <div className="max-w-md mx-auto w-full mb-4">
@@ -832,115 +872,178 @@ export const GlobalPlayer: React.FC = () => {
 
       {/* 3. PLAYLIST / SURAH SELECTOR DRAWER */}
       {showPlaylistDrawer && (
-        <>
-          <div 
+        <div
+          className="fixed inset-0 z-[55] flex items-end sm:items-center justify-center"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="playlist-drawer-title"
+        >
+          <button
+            type="button"
+            aria-label="Fermer"
             onClick={() => setShowPlaylistDrawer(false)}
-            className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 transition-opacity duration-300"
+            className="absolute inset-0 bg-slate-950/70 backdrop-blur-sm"
           />
-          <div className="fixed inset-x-0 bottom-0 max-h-[75vh] bg-slate-950/98 border-t border-slate-800/80 rounded-t-3xl px-5 pt-5 pb-[calc(1.25rem+env(safe-area-inset-bottom,0px))] z-[55] flex flex-col gap-4 shadow-[0_-15px_40px_rgba(0,0,0,0.8)] animate-[slide-up_0.3s_cubic-bezier(0.16,1,0.3,1)]">
-            <div className="flex items-center justify-between border-b border-slate-900 pb-3">
-              <div>
-                <h3 className="font-bold text-slate-200 text-base flex items-center gap-2">
-                  <ListMusic className={`w-5 h-5 ${theme.accentText}`} />
-                  Liste des Sourates
-                </h3>
-                <p className="text-xs text-slate-400 mt-0.5">{currentTrack.reciter.name}</p>
+
+          <div className="relative z-10 flex w-full max-w-lg max-h-[82dvh] flex-col overflow-hidden rounded-t-3xl sm:rounded-3xl border border-slate-800/80 bg-slate-950 shadow-[0_-20px_60px_rgba(0,0,0,0.65)] sm:mx-4 animate-[slide-up_0.28s_cubic-bezier(0.16,1,0.3,1)]">
+            <div className="flex justify-center pt-3 pb-1 sm:hidden">
+              <span className="h-1 w-10 rounded-full bg-slate-700" />
+            </div>
+
+            <div className="flex items-start justify-between gap-3 px-5 pt-2 pb-3 border-b border-slate-900">
+              <div className="min-w-0">
+                <div className="flex items-center gap-2">
+                  <span
+                    className={`flex h-8 w-8 items-center justify-center rounded-xl ${theme.accentBgLight} ${theme.accentText}`}
+                  >
+                    <ListMusic className="h-4 w-4" />
+                  </span>
+                  <div className="min-w-0">
+                    <h3 id="playlist-drawer-title" className="font-bold text-slate-100 text-base truncate">
+                      Sourates
+                    </h3>
+                    <p className="text-[11px] text-slate-400 truncate">
+                      {currentTrack.reciter.name}
+                      <span className="mx-1.5 text-slate-600">·</span>
+                      {filteredDrawerSurahs.length} titre{filteredDrawerSurahs.length > 1 ? 's' : ''}
+                    </p>
+                  </div>
+                </div>
               </div>
-              <button 
+              <button
+                type="button"
                 onClick={() => setShowPlaylistDrawer(false)}
-                className="w-8 h-8 rounded-full bg-slate-900 hover:bg-slate-800 border border-slate-800/80 flex items-center justify-center text-slate-400 hover:text-slate-200 active:scale-95 transition-all"
+                className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-slate-800 bg-slate-900 text-slate-400 hover:text-slate-100 tap-feedback"
+                aria-label="Fermer la liste"
               >
                 <X className="w-4 h-4" />
               </button>
             </div>
 
-            <div className="relative">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500" />
-              <input
-                type="text"
-                value={drawerSearch}
-                onChange={(e) => setDrawerSearch(e.target.value)}
-                placeholder="Rechercher une sourate par nom ou numéro..."
-                className={`w-full pl-9 pr-8 py-2 bg-slate-900/60 focus:bg-slate-900 border border-slate-850 focus:${theme.accentBorder} rounded-xl text-slate-200 placeholder-slate-500 text-xs focus:outline-none transition-all`}
-              />
-              {drawerSearch && (
-                <button
-                  onClick={() => setDrawerSearch('')}
-                  className="absolute right-2.5 top-1/2 -translate-y-1/2 text-[10px] text-slate-450 hover:text-slate-200 px-1.5 py-0.5 bg-slate-800 rounded flex items-center justify-center"
-                >
-                  <X className="w-3 h-3" />
-                </button>
-              )}
+            <div className="px-4 pt-3 pb-2">
+              <div className="relative">
+                <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500" />
+                <input
+                  type="search"
+                  value={drawerSearch}
+                  onChange={(e) => setDrawerSearch(e.target.value)}
+                  placeholder="Nom, numéro ou arabe…"
+                  autoFocus
+                  className={`w-full pl-10 pr-10 py-2.5 bg-slate-900/70 border border-slate-800 rounded-2xl text-slate-200 placeholder-slate-500 text-sm focus:outline-none focus:border-opacity-100 transition-all`}
+                  style={{ borderColor: drawerSearch ? theme.sliderAccentColor : undefined }}
+                />
+                {drawerSearch && (
+                  <button
+                    type="button"
+                    onClick={() => setDrawerSearch('')}
+                    className="absolute right-2.5 top-1/2 -translate-y-1/2 flex h-7 w-7 items-center justify-center rounded-full bg-slate-800 text-slate-400 hover:text-slate-100"
+                    aria-label="Effacer la recherche"
+                  >
+                    <X className="w-3.5 h-3.5" />
+                  </button>
+                )}
+              </div>
             </div>
 
-            <div className="flex-1 overflow-y-auto pr-1 flex flex-col gap-1.5 scrollbar-thin scrollbar-thumb-slate-800 scrollbar-track-transparent pb-6">
+            <div
+              ref={drawerListRef}
+              className="flex-1 overflow-y-auto overscroll-contain px-2 pb-[calc(1rem+env(safe-area-inset-bottom,0px))]"
+            >
               {filteredDrawerSurahs.length === 0 ? (
-                <p className="text-xs text-slate-500 text-center py-6">Aucune sourate trouvée.</p>
+                <div className="flex flex-col items-center justify-center gap-2 py-14 text-center px-6">
+                  <Search className="w-8 h-8 text-slate-700" />
+                  <p className="text-sm text-slate-400">Aucune sourate pour « {drawerSearch} »</p>
+                  <button
+                    type="button"
+                    onClick={() => setDrawerSearch('')}
+                    className={`text-xs font-bold ${theme.accentText}`}
+                  >
+                    Effacer la recherche
+                  </button>
+                </div>
               ) : (
-                filteredDrawerSurahs.map((surah) => {
-                  const isCurrentSurah = currentTrack.surah.id === surah.id;
-                  return (
-                    <button
-                      key={surah.id}
-                      onClick={() => {
-                        playTrack(currentTrack.reciter, currentTrack.moshaf, surah);
-                        setShowPlaylistDrawer(false);
-                      }}
-                      className={`group w-full p-3 rounded-xl border flex items-center gap-3 text-left transition-all duration-300 relative ${
-                        isCurrentSurah
-                          ? `${theme.accentBorderActive} ${theme.accentBgLight} shadow-md ring-1 ${theme.accentRing}`
-                          : 'border-slate-800/40 bg-slate-900/30 hover:bg-slate-900/80 hover:border-slate-700/60'
-                      }`}
-                    >
-                      {isCurrentSurah && (
-                        <div 
-                          className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-1/2 rounded-r-full shadow-[0_0_8px_rgba(16,185,129,0.8)]" 
-                          style={{ backgroundColor: theme.sliderAccentColor }}
-                        />
-                      )}
+                <ul className="flex flex-col">
+                  {filteredDrawerSurahs.map((surah) => {
+                    const isCurrentSurah = currentTrack.surah.id === surah.id;
+                    const isPlayingCurrent = isCurrentSurah && playbackStatus === 'playing';
 
-                      <div className="relative flex items-center justify-center w-8 h-8 shrink-0 ml-1">
-                        <div 
-                          className={`absolute inset-0 rotate-45 rounded-md border transition-all duration-500 ${
-                            isCurrentSurah 
-                              ? 'bg-slate-950 scale-105' 
-                              : 'bg-slate-950 border-slate-700 group-hover:border-slate-500 group-hover:rotate-[135deg]'
+                    return (
+                      <li key={surah.id}>
+                        <button
+                          ref={isCurrentSurah ? currentSurahRowRef : undefined}
+                          type="button"
+                          onClick={() => {
+                            if (isCurrentSurah) {
+                              togglePlay();
+                            } else {
+                              playTrack(currentTrack.reciter, currentTrack.moshaf, surah);
+                              setShowPlaylistDrawer(false);
+                              setDrawerSearch('');
+                            }
+                          }}
+                          className={`group w-full flex items-center gap-3 rounded-2xl px-3 py-2.5 text-left transition-colors tap-feedback ${
+                            isCurrentSurah
+                              ? `${theme.accentBgLight}`
+                              : 'hover:bg-slate-900/80'
                           }`}
-                          style={isCurrentSurah ? { borderColor: theme.sliderAccentColor } : {}}
-                        />
-                        <span className={`relative z-10 text-[10px] font-bold ${isCurrentSurah ? theme.accentText : 'text-slate-400 group-hover:text-slate-200'}`}>
-                          {surah.id}
-                        </span>
-                      </div>
+                        >
+                          <span
+                            className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-xl text-xs font-bold tabular-nums ${
+                              isCurrentSurah
+                                ? `${theme.accentText} bg-slate-950/50 ring-1 ${theme.accentRing}`
+                                : 'bg-slate-900 text-slate-500 group-hover:text-slate-300'
+                            }`}
+                          >
+                            {isPlayingCurrent ? (
+                              <span className="flex gap-0.5 items-end justify-center h-3.5 w-3.5">
+                                <span className="w-0.5 h-full rounded-full animate-[shimmer_0.6s_infinite_alternate]" style={{ backgroundColor: theme.sliderAccentColor, animationDelay: '0.1s' }} />
+                                <span className="w-0.5 h-2/3 rounded-full animate-[shimmer_0.6s_infinite_alternate]" style={{ backgroundColor: theme.sliderAccentColor, animationDelay: '0.3s' }} />
+                                <span className="w-0.5 h-full rounded-full animate-[shimmer_0.6s_infinite_alternate]" style={{ backgroundColor: theme.sliderAccentColor, animationDelay: '0.5s' }} />
+                              </span>
+                            ) : (
+                              String(surah.id).padStart(2, '0')
+                            )}
+                          </span>
 
-                      <div className="min-w-0 flex-1">
-                        <p className={`font-semibold text-sm truncate transition-colors ${isCurrentSurah ? theme.accentText : 'text-slate-200 group-hover:text-emerald-400'}`}>
-                          {surah.name}
-                        </p>
-                        <p className="text-[10px] text-slate-400/80 truncate mt-0.5 font-medium">{surah.englishTranslation}</p>
-                      </div>
-                      
-                      <div className="flex items-center gap-3 shrink-0">
-                        <span className={`font-serif text-lg tracking-wide select-none arabic-text transition-colors ${
-                          isCurrentSurah ? `${theme.accentText} drop-shadow-[0_0_8px_rgba(16,185,129,0.4)]` : 'text-slate-350 group-hover:text-slate-200'
-                        }`}>
-                          {surah.arabicName}
-                        </span>
-                        {isCurrentSurah && (
-                          <div className="flex gap-0.5 items-end justify-center h-3 w-3 mr-1">
-                            <div className="w-0.5 animate-[shimmer_0.6s_infinite_alternate] h-full rounded-full" style={{ animationDelay: '0.1s', backgroundColor: theme.sliderAccentColor }}></div>
-                            <div className="w-0.5 animate-[shimmer_0.6s_infinite_alternate] h-2/3 rounded-full" style={{ animationDelay: '0.3s', backgroundColor: theme.sliderAccentColor }}></div>
-                            <div className="w-0.5 animate-[shimmer_0.6s_infinite_alternate] h-full rounded-full" style={{ animationDelay: '0.5s', backgroundColor: theme.sliderAccentColor }}></div>
-                          </div>
-                        )}
-                      </div>
-                    </button>
-                  );
-                })
+                          <span className="min-w-0 flex-1">
+                            <span className={`block text-sm font-semibold truncate ${isCurrentSurah ? theme.accentText : 'text-slate-100'}`}>
+                              {surah.name}
+                            </span>
+                            <span className="block text-[11px] text-slate-500 truncate mt-0.5">
+                              {surah.englishTranslation}
+                            </span>
+                          </span>
+
+                          <span
+                            className={`font-serif text-lg leading-none arabic-text shrink-0 ${
+                              isCurrentSurah ? theme.accentText : 'text-slate-400 group-hover:text-slate-200'
+                            }`}
+                          >
+                            {surah.arabicName}
+                          </span>
+
+                          <span
+                            className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-full transition-colors ${
+                              isCurrentSurah
+                                ? `${theme.accent} text-slate-950`
+                                : 'bg-slate-900 text-slate-400 opacity-0 group-hover:opacity-100 border border-slate-800'
+                            }`}
+                          >
+                            {isPlayingCurrent ? (
+                              <Pause className="w-3.5 h-3.5 fill-current" />
+                            ) : (
+                              <Play className="w-3.5 h-3.5 fill-current ml-0.5" />
+                            )}
+                          </span>
+                        </button>
+                      </li>
+                    );
+                  })}
+                </ul>
               )}
             </div>
           </div>
-        </>
+        </div>
       )}
     </>
   );

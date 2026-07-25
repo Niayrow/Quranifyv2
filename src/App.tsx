@@ -4,21 +4,24 @@ import { ReciterCard } from './components/ReciterCard';
 import { Navbar } from './components/Navbar';
 import { 
   Search, Heart, AlertTriangle, Crown, Headphones, Play, ArrowRight, BookOpenText,
-  Bookmark, Download, GitCompare, LayoutGrid, Sparkles
+  Bookmark, Download, GitCompare, Sparkles, Disc
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import type { Reciter } from './types';
 import { getGeneratedReciterAvatar, getReciterImage } from './utils/images';
+import { getReciterCategory, type ReciterCategoryId } from './data/reciterCategories';
+import { ReciterCategoryGrid, ReciterCategoryModal } from './components/ReciterCategoryModal';
 
 const SurahList = lazy(() => import('./components/SurahList').then((module) => ({ default: module.SurahList })));
 const EveryAyahReader = lazy(() => import('./components/EveryAyahReader').then((module) => ({ default: module.EveryAyahReader })));
-const GlobalPlayer = lazy(() => import('./components/GlobalPlayer').then((module) => ({ default: module.GlobalPlayer })));
+const GlobalPlayerV2 = lazy(() => import('./components/GlobalPlayerV2').then((module) => ({ default: module.GlobalPlayerV2 })));
+// Legacy player kept for reference: ./components/GlobalPlayer
 const AboutPanel = lazy(() => import('./components/AboutPanel').then((module) => ({ default: module.AboutPanel })));
 const ReciterCompare = lazy(() => import('./components/ReciterCompare').then((module) => ({ default: module.ReciterCompare })));
-const RECITER_BATCH_SIZE = 14;
 const TAB_IDS = ['home', 'listen', 'ayah', 'favorites', 'more'] as const;
 type TabId = typeof TAB_IDS[number];
 type MorePanel = 'priorities' | 'compare' | 'about';
+type ListenStep = 'reciters' | 'surahs';
 
 const PRODUCT_PRIORITIES: Array<{
   id: string;
@@ -288,30 +291,10 @@ const getSearchScore = (reciter: Reciter, queryNormalized: string): number => {
 };
 
 const RecitersLoadingSkeleton: React.FC = () => (
-  <div className="flex flex-col gap-6 min-h-[520px]" aria-hidden="true">
-    {[0, 1].map((section) => (
-      <div key={section} className="flex flex-col gap-3">
-        <div className="h-4 w-44 rounded-full bg-slate-800/70" />
-        <div className="h-2.5 w-64 max-w-[70%] rounded-full bg-slate-900/90" />
-        <div className="flex gap-4 overflow-hidden pb-3">
-          {[0, 1, 2, 3].map((item) => (
-            <div key={item} className="w-20 shrink-0">
-              <div className="shimmer-loader h-16 w-16 rounded-2xl border border-slate-900" />
-              <div className="mt-2 h-2.5 w-16 rounded-full bg-slate-900/80" />
-            </div>
-          ))}
-        </div>
-      </div>
+  <div className="flex flex-col gap-3 min-h-[320px]" aria-hidden="true">
+    {[0, 1, 2, 3, 4].map((item) => (
+      <div key={item} className="shimmer-loader h-[88px] rounded-2xl border border-slate-900" />
     ))}
-    <div className="flex flex-col gap-3">
-      <div className="h-2.5 w-36 rounded-full bg-slate-800/70" />
-      <div className="flex gap-2 overflow-hidden">
-        {[0, 1, 2, 3, 4, 5, 6, 7].map((item) => (
-          <div key={item} className="h-8 w-10 shrink-0 rounded-lg bg-slate-900/80 border border-slate-800/70" />
-        ))}
-      </div>
-    </div>
-    <div className="shimmer-loader h-40 rounded-2xl border border-slate-900" />
   </div>
 );
 
@@ -502,20 +485,23 @@ const AppContent: React.FC = () => {
     isLoadingReciters,
     error,
     activeReciter,
+    activeMoshaf,
     setActiveReciter,
+    setActiveMoshaf,
     currentTrack
   } = useAudio();
 
 
   const [activeTab, setActiveTab] = useState<TabId>(() => getInitialTab());
   const [morePanel, setMorePanel] = useState<MorePanel>('priorities');
+  const [listenStep, setListenStep] = useState<ListenStep>('reciters');
+  const [categoryModalId, setCategoryModalId] = useState<ReciterCategoryId | null>(null);
   const [reciterSearch, setReciterSearch] = useState<string>('');
   const deferredReciterSearch = useDeferredValue(reciterSearch);
-  const [selectedLetter, setSelectedLetter] = useState<string>('');
-  const [reciterPaging, setReciterPaging] = useState({ key: '', limit: RECITER_BATCH_SIZE });
   const [loadingProgress, setLoadingProgress] = useState(8);
   const [showLoadingHome, setShowLoadingHome] = useState(true);
   const surahSectionRef = useRef<HTMLElement | null>(null);
+  const didRestoreListenStep = useRef(false);
 
   const applyDeepLink = useCallback((rawUrl: string) => {
     try {
@@ -627,7 +613,7 @@ const AppContent: React.FC = () => {
   });
 
   const toggleFavorite = (id: number, e: React.MouseEvent) => {
-    e.stopPropagation(); // Avoid selecting the card when favoriting
+    e.stopPropagation();
     setFavorites((prev) => {
       const updated = prev.includes(id) ? prev.filter((fId) => fId !== id) : [...prev, id];
       try {
@@ -639,13 +625,6 @@ const AppContent: React.FC = () => {
     });
   };
 
-  // Extract available letters dynamically from loaded reciters
-  const availableLetters = useMemo(() => {
-    if (!reciters) return [];
-    const letters = reciters.map(r => r.letter.toUpperCase().trim()).filter(Boolean);
-    return Array.from(new Set(letters)).sort();
-  }, [reciters]);
-
   const featuredReciters = useMemo(() => {
     if (!reciters) return [];
 
@@ -654,53 +633,24 @@ const AppContent: React.FC = () => {
       .filter((r): r is Reciter => !!r);
   }, [reciters]);
 
-  // Client-side fuzzy search and letter filter on reciters
+  // Client-side fuzzy search on reciters
   const filteredReciters = useMemo(() => {
     if (!reciters) return [];
-    
-    let result = reciters;
 
-    // Apply alphabetical filter
-    if (selectedLetter) {
-      result = result.filter(
-        (r) =>
-          r.letter.toUpperCase() === selectedLetter.toUpperCase() ||
-          r.name.toUpperCase().startsWith(selectedLetter.toUpperCase())
-      );
-    }
+    if (!deferredReciterSearch.trim()) return reciters;
 
-    // Apply search query with smart ranking
-    if (deferredReciterSearch.trim()) {
-      const queryNorm = normalizeString(deferredReciterSearch);
-      
-      // Calculate search scores for all items
-      const scored = result
-        .map(r => ({
-          reciter: r,
-          score: getSearchScore(r, queryNorm)
-        }))
-        .filter(item => item.score > 0); // Keep only matching items
-        
-      // Sort by score in descending order
-      scored.sort((a, b) => b.score - a.score || a.reciter.name.localeCompare(b.reciter.name));
-      
-      return scored.map(item => item.reciter);
-    }
+    const queryNorm = normalizeString(deferredReciterSearch);
+    const scored = reciters
+      .map(r => ({
+        reciter: r,
+        score: getSearchScore(r, queryNorm)
+      }))
+      .filter(item => item.score > 0);
 
-    return result;
-  }, [reciters, deferredReciterSearch, selectedLetter]);
+    scored.sort((a, b) => b.score - a.score || a.reciter.name.localeCompare(b.reciter.name));
+    return scored.map(item => item.reciter);
+  }, [reciters, deferredReciterSearch]);
 
-  const reciterFilterKey = `${deferredReciterSearch.trim()}|${selectedLetter}`;
-  const visibleReciterLimit = reciterPaging.key === reciterFilterKey
-    ? reciterPaging.limit
-    : RECITER_BATCH_SIZE;
-
-  const visibleReciters = useMemo(
-    () => filteredReciters.slice(0, visibleReciterLimit),
-    [filteredReciters, visibleReciterLimit]
-  );
-
-  const hasMoreReciters = visibleReciterLimit < filteredReciters.length;
   const isSearchPending = reciterSearch !== deferredReciterSearch;
 
   const favoritedReciters = useMemo(() => {
@@ -708,22 +658,65 @@ const AppContent: React.FC = () => {
     return reciters.filter((r) => favorites.includes(r.id));
   }, [reciters, favorites]);
 
+  const listenFavoritedReciters = useMemo(() => {
+    if (deferredReciterSearch.trim()) return [];
+    return favoritedReciters;
+  }, [favoritedReciters, deferredReciterSearch]);
+
+  const catalogReciters = useMemo(() => {
+    if (deferredReciterSearch.trim()) return filteredReciters;
+    const favoriteIds = new Set(favoritedReciters.map((r) => r.id));
+    return filteredReciters.filter((r) => !favoriteIds.has(r.id));
+  }, [filteredReciters, favoritedReciters, deferredReciterSearch]);
+
   const handleNavigate = (tab: TabId, panel?: MorePanel) => {
     setActiveTab(tab);
     if (panel) setMorePanel(panel);
+    if (tab === 'listen') {
+      setListenStep(activeReciter ? 'surahs' : 'reciters');
+    }
   };
 
   const handleSelectReciter = (reciter: Reciter) => {
+    setCategoryModalId(null);
     setActiveReciter(reciter);
     setActiveTab('listen');
+    setListenStep('surahs');
     setReciterSearch('');
-    setSelectedLetter('');
     window.setTimeout(() => {
       surahSectionRef.current?.scrollIntoView({
         block: 'start',
         behavior: 'smooth',
       });
+      window.scrollTo({ top: 0, behavior: 'smooth' });
     }, 80);
+  };
+
+  const activeCategory = categoryModalId ? getReciterCategory(categoryModalId) : undefined;
+
+  const handleChangeReciter = () => {
+    setListenStep('reciters');
+    setReciterSearch('');
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  useEffect(() => {
+    if (isLoadingReciters) return;
+    if (!activeReciter) {
+      setListenStep('reciters');
+      return;
+    }
+    if (!didRestoreListenStep.current) {
+      didRestoreListenStep.current = true;
+      setListenStep('surahs');
+    }
+  }, [activeReciter, isLoadingReciters]);
+
+  const handleSetActiveTab = (tab: TabId) => {
+    setActiveTab(tab);
+    if (tab === 'listen') {
+      setListenStep(activeReciter ? 'surahs' : 'reciters');
+    }
   };
 
   if (showLoadingHome) {
@@ -761,16 +754,13 @@ const AppContent: React.FC = () => {
                 <div className="min-w-0">
                   <span className="inline-flex items-center gap-2 rounded-full border border-emerald-400/20 bg-emerald-400/10 px-3 py-1 text-[10px] font-black uppercase tracking-widest text-emerald-300">
                     <Sparkles className="h-3.5 w-3.5" />
-                    Nouveau parcours d'écoute
+                    Démarrage rapide
                   </span>
                   <h2 className="mt-3 text-xl font-black text-slate-100">Accueil Quranify</h2>
                   <p className="mt-2 max-w-md text-sm leading-relaxed text-slate-400">
-                    Reprenez votre lecture, explorez les voix majeures et accédez aux fonctions utiles sans naviguer entre des onglets techniques.
+                    Reprenez votre lecture ou choisissez une voix connue — le catalogue complet est dans Écouter.
                   </p>
                 </div>
-                <span className="hidden rounded-2xl border border-slate-800 bg-slate-950/60 px-3 py-2 text-[11px] font-bold text-slate-400 md:inline-flex">
-                  4 onglets essentiels
-                </span>
               </div>
 
               <div className="mt-5 grid grid-cols-1 gap-3 sm:grid-cols-2">
@@ -780,7 +770,7 @@ const AppContent: React.FC = () => {
                     ? `${currentTrack.surah.name} avec ${currentTrack.reciter.name}`
                     : activeReciter
                       ? `Retourner aux sourates de ${activeReciter.name}`
-                      : 'Choisissez un récitateur puis lancez une sourate en quelques secondes.'}
+                      : 'Choisissez un récitateur puis une sourate.'}
                   icon={Play}
                   onClick={() => handleNavigate('listen')}
                 />
@@ -793,85 +783,9 @@ const AppContent: React.FC = () => {
               </div>
             </section>
 
-            {/* Search inputs */}
-            <div className="relative">
-              <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
-              <input
-                type="text"
-                value={reciterSearch}
-                onChange={(e) => setReciterSearch(e.target.value)}
-                placeholder="Rechercher un récitateur..."
-                className="w-full pl-12 pr-5 py-3.5 bg-slate-900/60 hover:bg-slate-900/80 focus:bg-slate-900 border border-slate-800 focus:border-emerald-500/50 rounded-2xl text-slate-200 placeholder-slate-500 text-sm focus:outline-none transition-all"
-              />
-              {reciterSearch && (
-                <button
-                  onClick={() => setReciterSearch('')}
-                  className="absolute right-4 top-1/2 -translate-y-1/2 text-xs text-slate-400 hover:text-slate-200 px-2 py-1 bg-slate-800 rounded-md"
-                >
-                  Effacer
-                </button>
-              )}
-            </div>
-
-            {reciterSearch.trim() && (
-              <div className="flex items-center justify-between gap-3 rounded-2xl border border-slate-800/80 bg-slate-900/45 px-4 py-3">
-                <div className="min-w-0">
-                  <p className="text-xs font-bold text-slate-200">
-                    {isSearchPending ? 'Recherche...' : `${filteredReciters.length} résultat${filteredReciters.length > 1 ? 's' : ''} proche${filteredReciters.length > 1 ? 's' : ''}`}
-                  </p>
-                  <p className="mt-0.5 text-[11px] text-slate-500 truncate">
-                    Tolère accents, majuscules, lettres oubliées et orthographes proches.
-                  </p>
-                </div>
-                <span className="shrink-0 rounded-full border border-emerald-400/20 bg-emerald-400/10 px-2.5 py-1 text-[10px] font-black uppercase tracking-widest text-emerald-300">
-                  Smart
-                </span>
-              </div>
-            )}
-
-            {/* B. Alphabetical A-Z Letter Filter Bar */}
-            {availableLetters.length > 0 && (
-              <div className="flex flex-col gap-2.5">
-                <div className="flex items-center justify-between">
-                  <span className="text-[10px] uppercase font-bold tracking-widest text-slate-400">Filtrer par lettre</span>
-                  {selectedLetter && (
-                    <button 
-                      onClick={() => setSelectedLetter('')}
-                      className="text-[10px] text-emerald-400 font-bold hover:underline"
-                    >
-                      Réinitialiser
-                    </button>
-                  )}
-                </div>
-                <div className="flex overflow-x-auto gap-1.5 pb-2 scrollbar-thin scrollbar-thumb-slate-800 scrollbar-track-transparent">
-                  <button
-                    onClick={() => setSelectedLetter('')}
-                    className={`text-xs px-3 py-1.5 rounded-lg border font-semibold shrink-0 transition-all ${
-                      !selectedLetter
-                        ? 'bg-emerald-500 border-emerald-500 text-slate-950 shadow-md shadow-emerald-500/10'
-                        : 'bg-slate-900/60 border-slate-800/80 text-slate-400 hover:text-slate-200'
-                    }`}
-                  >
-                    Tous
-                  </button>
-                  {availableLetters.map(letter => (
-                    <button
-                      key={letter}
-                      onClick={() => setSelectedLetter(selectedLetter === letter ? '' : letter)}
-                      className={`text-xs w-8 h-8 rounded-lg border font-bold flex items-center justify-center shrink-0 transition-all ${
-                        selectedLetter === letter
-                          ? 'bg-emerald-500 border-emerald-500 text-slate-950 shadow-md shadow-emerald-500/10'
-                          : 'bg-slate-900/60 border-slate-800/80 text-slate-400 hover:text-slate-200'
-                      }`}
-                    >
-                      {letter}
-                    </button>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            {!reciterSearch && !selectedLetter && featuredReciters.length > 0 && (
+            {isLoadingReciters ? (
+              <RecitersLoadingSkeleton />
+            ) : featuredReciters.length > 0 && (
               <section className="flex flex-col gap-3">
                 <div className="flex items-end justify-between gap-3">
                   <div>
@@ -880,14 +794,18 @@ const AppContent: React.FC = () => {
                       Grands récitateurs
                     </h2>
                     <p className="text-xs text-slate-400 mt-1">
-                      Les voix les plus connues pour démarrer rapidement.
+                      1 clic pour ouvrir leurs sourates.
                     </p>
                   </div>
                   <button
-                    onClick={() => handleNavigate('listen')}
+                    type="button"
+                    onClick={() => {
+                      setActiveTab('listen');
+                      setListenStep('reciters');
+                    }}
                     className="hidden min-[390px]:inline-flex items-center gap-1 text-[10px] font-black uppercase tracking-widest text-emerald-400 bg-emerald-400/10 border border-emerald-400/20 rounded-full px-3 py-1"
                   >
-                    Tout écouter
+                    Tous les récitateurs
                     <ArrowRight className="h-3.5 w-3.5" />
                   </button>
                 </div>
@@ -904,184 +822,12 @@ const AppContent: React.FC = () => {
                 </div>
               </section>
             )}
-
-            <section className="flex flex-col gap-3">
-              <div>
-                <h2 className="text-lg font-black text-slate-100">
-                  {!reciterSearch && !selectedLetter ? 'Tous les récitateurs' : 'Récitateurs'}
-                </h2>
-                {!reciterSearch && !selectedLetter && (
-                  <p className="text-xs text-slate-400 mt-1">
-                    Parcourez la liste complète des voix disponibles.
-                  </p>
-                )}
-              </div>
-
-              {/* Skeleton Shimmer Loaders */}
-              {isLoadingReciters ? (
-                <RecitersLoadingSkeleton />
-              ) : filteredReciters.length === 0 ? (
-                <div className="flex flex-col items-center justify-center p-12 text-center glass-panel rounded-3xl gap-2">
-                  <p className="text-slate-400">Aucun récitateur trouvé</p>
-                </div>
-              ) : (
-                <div className="grid grid-cols-1 gap-4">
-                  {visibleReciters.map((reciter) => (
-                    <ReciterCard
-                      key={reciter.id}
-                      reciter={reciter}
-                      isSelected={activeReciter?.id === reciter.id}
-                      onSelect={() => handleSelectReciter(reciter)}
-                      isFavorite={favorites.includes(reciter.id)}
-                      onToggleFavorite={(e) => toggleFavorite(reciter.id, e)}
-                      searchQuery={reciterSearch}
-                    />
-                  ))}
-                  {hasMoreReciters && (
-                    <button
-                      onClick={() => setReciterPaging({
-                        key: reciterFilterKey,
-                        limit: visibleReciterLimit + RECITER_BATCH_SIZE
-                      })}
-                      className="w-full rounded-2xl border border-slate-800 bg-slate-900/60 px-4 py-3 text-sm font-semibold text-emerald-400 transition-colors hover:bg-slate-900 hover:text-emerald-300 tap-feedback"
-                    >
-                      Afficher plus ({filteredReciters.length - visibleReciterLimit})
-                    </button>
-                  )}
-                </div>
-              )}
-            </section>
           </div>
         )}
 
-        {/* 2.1 Listening Hub */}
+        {/* 2.1 Listening Hub — wizard: reciters then surahs */}
         {activeTab === 'listen' && (
           <div className="flex flex-col gap-5">
-            <section className="glass-panel rounded-3xl border border-slate-800/70 p-5">
-              <div className="flex items-start justify-between gap-3">
-                <div>
-                  <span className="inline-flex items-center gap-2 rounded-full border border-emerald-400/20 bg-emerald-400/10 px-3 py-1 text-[10px] font-black uppercase tracking-widest text-emerald-300">
-                    <LayoutGrid className="h-3.5 w-3.5" />
-                    Espace Écouter
-                  </span>
-                  <h2 className="mt-3 text-lg font-black text-slate-100">Un seul parcours pour choisir et lancer</h2>
-                  <p className="mt-1 text-xs leading-relaxed text-slate-400">
-                    Sélectionnez un récitateur puis écoutez ses sourates. La lecture EveryAyah est maintenant séparée dans son propre onglet.
-                  </p>
-                </div>
-                {activeReciter && (
-                  <button
-                    onClick={() => handleNavigate('favorites')}
-                    className="hidden rounded-xl border border-slate-800 bg-slate-950/60 px-3 py-2 text-[11px] font-bold text-slate-300 sm:inline-flex"
-                  >
-                    Voir les favoris
-                  </button>
-                )}
-              </div>
-            </section>
-
-            {/* Search inputs */}
-            <div className="relative">
-              <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
-              <input
-                type="text"
-                value={reciterSearch}
-                onChange={(e) => setReciterSearch(e.target.value)}
-                placeholder="Rechercher un récitateur..."
-                className="w-full pl-12 pr-5 py-3.5 bg-slate-900/60 hover:bg-slate-900/80 focus:bg-slate-900 border border-slate-800 focus:border-emerald-500/50 rounded-2xl text-slate-200 placeholder-slate-500 text-sm focus:outline-none transition-all"
-              />
-              {reciterSearch && (
-                <button
-                  onClick={() => setReciterSearch('')}
-                  className="absolute right-4 top-1/2 -translate-y-1/2 text-xs text-slate-400 hover:text-slate-200 px-2 py-1 bg-slate-800 rounded-md"
-                >
-                  Effacer
-                </button>
-              )}
-            </div>
-
-            {reciterSearch.trim() && (
-              <div className="flex items-center justify-between gap-3 rounded-2xl border border-slate-800/80 bg-slate-900/45 px-4 py-3">
-                <div className="min-w-0">
-                  <p className="text-xs font-bold text-slate-200">
-                    {isSearchPending ? 'Recherche...' : `${filteredReciters.length} résultat${filteredReciters.length > 1 ? 's' : ''} proche${filteredReciters.length > 1 ? 's' : ''}`}
-                  </p>
-                  <p className="mt-0.5 text-[11px] text-slate-500 truncate">
-                    Tolère accents, majuscules, lettres oubliées et orthographes proches.
-                  </p>
-                </div>
-                <span className="shrink-0 rounded-full border border-emerald-400/20 bg-emerald-400/10 px-2.5 py-1 text-[10px] font-black uppercase tracking-widest text-emerald-300">
-                  Smart
-                </span>
-              </div>
-            )}
-
-            {/* B. Alphabetical A-Z Letter Filter Bar */}
-            {availableLetters.length > 0 && (
-              <div className="flex flex-col gap-2.5">
-                <div className="flex items-center justify-between">
-                  <span className="text-[10px] uppercase font-bold tracking-widest text-slate-400">Filtrer par lettre</span>
-                  {selectedLetter && (
-                    <button 
-                      onClick={() => setSelectedLetter('')}
-                      className="text-[10px] text-emerald-400 font-bold hover:underline"
-                    >
-                      Réinitialiser
-                    </button>
-                  )}
-                </div>
-                <div className="flex overflow-x-auto gap-1.5 pb-2 scrollbar-thin scrollbar-thumb-slate-800 scrollbar-track-transparent">
-                  <button
-                    onClick={() => setSelectedLetter('')}
-                    className={`text-xs px-3 py-1.5 rounded-lg border font-semibold shrink-0 transition-all ${
-                      !selectedLetter
-                        ? 'bg-emerald-500 border-emerald-500 text-slate-950 shadow-md shadow-emerald-500/10'
-                        : 'bg-slate-900/60 border-slate-800/80 text-slate-400 hover:text-slate-200'
-                    }`}
-                  >
-                    Tous
-                  </button>
-                  {availableLetters.map(letter => (
-                    <button
-                      key={letter}
-                      onClick={() => setSelectedLetter(selectedLetter === letter ? '' : letter)}
-                      className={`text-xs w-8 h-8 rounded-lg border font-bold flex items-center justify-center shrink-0 transition-all ${
-                        selectedLetter === letter
-                          ? 'bg-emerald-500 border-emerald-500 text-slate-950 shadow-md shadow-emerald-500/10'
-                          : 'bg-slate-900/60 border-slate-800/80 text-slate-400 hover:text-slate-200'
-                      }`}
-                    >
-                      {letter}
-                    </button>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            {!reciterSearch.trim() && !selectedLetter && (
-              <section ref={surahSectionRef} className="scroll-mt-6 flex flex-col gap-3">
-                <div className="flex items-center justify-between gap-3">
-                  <div>
-                    <h2 className="text-lg font-black text-slate-100">Sourates</h2>
-                    <p className="mt-1 text-xs text-slate-400">
-                      {activeReciter
-                        ? `Sélection active : ${activeReciter.name}.`
-                        : 'Choisissez une voix ci-dessus pour afficher les sourates disponibles.'}
-                    </p>
-                  </div>
-                  {!activeReciter && (
-                    <span className="rounded-full border border-slate-800 bg-slate-900/70 px-3 py-1 text-[10px] font-black uppercase tracking-widest text-slate-500">
-                      Étape 2 après sélection
-                    </span>
-                  )}
-                </div>
-                <Suspense fallback={<div className="shimmer-loader h-40 rounded-2xl border border-slate-900" />}>
-                  <SurahList mode="listen" />
-                </Suspense>
-              </section>
-            )}
-
-            {/* Error notifications */}
             {error && (
               <div className="glass-panel p-4 rounded-2xl border-red-500/20 bg-red-500/5 flex gap-3 items-start">
                 <AlertTriangle className="w-5 h-5 text-red-400 shrink-0 mt-0.5" />
@@ -1092,40 +838,204 @@ const AppContent: React.FC = () => {
               </div>
             )}
 
-            {/* Skeleton Shimmer Loaders */}
-            {isLoadingReciters ? (
-              <RecitersLoadingSkeleton />
-            ) : filteredReciters.length === 0 ? (
-              <div className="flex flex-col items-center justify-center p-12 text-center glass-panel rounded-3xl gap-2">
-                <p className="text-slate-400">Aucun récitateur trouvé</p>
-              </div>
-            ) : (
-              (!activeReciter || deferredReciterSearch.trim() || selectedLetter) && (
-                <div className="grid grid-cols-1 gap-4">
-                  {visibleReciters.map((reciter) => (
-                    <ReciterCard
-                      key={reciter.id}
-                      reciter={reciter}
-                      isSelected={activeReciter?.id === reciter.id}
-                      onSelect={() => handleSelectReciter(reciter)}
-                      isFavorite={favorites.includes(reciter.id)}
-                      onToggleFavorite={(e) => toggleFavorite(reciter.id, e)}
-                      searchQuery={reciterSearch}
-                    />
-                  ))}
-                  {hasMoreReciters && (
+            {listenStep === 'reciters' && (
+              <div className="flex flex-col gap-5">
+                <section className="flex flex-col gap-1">
+                  <h2 className="text-lg font-black text-slate-100">Choisis un récitateur</h2>
+                  <p className="text-xs text-slate-400">
+                    Ensuite, choisis une sourate pour lancer l&apos;écoute.
+                  </p>
+                </section>
+
+                {!isLoadingReciters && (
+                  <ReciterCategoryGrid
+                    reciters={reciters}
+                    activeCategoryId={categoryModalId}
+                    onOpenCategory={setCategoryModalId}
+                  />
+                )}
+
+                <div className="relative">
+                  <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
+                  <input
+                    type="text"
+                    value={reciterSearch}
+                    onChange={(e) => setReciterSearch(e.target.value)}
+                    placeholder="Rechercher un récitateur..."
+                    className="w-full pl-12 pr-5 py-3.5 bg-slate-900/60 hover:bg-slate-900/80 focus:bg-slate-900 border border-slate-800 focus:border-emerald-500/50 rounded-2xl text-slate-200 placeholder-slate-500 text-sm focus:outline-none transition-all"
+                  />
+                  {reciterSearch && (
                     <button
-                      onClick={() => setReciterPaging({
-                        key: reciterFilterKey,
-                        limit: visibleReciterLimit + RECITER_BATCH_SIZE
-                      })}
-                      className="w-full rounded-2xl border border-slate-800 bg-slate-900/60 px-4 py-3 text-sm font-semibold text-emerald-400 transition-colors hover:bg-slate-900 hover:text-emerald-300 tap-feedback"
+                      type="button"
+                      onClick={() => setReciterSearch('')}
+                      className="absolute right-4 top-1/2 -translate-y-1/2 text-xs text-slate-400 hover:text-slate-200 px-2 py-1 bg-slate-800 rounded-md"
                     >
-                      Afficher plus ({filteredReciters.length - visibleReciterLimit})
+                      Effacer
                     </button>
                   )}
                 </div>
-              )
+
+                {reciterSearch.trim() && (
+                  <div className="flex items-center justify-between gap-3 rounded-2xl border border-slate-800/80 bg-slate-900/45 px-4 py-3">
+                    <div className="min-w-0">
+                      <p className="text-xs font-bold text-slate-200">
+                        {isSearchPending ? 'Recherche...' : `${filteredReciters.length} résultat${filteredReciters.length > 1 ? 's' : ''}`}
+                      </p>
+                      <p className="mt-0.5 text-[11px] text-slate-500 truncate">
+                        Accents, aliases et orthographes proches.
+                      </p>
+                    </div>
+                    <span className="shrink-0 rounded-full border border-emerald-400/20 bg-emerald-400/10 px-2.5 py-1 text-[10px] font-black uppercase tracking-widest text-emerald-300">
+                      Smart
+                    </span>
+                  </div>
+                )}
+
+                {isLoadingReciters ? (
+                  <RecitersLoadingSkeleton />
+                ) : filteredReciters.length === 0 ? (
+                  <div className="flex flex-col items-center justify-center p-12 text-center glass-panel rounded-3xl gap-2">
+                    <p className="text-slate-400">Aucun récitateur trouvé</p>
+                  </div>
+                ) : (
+                  <div className="flex flex-col gap-5">
+                    {listenFavoritedReciters.length > 0 && (
+                      <section className="flex flex-col gap-3">
+                        <h3 className="text-sm font-bold text-slate-300 flex items-center gap-2">
+                          <Heart className="w-4 h-4 text-red-400 fill-current" />
+                          Favoris
+                        </h3>
+                        <div className="grid grid-cols-1 gap-3">
+                          {listenFavoritedReciters.map((reciter) => (
+                            <ReciterCard
+                              key={reciter.id}
+                              reciter={reciter}
+                              isSelected={activeReciter?.id === reciter.id}
+                              onSelect={() => handleSelectReciter(reciter)}
+                              isFavorite={true}
+                              onToggleFavorite={(e) => toggleFavorite(reciter.id, e)}
+                              searchQuery={reciterSearch}
+                            />
+                          ))}
+                        </div>
+                      </section>
+                    )}
+
+                    <section className="flex flex-col gap-3">
+                      {!deferredReciterSearch.trim() && (
+                        <h3 className="text-sm font-bold text-slate-300">
+                          {listenFavoritedReciters.length > 0 ? 'Tous les récitateurs' : 'Récitateurs'}
+                        </h3>
+                      )}
+                      <div className="grid grid-cols-1 gap-3">
+                        {catalogReciters.map((reciter) => (
+                          <ReciterCard
+                            key={reciter.id}
+                            reciter={reciter}
+                            isSelected={activeReciter?.id === reciter.id}
+                            onSelect={() => handleSelectReciter(reciter)}
+                            isFavorite={favorites.includes(reciter.id)}
+                            onToggleFavorite={(e) => toggleFavorite(reciter.id, e)}
+                            searchQuery={reciterSearch}
+                          />
+                        ))}
+                      </div>
+                    </section>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {listenStep === 'surahs' && !activeReciter && (
+              <div className="flex flex-col items-center justify-center p-12 text-center glass-panel rounded-3xl gap-4">
+                <p className="text-slate-400 text-sm">Choisissez un récitateur pour continuer.</p>
+                <button
+                  type="button"
+                  onClick={handleChangeReciter}
+                  className="px-5 py-2.5 rounded-xl bg-emerald-500 text-slate-950 font-semibold text-xs tap-feedback"
+                >
+                  Voir les récitateurs
+                </button>
+              </div>
+            )}
+
+            {listenStep === 'surahs' && activeReciter && (
+              <div className="flex flex-col gap-5">
+                <section
+                  ref={surahSectionRef}
+                  className="sticky top-0 z-20 -mx-1 px-1 pt-1 pb-2 bg-slate-950/90 backdrop-blur-md scroll-mt-6 md:top-24"
+                >
+                  <div className="glass-panel rounded-2xl border border-emerald-500/20 bg-emerald-500/5 p-4 flex flex-col gap-3">
+                    <div className="flex items-center gap-3">
+                      <div className="w-12 h-12 rounded-xl overflow-hidden border border-slate-700/70 bg-slate-950 shrink-0">
+                        <img
+                          src={getReciterImage(activeReciter)}
+                          alt={activeReciter.name}
+                          width="48"
+                          height="48"
+                          className="w-full h-full object-cover"
+                          onError={(e) => {
+                            const img = e.currentTarget;
+                            const fallback = getGeneratedReciterAvatar(activeReciter);
+                            if (img.src !== fallback) img.src = fallback;
+                          }}
+                        />
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <span className="text-[10px] uppercase font-bold tracking-wider text-emerald-400">
+                          Étape 2 · Sourates
+                        </span>
+                        <h2 className="font-semibold text-slate-100 truncate">{activeReciter.name}</h2>
+                        {activeMoshaf && (
+                          <p className="text-xs text-slate-400 truncate">{activeMoshaf.name}</p>
+                        )}
+                      </div>
+                      <button
+                        type="button"
+                        onClick={handleChangeReciter}
+                        className="shrink-0 rounded-xl border border-slate-700 bg-slate-950/70 px-3 py-2 text-[11px] font-bold text-slate-200 hover:border-emerald-500/40 hover:text-emerald-300 transition-colors tap-feedback"
+                      >
+                        Changer
+                      </button>
+                    </div>
+
+                    {activeReciter.moshaf.length > 1 && (
+                      <div className="flex flex-col gap-1.5">
+                        <span className="text-[10px] uppercase font-bold tracking-widest text-slate-500 flex items-center gap-1.5">
+                          <Disc className="w-3 h-3 text-emerald-400" />
+                          Riwaya
+                        </span>
+                        <div className="flex flex-wrap gap-1.5">
+                          {activeReciter.moshaf.map((m) => {
+                            const isMoshafSelected = activeMoshaf?.id === m.id;
+                            return (
+                              <button
+                                key={m.id}
+                                type="button"
+                                onClick={() => setActiveMoshaf(m)}
+                                className={`text-[10px] font-medium px-2.5 py-1 rounded-lg border transition-all tap-feedback ${
+                                  isMoshafSelected
+                                    ? 'bg-emerald-500/15 border-emerald-500/35 text-emerald-300'
+                                    : 'bg-slate-900/60 border-slate-800 text-slate-400 hover:bg-slate-800 hover:text-slate-300'
+                                }`}
+                              >
+                                {m.name}
+                              </button>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </section>
+
+                <div>
+                  <h3 className="text-sm font-bold text-slate-300 mb-3">Choisis une sourate</h3>
+                  <Suspense fallback={<div className="shimmer-loader h-40 rounded-2xl border border-slate-900" />}>
+                    <SurahList mode="listen" onChooseReciter={handleChangeReciter} />
+                  </Suspense>
+                </div>
+              </div>
             )}
           </div>
         )}
@@ -1268,17 +1178,30 @@ const AppContent: React.FC = () => {
         </div>
       </main>
 
+      {/* Category modal (listen step) */}
+      {activeCategory && (
+        <ReciterCategoryModal
+          category={activeCategory}
+          reciters={reciters}
+          activeReciterId={activeReciter?.id}
+          favorites={favorites}
+          onClose={() => setCategoryModalId(null)}
+          onSelect={handleSelectReciter}
+          onToggleFavorite={toggleFavorite}
+        />
+      )}
+
       {/* 3. Global Audio Player Sheet */}
       {currentTrack && activeTab !== 'ayah' && (
         <Suspense fallback={null}>
-          <GlobalPlayer />
+          <GlobalPlayerV2 />
         </Suspense>
       )}
 
       {/* 4. Floating Navbar */}
       <Navbar
         activeTab={activeTab}
-        setActiveTab={setActiveTab}
+        setActiveTab={handleSetActiveTab}
       />
 
     </div>
