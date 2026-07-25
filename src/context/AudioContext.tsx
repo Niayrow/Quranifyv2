@@ -70,7 +70,7 @@ interface AudioContextType {
 
   // Playlist selection (checked surahs)
   selectedSurahIds: Set<number>;
-  setSelectedSurahIds: (ids: Set<number>) => void;
+  setSelectedSurahIds: (ids: Set<number> | ((prev: Set<number>) => Set<number>)) => void;
 
   // Player V2 personalization
   playerV2Prefs: PlayerV2Prefs;
@@ -857,13 +857,19 @@ export const AudioProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     writeStorage(`${LOCAL_STORAGE_PREFIX}player_theme`, theme);
   };
 
-  const setSelectedSurahIds = useCallback((ids: Set<number>) => {
-    setSelectedSurahIdsState(ids);
-    writeStorage(
-      `${LOCAL_STORAGE_PREFIX}selected_surah_ids`,
-      JSON.stringify([...ids].sort((a, b) => a - b))
-    );
-  }, []);
+  const setSelectedSurahIds = useCallback(
+    (ids: Set<number> | ((prev: Set<number>) => Set<number>)) => {
+      setSelectedSurahIdsState((prev) => {
+        const next = typeof ids === 'function' ? ids(prev) : ids;
+        writeStorage(
+          `${LOCAL_STORAGE_PREFIX}selected_surah_ids`,
+          JSON.stringify([...next].sort((a, b) => a - b))
+        );
+        return next;
+      });
+    },
+    []
+  );
 
   const setPlayerV2Prefs = useCallback(
     (prefs: PlayerV2Prefs | ((prev: PlayerV2Prefs) => PlayerV2Prefs)) => {

@@ -201,10 +201,12 @@ export const GlobalPlayerV2: React.FC = () => {
   };
 
   const toggleSurahInPlaylist = (surahId: number) => {
-    const next = new Set(selectedSurahIds);
-    if (next.has(surahId)) next.delete(surahId);
-    else next.add(surahId);
-    setSelectedSurahIds(next);
+    setSelectedSurahIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(surahId)) next.delete(surahId);
+      else next.add(surahId);
+      return next;
+    });
   };
 
   const jumpBy = (delta: number) => {

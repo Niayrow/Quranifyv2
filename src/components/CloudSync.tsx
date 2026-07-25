@@ -90,6 +90,9 @@ export const CloudSync: React.FC<CloudSyncProps> = ({ favorites, setFavorites })
 
   const lastPushedFavorites = useRef<string>('');
   const lastPushedSettings = useRef<string>('');
+  const pendingSettingsSigRef = useRef<string | null>(null);
+  const suppressRemoteSettingsUntilRef = useRef(0);
+  const lastRemoteSettingsAtRef = useRef(0);
   const settingsPushTimer = useRef<number | null>(null);
   const didHydrateCloud = useRef(false);
   const favoritesRef = useRef(favorites);
@@ -154,7 +157,32 @@ export const CloudSync: React.FC<CloudSyncProps> = ({ favorites, setFavorites })
   const applyRemoteSettings = (row: QuranifyUserSettingsRow) => {
     if (!row || typeof row.user_id !== 'string') return;
     const signature = signatureFromSettingsRow(row);
+
+    // Echo of our own in-flight write
+    if (pendingSettingsSigRef.current && signature === pendingSettingsSigRef.current) {
+      lastPushedSettings.current = signature;
+      pendingSettingsSigRef.current = null;
+      const echoedAt = Date.parse(row.updated_at);
+      if (Number.isFinite(echoedAt)) lastRemoteSettingsAtRef.current = echoedAt;
+      return;
+    }
+
     if (signature === lastPushedSettings.current) return;
+
+    // Local edit in progress — ignore stale cloud snapshots
+    if (
+      pendingSettingsSigRef.current ||
+      Date.now() < suppressRemoteSettingsUntilRef.current
+    ) {
+      return;
+    }
+
+    const remoteAt = Date.parse(row.updated_at);
+    if (Number.isFinite(remoteAt) && remoteAt <= lastRemoteSettingsAtRef.current) {
+      return;
+    }
+    if (Number.isFinite(remoteAt)) lastRemoteSettingsAtRef.current = remoteAt;
+
     lastPushedSettings.current = signature;
     hydrateSettingsRef.current({
       volume: row.volume,
@@ -164,6 +192,11 @@ export const CloudSync: React.FC<CloudSyncProps> = ({ favorites, setFavorites })
       playerV2Prefs: row.player_v2_prefs as Partial<typeof playerV2Prefs>,
       selectedSurahIds: row.selected_surah_ids ?? [],
     });
+  };
+
+  const queueLocalSettings = (signature: string) => {
+    pendingSettingsSigRef.current = signature;
+    suppressRemoteSettingsUntilRef.current = Date.now() + 4000;
   };
 
   const clearPauseTimer = () => {
@@ -453,6 +486,9 @@ export const CloudSync: React.FC<CloudSyncProps> = ({ favorites, setFavorites })
       didHydrateCloud.current = false;
       setSettingsReady(false);
       lastPushedSettings.current = '';
+      pendingSettingsSigRef.current = null;
+      suppressRemoteSettingsUntilRef.current = 0;
+      lastRemoteSettingsAtRef.current = 0;
       weOwnPlaybackRef.current = false;
       lastPushKey.current = '';
       lastRemoteKeyRef.current = '';
@@ -507,15 +543,34 @@ export const CloudSync: React.FC<CloudSyncProps> = ({ favorites, setFavorites })
         : [],
     };
     const signature = settingsSignature(payload);
-    if (signature === lastPushedSettings.current) return;
+    if (
+      signature === lastPushedSettings.current &&
+      pendingSettingsSigRef.current === null
+    ) {
+      return;
+    }
+
+    // Mark dirty immediately so polls/realtime cannot clobber the click
+    queueLocalSettings(signature);
 
     if (settingsPushTimer.current !== null) {
       window.clearTimeout(settingsPushTimer.current);
     }
     settingsPushTimer.current = window.setTimeout(() => {
-      lastPushedSettings.current = signature;
-      void upsertSettingsRef.current(payload);
-      settingsPushTimer.current = null;
+      void (async () => {
+        try {
+          await upsertSettingsRef.current(payload);
+          if (pendingSettingsSigRef.current === signature) {
+            lastPushedSettings.current = signature;
+            pendingSettingsSigRef.current = null;
+            lastRemoteSettingsAtRef.current = Date.now();
+          }
+        } catch (err) {
+          console.warn('settings push failed', err);
+        } finally {
+          settingsPushTimer.current = null;
+        }
+      })();
     }, SETTINGS_PUSH_DELAY_MS);
 
     return () => {

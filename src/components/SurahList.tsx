@@ -52,10 +52,12 @@ export const SurahList: React.FC<SurahListProps> = ({ onChooseReciter }) => {
   const playlistActive = selectedSurahIds.size > 0;
 
   const toggleInLoop = (id: number) => {
-    const next = new Set(selectedSurahIds);
-    if (next.has(id)) next.delete(id);
-    else next.add(id);
-    setSelectedSurahIds(next);
+    setSelectedSurahIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
   };
 
   const handlePlay = (surah: Surah) => {
