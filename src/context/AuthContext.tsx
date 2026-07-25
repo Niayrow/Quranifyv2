@@ -52,7 +52,7 @@ interface AuthContextValue {
     playbackSpeed: number;
     repeatMode: 'none' | 'one' | 'all';
     playerTheme: string;
-    playerV2Prefs: Record<string, unknown>;
+    playerV2Prefs: object;
     selectedSurahIds: number[];
   }) => Promise<void>;
 }
@@ -301,7 +301,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     playbackSpeed: number;
     repeatMode: 'none' | 'one' | 'all';
     playerTheme: string;
-    playerV2Prefs: Record<string, unknown>;
+    playerV2Prefs: object;
     selectedSurahIds: number[];
   }) => {
     if (!supabase || !userIdRef.current) return;
