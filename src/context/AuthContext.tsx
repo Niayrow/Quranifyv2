@@ -41,6 +41,9 @@ interface AuthContextValue {
     moshafId: number;
     surahId: number;
     positionSeconds: number;
+    isPlaying: boolean;
+    deviceId: string;
+    deviceLabel: string;
   }) => Promise<void>;
 }
 
@@ -250,6 +253,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     moshafId: number;
     surahId: number;
     positionSeconds: number;
+    isPlaying: boolean;
+    deviceId: string;
+    deviceLabel: string;
   }) => {
     if (!supabase || !userIdRef.current) return;
     const { error } = await supabase.from('quranify_playback_state').upsert({
@@ -258,6 +264,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       moshaf_id: payload.moshafId,
       surah_id: payload.surahId,
       position_seconds: Math.max(0, payload.positionSeconds),
+      is_playing: payload.isPlaying,
+      device_id: payload.deviceId,
+      device_label: payload.deviceLabel,
       updated_at: new Date().toISOString(),
     });
     if (error) console.warn('playback upsert failed', error.message);

@@ -1,6 +1,8 @@
 import React, { useEffect, useRef } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { useAudio } from '../context/AudioContext';
+import { supabase, type QuranifyPlaybackRow } from '../lib/supabase';
+import { getLocalDeviceId, getLocalDeviceLabel } from '../lib/deviceId';
 
 const FAVORITES_KEY = 'quran_streamer_favorites';
 
@@ -11,7 +13,7 @@ interface CloudSyncProps {
 
 /**
  * Syncs Quranify favorites + playback resume with Supabase when logged in.
- * Keeps localStorage as offline cache.
+ * Also keeps multi-device "now playing" presence via Realtime.
  */
 export const CloudSync: React.FC<CloudSyncProps> = ({ favorites, setFavorites }) => {
   const {
@@ -24,8 +26,12 @@ export const CloudSync: React.FC<CloudSyncProps> = ({ favorites, setFavorites })
   const {
     currentTrack,
     currentTime,
+    playbackStatus,
     isLoadingReciters,
     hydratePlaybackState,
+    remoteSession,
+    setRemoteSession,
+    pause,
   } = useAudio();
 
   const lastPushedFavorites = useRef<string>('');
@@ -34,7 +40,21 @@ export const CloudSync: React.FC<CloudSyncProps> = ({ favorites, setFavorites })
   const favoritesRef = useRef(favorites);
   favoritesRef.current = favorites;
 
-  // On login: merge favorites + restore cloud playback
+  const currentTrackRef = useRef(currentTrack);
+  currentTrackRef.current = currentTrack;
+  const currentTimeRef = useRef(currentTime);
+  currentTimeRef.current = currentTime;
+  const playbackStatusRef = useRef(playbackStatus);
+  playbackStatusRef.current = playbackStatus;
+  const remoteSessionRef = useRef(remoteSession);
+  remoteSessionRef.current = remoteSession;
+
+  const localDeviceId = useRef(getLocalDeviceId());
+  const localDeviceLabel = useRef(getLocalDeviceLabel());
+  const lastStatusPushed = useRef<string>('');
+  const suppressRemoteClobber = useRef(false);
+
+  // On login: merge favorites + restore cloud playback metadata
   useEffect(() => {
     if (!user || isLoadingReciters) return;
     let cancelled = false;
@@ -54,12 +74,36 @@ export const CloudSync: React.FC<CloudSyncProps> = ({ favorites, setFavorites })
         didHydrateCloud.current = true;
         const remote = await fetchPlaybackState();
         if (cancelled || !remote) return;
-        hydratePlaybackState({
-          reciterId: remote.reciter_id,
-          moshafId: remote.moshaf_id,
-          surahId: remote.surah_id,
-          positionSeconds: remote.position_seconds,
-        });
+
+        const isOtherDevicePlaying =
+          remote.is_playing &&
+          Boolean(remote.device_id) &&
+          remote.device_id !== localDeviceId.current;
+
+        if (isOtherDevicePlaying) {
+          hydratePlaybackState({
+            reciterId: remote.reciter_id,
+            moshafId: remote.moshaf_id,
+            surahId: remote.surah_id,
+            positionSeconds: remote.position_seconds,
+          });
+          setRemoteSession({
+            reciterId: remote.reciter_id,
+            moshafId: remote.moshaf_id,
+            surahId: remote.surah_id,
+            positionSeconds: remote.position_seconds,
+            deviceId: remote.device_id!,
+            deviceLabel: remote.device_label,
+            updatedAt: remote.updated_at,
+          });
+        } else if (!currentTrackRef.current) {
+          hydratePlaybackState({
+            reciterId: remote.reciter_id,
+            moshafId: remote.moshaf_id,
+            surahId: remote.surah_id,
+            positionSeconds: remote.position_seconds,
+          });
+        }
       }
     };
 
@@ -74,13 +118,16 @@ export const CloudSync: React.FC<CloudSyncProps> = ({ favorites, setFavorites })
     setFavorites,
     fetchPlaybackState,
     hydratePlaybackState,
+    setRemoteSession,
   ]);
 
   useEffect(() => {
     if (!user) {
       didHydrateCloud.current = false;
+      setRemoteSession(null);
+      lastStatusPushed.current = '';
     }
-  }, [user]);
+  }, [user, setRemoteSession]);
 
   // Push favorite changes after login merge
   useEffect(() => {
@@ -108,24 +155,128 @@ export const CloudSync: React.FC<CloudSyncProps> = ({ favorites, setFavorites })
     });
   }, [favorites, user, setFavoriteReciter]);
 
-  // Debounced playback upsert
+  const pushPlayback = (immediate = false) => {
+    const track = currentTrackRef.current;
+    if (!user || !track) return;
+
+    const isPlaying = playbackStatusRef.current === 'playing';
+    // Another device owns playback — don't overwrite with our paused/idle state
+    if (remoteSessionRef.current && !isPlaying) return;
+
+    const statusKey = `${isPlaying}:${track.reciter.id}:${track.surah.id}`;
+    const now = Date.now();
+
+    if (!immediate && now - lastPlaybackPush.current < 2500) return;
+
+    lastPlaybackPush.current = now;
+    lastStatusPushed.current = statusKey;
+
+    void upsertPlaybackState({
+      reciterId: track.reciter.id,
+      moshafId: track.moshaf.id,
+      surahId: track.surah.id,
+      positionSeconds: currentTimeRef.current,
+      isPlaying,
+      deviceId: localDeviceId.current,
+      deviceLabel: localDeviceLabel.current,
+    });
+  };
+
+  // Clear remote banner as soon as this device starts playing
+  useEffect(() => {
+    if (playbackStatus === 'playing' && remoteSession) {
+      setRemoteSession(null);
+    }
+  }, [playbackStatus, remoteSession, setRemoteSession]);
+
+  // Immediate push on play/pause transitions
   useEffect(() => {
     if (!user || !currentTrack) return;
-    const now = Date.now();
-    if (now - lastPlaybackPush.current < 4000) return;
+    if (suppressRemoteClobber.current) return;
+    if (playbackStatus === 'playing' || playbackStatus === 'paused' || playbackStatus === 'idle') {
+      pushPlayback(true);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user, playbackStatus, currentTrack?.reciter.id, currentTrack?.surah.id, currentTrack?.moshaf.id]);
+
+  // Debounced position updates while playing
+  useEffect(() => {
+    if (!user || !currentTrack || playbackStatus !== 'playing') return;
 
     const timer = window.setTimeout(() => {
-      lastPlaybackPush.current = Date.now();
-      void upsertPlaybackState({
-        reciterId: currentTrack.reciter.id,
-        moshafId: currentTrack.moshaf.id,
-        surahId: currentTrack.surah.id,
-        positionSeconds: currentTime,
-      });
-    }, 2500);
+      pushPlayback(false);
+    }, 2200);
 
     return () => window.clearTimeout(timer);
-  }, [user, currentTrack, currentTime, upsertPlaybackState]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user, currentTrack, currentTime, playbackStatus]);
+
+  // Realtime subscription for multi-device presence
+  useEffect(() => {
+    if (!user || !supabase) return;
+    const client = supabase;
+
+    const applyRemoteRow = (row: QuranifyPlaybackRow) => {
+      if (!row.device_id || row.device_id === localDeviceId.current) {
+        setRemoteSession(null);
+        return;
+      }
+
+      if (row.is_playing) {
+        if (playbackStatusRef.current === 'playing') {
+          suppressRemoteClobber.current = true;
+          pause();
+          window.setTimeout(() => {
+            suppressRemoteClobber.current = false;
+          }, 800);
+        }
+        hydratePlaybackState({
+          reciterId: row.reciter_id,
+          moshafId: row.moshaf_id,
+          surahId: row.surah_id,
+          positionSeconds: row.position_seconds,
+        });
+        setRemoteSession({
+          reciterId: row.reciter_id,
+          moshafId: row.moshaf_id,
+          surahId: row.surah_id,
+          positionSeconds: row.position_seconds,
+          deviceId: row.device_id,
+          deviceLabel: row.device_label,
+          updatedAt: row.updated_at,
+        });
+        return;
+      }
+
+      setRemoteSession(null);
+    };
+
+    const channel = client
+      .channel(`quranify-playback-${user.id}`)
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'quranify_playback_state',
+          filter: `user_id=eq.${user.id}`,
+        },
+        (payload) => {
+          const row = (payload.new || payload.old) as QuranifyPlaybackRow | null;
+          if (!row || !('reciter_id' in row)) return;
+          if (payload.eventType === 'DELETE') {
+            setRemoteSession(null);
+            return;
+          }
+          applyRemoteRow(row);
+        }
+      )
+      .subscribe();
+
+    return () => {
+      void client.removeChannel(channel);
+    };
+  }, [user, pause, setRemoteSession, hydratePlaybackState]);
 
   return null;
 };

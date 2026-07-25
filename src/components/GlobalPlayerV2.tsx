@@ -3,7 +3,7 @@ import { useAudio } from '../context/AudioContext';
 import {
   Play, Pause, SkipForward, SkipBack, ChevronDown, Volume2, VolumeX,
   Disc, ListMusic, Search, X, Settings, Sparkles, Check, Moon, Repeat,
-  Repeat1, Clock, RotateCcw, RotateCw, Gauge, SlidersHorizontal
+  Repeat1, Clock, RotateCcw, RotateCw, Gauge, SlidersHorizontal, MonitorSmartphone
 } from 'lucide-react';
 import { PLAYER_THEMES, PLAYER_THEME_IDS, type PlayerThemeId } from './player/playerThemes';
 import {
@@ -67,6 +67,8 @@ export const GlobalPlayerV2: React.FC = () => {
     setSleepTimer,
     playerTheme,
     setPlayerTheme,
+    remoteSession,
+    takeOverRemoteSession,
   } = useAudio();
 
   const [isExpanded, setIsExpanded] = useState(false);
@@ -215,6 +217,32 @@ export const GlobalPlayerV2: React.FC = () => {
           ${isExpanded ? 'opacity-0 pointer-events-none translate-y-3 md:opacity-100 md:pointer-events-auto md:translate-y-0' : 'opacity-100'}
         `}
       >
+        {remoteSession && !isExpanded && (
+          <div className="absolute -top-[2.85rem] left-0 right-0 z-10 px-0.5">
+            <div className="flex items-center gap-2 rounded-2xl border border-emerald-500/25 bg-slate-950/95 px-3 py-2 shadow-lg backdrop-blur-xl">
+              <MonitorSmartphone className="w-4 h-4 text-emerald-400 shrink-0" />
+              <div className="min-w-0 flex-1">
+                <p className="text-[11px] font-semibold text-slate-100 truncate">
+                  Écoute sur un autre appareil
+                </p>
+                {remoteSession.deviceLabel && (
+                  <p className="text-[10px] text-slate-400 truncate">{remoteSession.deviceLabel}</p>
+                )}
+              </div>
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  takeOverRemoteSession();
+                }}
+                className={`shrink-0 rounded-full px-3 py-1.5 text-[11px] font-bold text-slate-950 tap-feedback ${theme.accent}`}
+              >
+                Basculer ici
+              </button>
+            </div>
+          </div>
+        )}
+
         {/* Seam with navbar — mobile dock only */}
         <div className="absolute bottom-0 left-3 right-3 h-px bg-slate-700/40 md:hidden" aria-hidden />
         {/* Thin progress — mobile only */}
@@ -482,6 +510,25 @@ export const GlobalPlayerV2: React.FC = () => {
               <Settings className="w-5 h-5" />
             </button>
           </div>
+
+          {remoteSession && (
+            <div className="relative z-10 mx-4 mt-3 flex items-center gap-2 rounded-2xl border border-emerald-500/25 bg-slate-900/90 px-3 py-2.5">
+              <MonitorSmartphone className="w-4 h-4 text-emerald-400 shrink-0" />
+              <div className="min-w-0 flex-1">
+                <p className="text-xs font-semibold text-slate-100">Écoute sur un autre appareil</p>
+                {remoteSession.deviceLabel && (
+                  <p className="text-[10px] text-slate-400 truncate">{remoteSession.deviceLabel}</p>
+                )}
+              </div>
+              <button
+                type="button"
+                onClick={takeOverRemoteSession}
+                className={`shrink-0 rounded-full px-3 py-1.5 text-[11px] font-bold text-slate-950 tap-feedback ${theme.accent}`}
+              >
+                Basculer ici
+              </button>
+            </div>
+          )}
 
           <div className="relative z-10 flex-1 flex flex-col px-5 pt-5 pb-[calc(1.25rem+env(safe-area-inset-bottom,0px))] overflow-y-auto">
             <button

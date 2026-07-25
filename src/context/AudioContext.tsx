@@ -12,6 +12,16 @@ import {
   clearAudioCache,
 } from '../utils/offlineManager';
 
+export type RemotePlaybackSession = {
+  reciterId: number;
+  moshafId: number;
+  surahId: number;
+  positionSeconds: number;
+  deviceId: string;
+  deviceLabel: string | null;
+  updatedAt: string;
+};
+
 interface AudioContextType {
   // Playback state
   currentTrack: AudioTrack | null;
@@ -23,6 +33,11 @@ interface AudioContextType {
   repeatMode: 'none' | 'one' | 'all';
   sleepTimer: number | null;
   playerTheme: string;
+
+  /** Another signed-in device is currently playing */
+  remoteSession: RemotePlaybackSession | null;
+  setRemoteSession: (session: RemotePlaybackSession | null) => void;
+  takeOverRemoteSession: () => boolean;
 
   // Offline / Cache States & Actions
   cachedUrls: Set<string>;
@@ -198,6 +213,7 @@ export const AudioProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   const [duration, setDuration] = useState<number>(0);
   const [volume, setVolumeState] = useState<number>(0.8);
   const [playbackSpeed, setPlaybackSpeedState] = useState<number>(1.0);
+  const [remoteSession, setRemoteSession] = useState<RemotePlaybackSession | null>(null);
   const [repeatMode, setRepeatModeState] = useState<'none' | 'one' | 'all'>(() => {
     const saved = readStorage(`${LOCAL_STORAGE_PREFIX}repeat_mode`);
     return (saved === 'none' || saved === 'one' || saved === 'all') ? saved : 'all';
@@ -847,6 +863,25 @@ export const AudioProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     const prevSurah = playlist[prevIndex];
     playTrack(currentTrack.reciter, currentTrack.moshaf, prevSurah);
   };
+
+  const takeOverRemoteSession = () => {
+    if (!remoteSession) return false;
+    const reciter = reciters.find((r) => r.id === remoteSession.reciterId);
+    if (!reciter) return false;
+    const moshaf =
+      reciter.moshaf.find((m) => m.id === remoteSession.moshafId) || reciter.moshaf[0];
+    if (!moshaf) return false;
+    const surah = SURAHS.find((s) => s.id === remoteSession.surahId);
+    if (!surah) return false;
+
+    const startAt = Number.isFinite(remoteSession.positionSeconds)
+      ? Math.max(0, remoteSession.positionSeconds)
+      : 0;
+    setRemoteSession(null);
+    void playTrack(reciter, moshaf, surah, startAt);
+    return true;
+  };
+
   return (
     <AudioContext.Provider value={{
       currentTrack,
@@ -858,6 +893,9 @@ export const AudioProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       repeatMode,
       sleepTimer,
       playerTheme,
+      remoteSession,
+      setRemoteSession,
+      takeOverRemoteSession,
       
       reciters,
       isLoadingReciters,

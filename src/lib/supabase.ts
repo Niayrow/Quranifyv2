@@ -22,6 +22,9 @@ export type QuranifyPlaybackRow = {
   surah_id: number;
   position_seconds: number;
   updated_at: string;
+  is_playing: boolean;
+  device_id: string | null;
+  device_label: string | null;
 };
 
 export type QuranifyFavoriteRow = {
