@@ -1,7 +1,10 @@
 import React, { useState, useMemo } from 'react';
 import { useAudio } from '../context/AudioContext';
 import type { Surah } from '../types';
-import { Search, Play, Pause, Disc, MoreHorizontal, Download, CheckCircle2, Trash2 } from 'lucide-react';
+import {
+  Search, Play, Pause, Disc, MoreHorizontal, Download, CheckCircle2, Trash2,
+  Repeat1, Repeat, X,
+} from 'lucide-react';
 import { getAudioUrl } from '../utils/audioUrl';
 
 interface SurahListProps {
@@ -18,6 +21,10 @@ export const SurahList: React.FC<SurahListProps> = ({ onChooseReciter }) => {
     playbackStatus,
     playTrack,
     togglePlay,
+    repeatMode,
+    setRepeatMode,
+    selectedSurahIds,
+    setSelectedSurahIds,
     cachedUrls,
     downloadProgress,
     downloadSurah,
@@ -41,6 +48,15 @@ export const SurahList: React.FC<SurahListProps> = ({ onChooseReciter }) => {
       surah.id.toString().includes(query)
     );
   }, [availableSurahs, searchQuery]);
+
+  const playlistActive = selectedSurahIds.size > 0;
+
+  const toggleInLoop = (id: number) => {
+    const next = new Set(selectedSurahIds);
+    if (next.has(id)) next.delete(id);
+    else next.add(id);
+    setSelectedSurahIds(next);
+  };
 
   const handlePlay = (surah: Surah) => {
     if (!activeReciter || !activeMoshaf) return;
@@ -100,6 +116,43 @@ export const SurahList: React.FC<SurahListProps> = ({ onChooseReciter }) => {
         )}
       </div>
 
+      <div className="glass-panel p-4 rounded-2xl flex items-center justify-between gap-3 border-emerald-500/20 bg-emerald-500/5">
+        <div className="min-w-0">
+          <span className="text-[10px] uppercase font-bold tracking-wider text-emerald-400">Récitateur sélectionné</span>
+          <h4 className="font-semibold text-slate-200 truncate">{activeReciter.name}</h4>
+          <p className="text-xs text-slate-400 truncate">
+            {playlistActive
+              ? `Boucle active · ${selectedSurahIds.size} sourate${selectedSurahIds.size > 1 ? 's' : ''}`
+              : `${activeMoshaf.name} · « Boucle » pour répéter une sélection`}
+          </p>
+        </div>
+        <div className="flex items-center gap-2 shrink-0">
+          <button
+            type="button"
+            onClick={() => setRepeatMode(repeatMode === 'one' ? 'all' : 'one')}
+            title={repeatMode === 'one' ? 'Répétition d’une seule sourate active' : 'Répéter la même sourate'}
+            className={`w-9 h-9 rounded-full flex items-center justify-center transition-all border ${
+              repeatMode === 'one'
+                ? 'bg-amber-500/20 border-amber-400/50 text-amber-300 shadow-[0_0_12px_rgba(245,158,11,0.3)]'
+                : 'bg-slate-800/60 border-slate-700 text-slate-400 hover:text-slate-200'
+            }`}
+          >
+            <Repeat1 className="w-4 h-4" />
+          </button>
+          {playlistActive && (
+            <button
+              type="button"
+              onClick={() => setSelectedSurahIds(new Set())}
+              className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg border border-slate-700 text-[11px] font-semibold text-slate-400 hover:text-slate-200"
+              title="Lire toutes les sourates"
+            >
+              <X className="w-3 h-3" />
+              Tout
+            </button>
+          )}
+        </div>
+      </div>
+
       {filteredSurahs.length === 0 ? (
         <div className="flex flex-col items-center justify-center p-12 text-center glass-panel rounded-3xl gap-2">
           <p className="text-slate-400">Aucune sourate trouvée pour &quot;{searchQuery}&quot;</p>
@@ -113,6 +166,8 @@ export const SurahList: React.FC<SurahListProps> = ({ onChooseReciter }) => {
               currentTrack?.moshaf.id === activeMoshaf.id;
             const isPlaying = isCurrent && playbackStatus === 'playing';
             const isBuffering = isCurrent && playbackStatus === 'buffering';
+            const inLoop = selectedSurahIds.has(surah.id);
+            const isDimmed = playlistActive && !inLoop;
             const url = getAudioUrl(activeMoshaf, surah);
             const isDownloaded = cachedUrls.has(url);
             const progress = downloadProgress[url];
@@ -122,10 +177,14 @@ export const SurahList: React.FC<SurahListProps> = ({ onChooseReciter }) => {
             return (
               <div
                 key={surah.id}
-                className={`group relative p-3 min-[390px]:p-4 rounded-2xl flex items-center gap-3 transition-all duration-200 border ${
+                className={`group relative p-3 min-[390px]:p-4 rounded-2xl flex items-center gap-2.5 transition-all duration-200 border ${
                   isCurrent
                     ? 'border-emerald-500/40 bg-emerald-500/10 shadow-[0_8px_24px_rgba(16,185,129,0.15)] ring-1 ring-emerald-500/20'
-                    : 'border-slate-800/40 bg-slate-900/30 hover:bg-slate-900/80 hover:border-slate-700/60'
+                    : isDimmed
+                      ? 'border-slate-800/20 bg-slate-900/15 opacity-45'
+                      : inLoop
+                        ? 'border-emerald-500/30 bg-emerald-500/5'
+                        : 'border-slate-800/40 bg-slate-900/30 hover:bg-slate-900/80 hover:border-slate-700/60'
                 }`}
               >
                 {isCurrent && (
@@ -171,25 +230,44 @@ export const SurahList: React.FC<SurahListProps> = ({ onChooseReciter }) => {
                     </p>
                   </div>
 
-                  <span className={`font-serif text-2xl tracking-wide select-none arabic-text transition-colors shrink-0 ${
+                  <span className={`font-serif text-2xl tracking-wide select-none arabic-text transition-colors shrink-0 hidden min-[420px]:inline ${
                     isCurrent ? 'text-emerald-400 drop-shadow-[0_0_8px_rgba(16,185,129,0.4)]' : 'text-slate-300 group-hover:text-slate-100'
                   }`}>
                     {surah.arabicName}
                   </span>
+                </button>
 
-                  <span
-                    className={`w-10 h-10 rounded-full flex items-center justify-center transition-all shrink-0 ${
-                      isCurrent
-                        ? 'bg-emerald-500 text-slate-950 shadow-[0_0_15px_rgba(16,185,129,0.4)]'
-                        : 'bg-slate-800 text-slate-300 group-hover:text-slate-950 group-hover:bg-emerald-400 border border-slate-700'
-                    }`}
-                  >
-                    {isPlaying ? (
-                      <Pause className="w-4 h-4 fill-current" />
-                    ) : (
-                      <Play className="w-4 h-4 fill-current ml-0.5" />
-                    )}
-                  </span>
+                <button
+                  type="button"
+                  onClick={() => toggleInLoop(surah.id)}
+                  className={`shrink-0 inline-flex items-center gap-1.5 h-9 px-2.5 rounded-full text-[11px] font-semibold tracking-wide transition-all tap-feedback ${
+                    inLoop
+                      ? 'bg-emerald-500 text-slate-950 shadow-[0_0_14px_rgba(16,185,129,0.35)]'
+                      : 'bg-transparent text-slate-400 ring-1 ring-inset ring-slate-700/80 hover:text-emerald-300 hover:ring-emerald-500/40'
+                  }`}
+                  title={inLoop ? 'Retirer de la boucle' : 'Ajouter à la boucle de répétition'}
+                  aria-pressed={inLoop}
+                  aria-label={inLoop ? `Retirer ${surah.name} de la boucle` : `Ajouter ${surah.name} à la boucle`}
+                >
+                  <Repeat className={`w-3.5 h-3.5 ${inLoop ? '' : 'opacity-80'}`} />
+                  <span className="hidden min-[360px]:inline">{inLoop ? 'En boucle' : 'Boucle'}</span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => handlePlay(surah)}
+                  className={`w-10 h-10 rounded-full flex items-center justify-center transition-all shrink-0 tap-feedback ${
+                    isCurrent
+                      ? 'bg-emerald-500 text-slate-950 shadow-[0_0_15px_rgba(16,185,129,0.4)]'
+                      : 'bg-slate-800 text-slate-300 group-hover:text-slate-950 group-hover:bg-emerald-400 border border-slate-700'
+                  }`}
+                  aria-label={isPlaying ? 'Pause' : 'Lire'}
+                >
+                  {isPlaying ? (
+                    <Pause className="w-4 h-4 fill-current" />
+                  ) : (
+                    <Play className="w-4 h-4 fill-current ml-0.5" />
+                  )}
                 </button>
 
                 <div className="relative shrink-0">

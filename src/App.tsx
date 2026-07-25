@@ -1021,11 +1021,11 @@ const AppContent: React.FC = () => {
               <div className="flex flex-col gap-5">
                 <section
                   ref={surahSectionRef}
-                  className="sticky top-0 z-20 -mx-1 px-1 pt-1 pb-2 bg-slate-950/90 backdrop-blur-md scroll-mt-6 md:top-24"
+                  className="sticky top-0 z-20 scroll-mt-6 md:top-24"
                 >
-                  <div className="glass-panel rounded-2xl border border-emerald-500/20 bg-emerald-500/5 p-4 flex flex-col gap-3">
+                  <div className="rounded-2xl border border-emerald-500/25 bg-slate-950/95 backdrop-blur-md p-4 flex flex-col gap-3 shadow-lg shadow-black/20">
                     <div className="flex items-center gap-3">
-                      <div className="w-12 h-12 rounded-xl overflow-hidden border border-slate-700/70 bg-slate-950 shrink-0">
+                      <div className="w-12 h-12 rounded-xl overflow-hidden border border-slate-700/70 bg-slate-900 shrink-0">
                         <img
                           src={getReciterImage(activeReciter)}
                           alt={activeReciter.name}
@@ -1051,7 +1051,7 @@ const AppContent: React.FC = () => {
                       <button
                         type="button"
                         onClick={handleChangeReciter}
-                        className="shrink-0 rounded-xl border border-slate-700 bg-slate-950/70 px-3 py-2 text-[11px] font-bold text-slate-200 hover:border-emerald-500/40 hover:text-emerald-300 transition-colors tap-feedback"
+                        className="shrink-0 rounded-xl border border-slate-700 bg-slate-900 px-3 py-2 text-[11px] font-bold text-slate-200 hover:border-emerald-500/40 hover:text-emerald-300 transition-colors tap-feedback"
                       >
                         Changer
                       </button>

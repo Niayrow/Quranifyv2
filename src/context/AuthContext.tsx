@@ -13,6 +13,7 @@ import {
   supabase,
   type QuranifyPlaybackRow,
   type QuranifyProfileRow,
+  type QuranifyUserSettingsRow,
 } from '../lib/supabase';
 
 type AuthMode = 'signin' | 'signup';
@@ -44,6 +45,15 @@ interface AuthContextValue {
     isPlaying: boolean;
     deviceId: string;
     deviceLabel: string;
+  }) => Promise<void>;
+  fetchUserSettings: () => Promise<QuranifyUserSettingsRow | null>;
+  upsertUserSettings: (payload: {
+    volume: number;
+    playbackSpeed: number;
+    repeatMode: 'none' | 'one' | 'all';
+    playerTheme: string;
+    playerV2Prefs: Record<string, unknown>;
+    selectedSurahIds: number[];
   }) => Promise<void>;
 }
 
@@ -272,6 +282,42 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     if (error) console.warn('playback upsert failed', error.message);
   }, []);
 
+  const fetchUserSettings = useCallback(async () => {
+    if (!supabase || !userIdRef.current) return null;
+    const { data, error } = await supabase
+      .from('quranify_user_settings')
+      .select('*')
+      .eq('user_id', userIdRef.current)
+      .maybeSingle();
+    if (error) {
+      console.warn('user settings fetch failed', error.message);
+      return null;
+    }
+    return (data as QuranifyUserSettingsRow | null) ?? null;
+  }, []);
+
+  const upsertUserSettings = useCallback(async (payload: {
+    volume: number;
+    playbackSpeed: number;
+    repeatMode: 'none' | 'one' | 'all';
+    playerTheme: string;
+    playerV2Prefs: Record<string, unknown>;
+    selectedSurahIds: number[];
+  }) => {
+    if (!supabase || !userIdRef.current) return;
+    const { error } = await supabase.from('quranify_user_settings').upsert({
+      user_id: userIdRef.current,
+      volume: Math.max(0, Math.min(1, payload.volume)),
+      playback_speed: Math.max(0.5, Math.min(2, payload.playbackSpeed)),
+      repeat_mode: payload.repeatMode,
+      player_theme: payload.playerTheme,
+      player_v2_prefs: payload.playerV2Prefs,
+      selected_surah_ids: payload.selectedSurahIds,
+      updated_at: new Date().toISOString(),
+    });
+    if (error) console.warn('user settings upsert failed', error.message);
+  }, []);
+
   const value = useMemo<AuthContextValue>(
     () => ({
       configured: isSupabaseConfigured,
@@ -289,6 +335,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       syncFavoritesMerge,
       fetchPlaybackState,
       upsertPlaybackState,
+      fetchUserSettings,
+      upsertUserSettings,
     }),
     [
       loading,
@@ -304,6 +352,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       syncFavoritesMerge,
       fetchPlaybackState,
       upsertPlaybackState,
+      fetchUserSettings,
+      upsertUserSettings,
     ]
   );
 

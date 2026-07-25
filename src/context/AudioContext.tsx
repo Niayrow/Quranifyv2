@@ -11,6 +11,12 @@ import {
   getCachedBlobUrl,
   clearAudioCache,
 } from '../utils/offlineManager';
+import {
+  DEFAULT_PLAYER_V2_PREFS,
+  loadPlayerV2Prefs,
+  savePlayerV2Prefs,
+  type PlayerV2Prefs,
+} from '../components/player/playerV2Prefs';
 
 export type RemotePlaybackSession = {
   reciterId: number;
@@ -65,6 +71,20 @@ interface AudioContextType {
   // Playlist selection (checked surahs)
   selectedSurahIds: Set<number>;
   setSelectedSurahIds: (ids: Set<number>) => void;
+
+  // Player V2 personalization
+  playerV2Prefs: PlayerV2Prefs;
+  setPlayerV2Prefs: (prefs: PlayerV2Prefs | ((prev: PlayerV2Prefs) => PlayerV2Prefs)) => void;
+
+  /** Apply cloud-synced player preferences + playlist */
+  hydrateCloudSettings: (payload: {
+    volume?: number;
+    playbackSpeed?: number;
+    repeatMode?: 'none' | 'one' | 'all';
+    playerTheme?: string;
+    playerV2Prefs?: Partial<PlayerV2Prefs>;
+    selectedSurahIds?: number[];
+  }) => void;
   
   // Actions
   setActiveReciter: (reciter: Reciter | null) => void;
@@ -231,8 +251,23 @@ export const AudioProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     return readStorage(`${LOCAL_STORAGE_PREFIX}player_theme`) || 'emerald';
   });
   // IDs of user-selected (checked) surahs; empty = play all
-  const [selectedSurahIds, setSelectedSurahIds] = useState<Set<number>>(new Set());
-  const selectedSurahIdsRef = useRef<Set<number>>(new Set());
+  const [selectedSurahIds, setSelectedSurahIdsState] = useState<Set<number>>(() => {
+    try {
+      const raw = readStorage(`${LOCAL_STORAGE_PREFIX}selected_surah_ids`);
+      if (!raw) return new Set();
+      const parsed = JSON.parse(raw) as unknown;
+      if (!Array.isArray(parsed)) return new Set();
+      return new Set(
+        parsed
+          .map((id) => Number(id))
+          .filter((id) => Number.isFinite(id) && id >= 1 && id <= 114)
+      );
+    } catch {
+      return new Set();
+    }
+  });
+  const [playerV2Prefs, setPlayerV2PrefsState] = useState<PlayerV2Prefs>(() => loadPlayerV2Prefs());
+  const selectedSurahIdsRef = useRef<Set<number>>(selectedSurahIds);
   useEffect(() => {
     selectedSurahIdsRef.current = selectedSurahIds;
   }, [selectedSurahIds]);
@@ -822,6 +857,82 @@ export const AudioProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     writeStorage(`${LOCAL_STORAGE_PREFIX}player_theme`, theme);
   };
 
+  const setSelectedSurahIds = useCallback((ids: Set<number>) => {
+    setSelectedSurahIdsState(ids);
+    writeStorage(
+      `${LOCAL_STORAGE_PREFIX}selected_surah_ids`,
+      JSON.stringify([...ids].sort((a, b) => a - b))
+    );
+  }, []);
+
+  const setPlayerV2Prefs = useCallback(
+    (prefs: PlayerV2Prefs | ((prev: PlayerV2Prefs) => PlayerV2Prefs)) => {
+      setPlayerV2PrefsState((prev) => {
+        const next = typeof prefs === 'function' ? prefs(prev) : prefs;
+        savePlayerV2Prefs(next);
+        return next;
+      });
+    },
+    []
+  );
+
+  const hydrateCloudSettings = useCallback(
+    (payload: {
+      volume?: number;
+      playbackSpeed?: number;
+      repeatMode?: 'none' | 'one' | 'all';
+      playerTheme?: string;
+      playerV2Prefs?: Partial<PlayerV2Prefs>;
+      selectedSurahIds?: number[];
+    }) => {
+      if (typeof payload.volume === 'number' && Number.isFinite(payload.volume)) {
+        const safeVol = Math.max(0, Math.min(1, payload.volume));
+        setVolumeState(safeVol);
+        writeStorage(`${LOCAL_STORAGE_PREFIX}volume`, String(safeVol));
+        if (audioRef.current) audioRef.current.volume = safeVol;
+      }
+      if (typeof payload.playbackSpeed === 'number' && Number.isFinite(payload.playbackSpeed)) {
+        const safeSpeed = Math.max(0.5, Math.min(2, payload.playbackSpeed));
+        setPlaybackSpeedState(safeSpeed);
+        writeStorage(`${LOCAL_STORAGE_PREFIX}speed`, String(safeSpeed));
+        if (audioRef.current) {
+          audioRef.current.defaultPlaybackRate = safeSpeed;
+          audioRef.current.playbackRate = safeSpeed;
+        }
+      }
+      if (
+        payload.repeatMode === 'none' ||
+        payload.repeatMode === 'one' ||
+        payload.repeatMode === 'all'
+      ) {
+        setRepeatModeState(payload.repeatMode);
+        writeStorage(`${LOCAL_STORAGE_PREFIX}repeat_mode`, payload.repeatMode);
+      }
+      if (typeof payload.playerTheme === 'string' && payload.playerTheme.trim()) {
+        setPlayerThemeState(payload.playerTheme);
+        writeStorage(`${LOCAL_STORAGE_PREFIX}player_theme`, payload.playerTheme);
+      }
+      if (payload.playerV2Prefs && typeof payload.playerV2Prefs === 'object') {
+        const next = { ...DEFAULT_PLAYER_V2_PREFS, ...payload.playerV2Prefs };
+        setPlayerV2PrefsState(next);
+        savePlayerV2Prefs(next);
+      }
+      if (Array.isArray(payload.selectedSurahIds)) {
+        const next = new Set(
+          payload.selectedSurahIds
+            .map((id) => Number(id))
+            .filter((id) => Number.isFinite(id) && id >= 1 && id <= 114)
+        );
+        setSelectedSurahIdsState(next);
+        writeStorage(
+          `${LOCAL_STORAGE_PREFIX}selected_surah_ids`,
+          JSON.stringify([...next].sort((a, b) => a - b))
+        );
+      }
+    },
+    []
+  );
+
   // Sleep Timer Countdown Effect
   useEffect(() => {
     if (sleepTimer === null) return;
@@ -938,6 +1049,9 @@ export const AudioProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 
       selectedSurahIds,
       setSelectedSurahIds,
+      playerV2Prefs,
+      setPlayerV2Prefs,
+      hydrateCloudSettings,
       
       setActiveReciter,
       setActiveMoshaf,

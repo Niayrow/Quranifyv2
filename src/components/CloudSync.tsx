@@ -1,15 +1,48 @@
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { useAudio } from '../context/AudioContext';
-import { supabase, type QuranifyPlaybackRow } from '../lib/supabase';
+import {
+  supabase,
+  type QuranifyPlaybackRow,
+  type QuranifyUserSettingsRow,
+} from '../lib/supabase';
 import { getLocalDeviceId, getLocalDeviceLabel } from '../lib/deviceId';
 import { SURAHS } from '../data/surahs';
 
 const FAVORITES_KEY = 'quran_streamer_favorites';
 const POLL_MS = 800;
+const SETTINGS_POLL_MS = 2500;
 const PAUSE_PUSH_DELAY_MS = 500;
 const TAKEOVER_GRACE_MS = 3500;
 const HEARTBEAT_MS = 1000;
+const SETTINGS_PUSH_DELAY_MS = 350;
+
+const settingsSignature = (payload: {
+  volume: number;
+  playbackSpeed: number;
+  repeatMode: string;
+  playerTheme: string;
+  playerV2Prefs: unknown;
+  selectedSurahIds: number[];
+}) =>
+  JSON.stringify({
+    volume: Math.round(payload.volume * 1000) / 1000,
+    playbackSpeed: Math.round(payload.playbackSpeed * 100) / 100,
+    repeatMode: payload.repeatMode,
+    playerTheme: payload.playerTheme,
+    playerV2Prefs: payload.playerV2Prefs,
+    selectedSurahIds: [...payload.selectedSurahIds].sort((a, b) => a - b),
+  });
+
+const signatureFromSettingsRow = (row: QuranifyUserSettingsRow) =>
+  settingsSignature({
+    volume: row.volume,
+    playbackSpeed: row.playback_speed,
+    repeatMode: row.repeat_mode,
+    playerTheme: row.player_theme,
+    playerV2Prefs: row.player_v2_prefs,
+    selectedSurahIds: row.selected_surah_ids ?? [],
+  });
 
 interface CloudSyncProps {
   favorites: number[];
@@ -17,7 +50,7 @@ interface CloudSyncProps {
 }
 
 /**
- * Syncs Quranify favorites + multi-device playback presence.
+ * Syncs Quranify favorites, settings/playlist loop, and multi-device playback.
  */
 export const CloudSync: React.FC<CloudSyncProps> = ({ favorites, setFavorites }) => {
   const {
@@ -26,6 +59,8 @@ export const CloudSync: React.FC<CloudSyncProps> = ({ favorites, setFavorites })
     setFavoriteReciter,
     fetchPlaybackState,
     upsertPlaybackState,
+    fetchUserSettings,
+    upsertUserSettings,
   } = useAuth();
   const {
     currentTrack,
@@ -41,9 +76,21 @@ export const CloudSync: React.FC<CloudSyncProps> = ({ favorites, setFavorites })
     setSuppressRemoteUntil,
     getAccurateCurrentTime,
     reciters,
+    volume,
+    playbackSpeed,
+    repeatMode,
+    playerTheme,
+    playerV2Prefs,
+    selectedSurahIds,
+    hydrateCloudSettings,
   } = useAudio();
 
+  const [settingsReady, setSettingsReady] = useState(false);
+  const selectedSurahKey = [...selectedSurahIds].sort((a, b) => a - b).join(',');
+
   const lastPushedFavorites = useRef<string>('');
+  const lastPushedSettings = useRef<string>('');
+  const settingsPushTimer = useRef<number | null>(null);
   const didHydrateCloud = useRef(false);
   const favoritesRef = useRef(favorites);
   favoritesRef.current = favorites;
@@ -85,6 +132,39 @@ export const CloudSync: React.FC<CloudSyncProps> = ({ favorites, setFavorites })
   getAccurateTimeRef.current = getAccurateCurrentTime;
   const setSuppressRef = useRef(setSuppressRemoteUntil);
   setSuppressRef.current = setSuppressRemoteUntil;
+  const fetchSettingsRef = useRef(fetchUserSettings);
+  fetchSettingsRef.current = fetchUserSettings;
+  const upsertSettingsRef = useRef(upsertUserSettings);
+  upsertSettingsRef.current = upsertUserSettings;
+  const hydrateSettingsRef = useRef(hydrateCloudSettings);
+  hydrateSettingsRef.current = hydrateCloudSettings;
+  const volumeRef = useRef(volume);
+  volumeRef.current = volume;
+  const playbackSpeedRef = useRef(playbackSpeed);
+  playbackSpeedRef.current = playbackSpeed;
+  const repeatModeRef = useRef(repeatMode);
+  repeatModeRef.current = repeatMode;
+  const playerThemeRef = useRef(playerTheme);
+  playerThemeRef.current = playerTheme;
+  const playerV2PrefsRef = useRef(playerV2Prefs);
+  playerV2PrefsRef.current = playerV2Prefs;
+  const selectedSurahIdsRef = useRef(selectedSurahIds);
+  selectedSurahIdsRef.current = selectedSurahIds;
+
+  const applyRemoteSettings = (row: QuranifyUserSettingsRow) => {
+    if (!row || typeof row.user_id !== 'string') return;
+    const signature = signatureFromSettingsRow(row);
+    if (signature === lastPushedSettings.current) return;
+    lastPushedSettings.current = signature;
+    hydrateSettingsRef.current({
+      volume: row.volume,
+      playbackSpeed: row.playback_speed,
+      repeatMode: row.repeat_mode,
+      playerTheme: row.player_theme,
+      playerV2Prefs: row.player_v2_prefs as Partial<typeof playerV2Prefs>,
+      selectedSurahIds: row.selected_surah_ids ?? [],
+    });
+  };
 
   const clearPauseTimer = () => {
     if (pausePushTimer.current !== null) {
@@ -296,7 +376,7 @@ export const CloudSync: React.FC<CloudSyncProps> = ({ favorites, setFavorites })
     return () => registerTakeOverHandler(null);
   }, [registerTakeOverHandler]);
 
-  // On login: merge favorites + restore cloud playback metadata
+  // On login: merge favorites + restore cloud playback metadata + settings
   useEffect(() => {
     if (!user || isLoadingReciters) return;
     let cancelled = false;
@@ -311,6 +391,26 @@ export const CloudSync: React.FC<CloudSyncProps> = ({ favorites, setFavorites })
         // ignore
       }
       lastPushedFavorites.current = JSON.stringify([...merged].sort((a, b) => a - b));
+
+      // Player prefs + selected surah playlist
+      const cloudSettings = await fetchSettingsRef.current();
+      if (cancelled) return;
+
+      if (cloudSettings) {
+        applyRemoteSettings(cloudSettings);
+      } else {
+        const localPayload = {
+          volume: volumeRef.current,
+          playbackSpeed: playbackSpeedRef.current,
+          repeatMode: repeatModeRef.current,
+          playerTheme: playerThemeRef.current,
+          playerV2Prefs: playerV2PrefsRef.current,
+          selectedSurahIds: [...selectedSurahIdsRef.current],
+        };
+        lastPushedSettings.current = settingsSignature(localPayload);
+        await upsertSettingsRef.current(localPayload);
+      }
+      if (!cancelled) setSettingsReady(true);
 
       if (!didHydrateCloud.current) {
         didHydrateCloud.current = true;
@@ -351,12 +451,18 @@ export const CloudSync: React.FC<CloudSyncProps> = ({ favorites, setFavorites })
   useEffect(() => {
     if (!user) {
       didHydrateCloud.current = false;
+      setSettingsReady(false);
+      lastPushedSettings.current = '';
       weOwnPlaybackRef.current = false;
       lastPushKey.current = '';
       lastRemoteKeyRef.current = '';
       pausedForRemoteRef.current = false;
       setRemoteSession(null);
       clearPauseTimer();
+      if (settingsPushTimer.current !== null) {
+        window.clearTimeout(settingsPushTimer.current);
+        settingsPushTimer.current = null;
+      }
     }
   }, [user, setRemoteSession]);
 
@@ -385,6 +491,49 @@ export const CloudSync: React.FC<CloudSyncProps> = ({ favorites, setFavorites })
       void setFavoriteReciter(id, false);
     });
   }, [favorites, user, setFavoriteReciter]);
+
+  // Debounced push of player prefs + selected surah loop (live multi-device)
+  useEffect(() => {
+    if (!user || !settingsReady) return;
+
+    const payload = {
+      volume,
+      playbackSpeed,
+      repeatMode,
+      playerTheme,
+      playerV2Prefs,
+      selectedSurahIds: selectedSurahKey
+        ? selectedSurahKey.split(',').map((id) => Number(id))
+        : [],
+    };
+    const signature = settingsSignature(payload);
+    if (signature === lastPushedSettings.current) return;
+
+    if (settingsPushTimer.current !== null) {
+      window.clearTimeout(settingsPushTimer.current);
+    }
+    settingsPushTimer.current = window.setTimeout(() => {
+      lastPushedSettings.current = signature;
+      void upsertSettingsRef.current(payload);
+      settingsPushTimer.current = null;
+    }, SETTINGS_PUSH_DELAY_MS);
+
+    return () => {
+      if (settingsPushTimer.current !== null) {
+        window.clearTimeout(settingsPushTimer.current);
+        settingsPushTimer.current = null;
+      }
+    };
+  }, [
+    user,
+    settingsReady,
+    volume,
+    playbackSpeed,
+    repeatMode,
+    playerTheme,
+    playerV2Prefs,
+    selectedSurahKey,
+  ]);
 
   // Claim / release ownership from local transport state
   useEffect(() => {
@@ -426,7 +575,7 @@ export const CloudSync: React.FC<CloudSyncProps> = ({ favorites, setFavorites })
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user, currentTrack?.reciter.id, currentTrack?.surah.id, playbackStatus]);
 
-  // Realtime + polling
+  // Realtime + polling (playback + settings/loop)
   useEffect(() => {
     if (!user || !supabase) return;
     const client = supabase;
@@ -438,7 +587,7 @@ export const CloudSync: React.FC<CloudSyncProps> = ({ favorites, setFavorites })
     });
 
     const channel = client
-      .channel(`quranify-playback-${userId}`)
+      .channel(`quranify-sync-${userId}`)
       .on(
         'postgres_changes',
         {
@@ -457,21 +606,46 @@ export const CloudSync: React.FC<CloudSyncProps> = ({ favorites, setFavorites })
           applyRemoteRow(row);
         }
       )
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'quranify_user_settings',
+          filter: `user_id=eq.${userId}`,
+        },
+        (payload) => {
+          const row = payload.new as QuranifyUserSettingsRow | null;
+          if (!row || payload.eventType === 'DELETE') return;
+          applyRemoteSettings(row);
+        }
+      )
       .subscribe();
 
-    const poll = async () => {
+    const pollPlayback = async () => {
       const remote = await fetchPlaybackRef.current();
       if (!remote) return;
       applyRemoteRow(remote);
     };
 
-    void poll();
-    const pollId = window.setInterval(() => {
-      void poll();
+    const pollSettings = async () => {
+      const remote = await fetchSettingsRef.current();
+      if (!remote) return;
+      applyRemoteSettings(remote);
+    };
+
+    void pollPlayback();
+    void pollSettings();
+    const playbackPollId = window.setInterval(() => {
+      void pollPlayback();
     }, POLL_MS);
+    const settingsPollId = window.setInterval(() => {
+      void pollSettings();
+    }, SETTINGS_POLL_MS);
 
     return () => {
-      window.clearInterval(pollId);
+      window.clearInterval(playbackPollId);
+      window.clearInterval(settingsPollId);
       void client.removeChannel(channel);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps

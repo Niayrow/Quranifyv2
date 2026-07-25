@@ -7,8 +7,6 @@ import {
 } from 'lucide-react';
 import { PLAYER_THEMES, PLAYER_THEME_IDS, type PlayerThemeId } from './player/playerThemes';
 import {
-  loadPlayerV2Prefs,
-  savePlayerV2Prefs,
   type PlayerBarDensity,
   type PlayerV2Prefs,
   type SeekStepSeconds,
@@ -71,6 +69,10 @@ export const GlobalPlayerV2: React.FC = () => {
     remoteSession,
     takeOverRemoteSession,
     reciters,
+    playerV2Prefs: prefs,
+    setPlayerV2Prefs,
+    selectedSurahIds,
+    setSelectedSurahIds,
   } = useAudio();
 
   const [isExpanded, setIsExpanded] = useState(false);
@@ -80,7 +82,6 @@ export const GlobalPlayerV2: React.FC = () => {
   const [showPersonalize, setShowPersonalize] = useState(false);
   const [showVolumePopover, setShowVolumePopover] = useState(false);
   const [drawerSearch, setDrawerSearch] = useState('');
-  const [prefs, setPrefs] = useState<PlayerV2Prefs>(() => loadPlayerV2Prefs());
   const currentSurahRowRef = useRef<HTMLButtonElement | null>(null);
   const volumeWrapRef = useRef<HTMLDivElement | null>(null);
   const [liveRemotePos, setLiveRemotePos] = useState(0);
@@ -137,10 +138,6 @@ export const GlobalPlayerV2: React.FC = () => {
         s.arabicName.includes(query)
     );
   }, [currentTrack, drawerSearch, getAvailableSurahs]);
-
-  useEffect(() => {
-    savePlayerV2Prefs(prefs);
-  }, [prefs]);
 
   useEffect(() => {
     if (!showPlaylist && !showPersonalize) return;
@@ -200,7 +197,14 @@ export const GlobalPlayerV2: React.FC = () => {
   if (!currentTrack) return null;
 
   const updatePref = <K extends keyof PlayerV2Prefs>(key: K, value: PlayerV2Prefs[K]) => {
-    setPrefs((prev) => ({ ...prev, [key]: value }));
+    setPlayerV2Prefs((prev) => ({ ...prev, [key]: value }));
+  };
+
+  const toggleSurahInPlaylist = (surahId: number) => {
+    const next = new Set(selectedSurahIds);
+    if (next.has(surahId)) next.delete(surahId);
+    else next.add(surahId);
+    setSelectedSurahIds(next);
   };
 
   const jumpBy = (delta: number) => {
@@ -1002,11 +1006,25 @@ export const GlobalPlayerV2: React.FC = () => {
             <div className="flex items-center justify-between px-5 py-3 border-b border-slate-900">
               <div>
                 <h3 className="font-bold text-slate-100">Sourates</h3>
-                <p className="text-[11px] text-slate-500">{currentTrack.reciter.name} · {filteredSurahs.length}</p>
+                <p className="text-[11px] text-slate-500">
+                  {currentTrack.reciter.name} · {filteredSurahs.length}
+                  {selectedSurahIds.size > 0 ? ` · boucle ${selectedSurahIds.size}` : ''}
+                </p>
               </div>
-              <button type="button" onClick={() => setShowPlaylist(false)} className="h-9 w-9 rounded-full border border-slate-800 flex items-center justify-center text-slate-400">
-                <X className="w-4 h-4" />
-              </button>
+              <div className="flex items-center gap-2">
+                {selectedSurahIds.size > 0 && (
+                  <button
+                    type="button"
+                    onClick={() => setSelectedSurahIds(new Set())}
+                    className="px-2.5 py-1.5 rounded-full border border-slate-800 text-[10px] font-semibold text-slate-400 hover:text-slate-200"
+                  >
+                    Tout lire
+                  </button>
+                )}
+                <button type="button" onClick={() => setShowPlaylist(false)} className="h-9 w-9 rounded-full border border-slate-800 flex items-center justify-center text-slate-400">
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
             </div>
             <div className="px-4 py-3">
               <div className="relative">
@@ -1031,35 +1049,52 @@ export const GlobalPlayerV2: React.FC = () => {
                 {filteredSurahs.map((surah) => {
                   const isCurrent = currentTrack.surah.id === surah.id;
                   const isPlaying = isCurrent && playbackStatus === 'playing';
+                  const inLoop = selectedSurahIds.has(surah.id);
                   return (
                     <li key={surah.id}>
-                      <button
-                        ref={isCurrent ? currentSurahRowRef : undefined}
-                        type="button"
-                        onClick={() => {
-                          if (isCurrent) togglePlay();
-                          else {
-                            playTrack(currentTrack.reciter, currentTrack.moshaf, surah);
-                            setShowPlaylist(false);
-                            setDrawerSearch('');
-                          }
-                        }}
-                        className={`w-full flex items-center gap-3 rounded-2xl px-3 py-2.5 text-left ${isCurrent ? theme.accentBgLight : 'hover:bg-slate-900/80'}`}
-                      >
-                        <span className={`h-9 w-9 rounded-xl flex items-center justify-center text-xs font-bold tabular-nums ${isCurrent ? `${theme.accentText} bg-slate-950/50` : 'bg-slate-900 text-slate-500'}`}>
-                          {String(surah.id).padStart(2, '0')}
-                        </span>
-                        <span className="min-w-0 flex-1">
-                          <span className={`block text-sm font-semibold truncate ${isCurrent ? theme.accentText : 'text-slate-100'}`}>{surah.name}</span>
-                          <span className="block text-[11px] text-slate-500 truncate">{surah.englishTranslation}</span>
-                        </span>
-                        {prefs.showArabic && (
-                          <span className={`font-serif text-lg arabic-text ${isCurrent ? theme.accentText : 'text-slate-400'}`}>{surah.arabicName}</span>
-                        )}
-                        <span className={`h-8 w-8 rounded-full flex items-center justify-center ${isCurrent ? `${theme.accent} text-slate-950` : 'opacity-0'}`}>
-                          {isPlaying ? <Pause className="w-3.5 h-3.5 fill-current" /> : <Play className="w-3.5 h-3.5 fill-current ml-0.5" />}
-                        </span>
-                      </button>
+                      <div className={`flex items-center gap-2 rounded-2xl px-2 py-1.5 ${isCurrent ? theme.accentBgLight : 'hover:bg-slate-900/80'}`}>
+                        <button
+                          ref={isCurrent ? currentSurahRowRef : undefined}
+                          type="button"
+                          onClick={() => {
+                            if (isCurrent) togglePlay();
+                            else {
+                              playTrack(currentTrack.reciter, currentTrack.moshaf, surah);
+                              setShowPlaylist(false);
+                              setDrawerSearch('');
+                            }
+                          }}
+                          className="min-w-0 flex-1 flex items-center gap-3 rounded-2xl px-1 py-1.5 text-left"
+                        >
+                          <span className={`h-9 w-9 rounded-xl flex items-center justify-center text-xs font-bold tabular-nums ${isCurrent ? `${theme.accentText} bg-slate-950/50` : 'bg-slate-900 text-slate-500'}`}>
+                            {String(surah.id).padStart(2, '0')}
+                          </span>
+                          <span className="min-w-0 flex-1">
+                            <span className={`block text-sm font-semibold truncate ${isCurrent ? theme.accentText : 'text-slate-100'}`}>{surah.name}</span>
+                            <span className="block text-[11px] text-slate-500 truncate">{surah.englishTranslation}</span>
+                          </span>
+                          {prefs.showArabic && (
+                            <span className={`font-serif text-lg arabic-text ${isCurrent ? theme.accentText : 'text-slate-400'}`}>{surah.arabicName}</span>
+                          )}
+                          <span className={`h-8 w-8 rounded-full flex items-center justify-center ${isCurrent ? `${theme.accent} text-slate-950` : 'opacity-0'}`}>
+                            {isPlaying ? <Pause className="w-3.5 h-3.5 fill-current" /> : <Play className="w-3.5 h-3.5 fill-current ml-0.5" />}
+                          </span>
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => toggleSurahInPlaylist(surah.id)}
+                          className={`shrink-0 inline-flex items-center gap-1 h-8 px-2.5 rounded-full text-[11px] font-semibold transition-all ${
+                            inLoop
+                              ? `${theme.accent} text-slate-950`
+                              : 'text-slate-500 ring-1 ring-inset ring-slate-700 hover:text-slate-200'
+                          }`}
+                          aria-pressed={inLoop}
+                          aria-label={inLoop ? `Retirer ${surah.name} de la boucle` : `Ajouter ${surah.name} à la boucle`}
+                        >
+                          <Repeat className="w-3.5 h-3.5" />
+                          <span>{inLoop ? 'En boucle' : 'Boucle'}</span>
+                        </button>
+                      </div>
                     </li>
                   );
                 })}

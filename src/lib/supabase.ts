@@ -39,3 +39,14 @@ export type QuranifyProfileRow = {
   created_at: string;
   updated_at: string;
 };
+
+export type QuranifyUserSettingsRow = {
+  user_id: string;
+  volume: number;
+  playback_speed: number;
+  repeat_mode: 'none' | 'one' | 'all';
+  player_theme: string;
+  player_v2_prefs: Record<string, unknown>;
+  selected_surah_ids: number[];
+  updated_at: string;
+};
