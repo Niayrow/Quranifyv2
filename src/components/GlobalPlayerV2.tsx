@@ -81,7 +81,6 @@ export const GlobalPlayerV2: React.FC = () => {
   const volumeWrapRef = useRef<HTMLDivElement | null>(null);
 
   const theme = PLAYER_THEMES[(playerTheme as PlayerThemeId)] || PLAYER_THEMES.emerald;
-  const density = DENSITY_META[prefs.density];
   const progressPercent = duration > 0 ? (currentTime / duration) * 100 : 0;
   const speedOptions = [0.75, 0.9, 1, 1.25, 1.5, 1.75, 2];
 
