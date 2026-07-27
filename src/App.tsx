@@ -739,141 +739,115 @@ const AppContent: React.FC = () => {
         onClose={dismissAuthPrompt}
         onConnect={openAuthFromPrompt}
       />
-      {/* 1. App Header */}
-      <header className="mb-6 flex items-center">
-        <div className="flex items-center">
-          <h1 className="sr-only">Quranify — Lecteur Coranique Premium</h1>
-          <img
-            src="/icons/sansfond.png"
-            alt="Quranify"
-            className="h-16 w-auto object-contain drop-shadow-[0_0_16px_rgba(122, 145, 159,0.35)]"
-          />
-        </div>
-      </header>
+      {/* Brand lives in the floating Navbar; keep an accessible page title */}
+      <h1 className="sr-only">Quranify — Lecteur Coranique Premium</h1>
 
       {/* 2. Main Tab Views */}
       <main className="flex-1 flex flex-col gap-5">
         <div key={activeTab} className="animate-page-enter flex flex-col gap-5">
         
         {activeTab === 'home' && (
-          <div className="flex flex-col gap-7 pb-16 sm:pb-20">
-            <section className="relative overflow-hidden rounded-3xl border border-white/[0.08] shadow-[0_20px_50px_-28px_rgba(0,0,0,0.55)]">
+          <div className="flex flex-col gap-8 pb-16 sm:pb-20">
+            {/* Hero — one composition: brand, line, CTAs, visual */}
+            <section className="relative isolate overflow-hidden rounded-[2rem] md:rounded-[2.25rem] ring-1 ring-sky-900/40">
               <div
-                className="absolute inset-0 bg-[linear-gradient(145deg,#0a1220_0%,#0f172a_45%,#0a1628_100%)]"
+                className="absolute inset-0 bg-[radial-gradient(ellipse_at_50%_-10%,rgba(37,99,160,0.35),transparent_52%),radial-gradient(ellipse_at_80%_80%,rgba(12,48,90,0.35),transparent_45%),linear-gradient(165deg,#0c2748_0%,#081a33_42%,#04101f_100%)]"
                 aria-hidden="true"
               />
               <div
-                className="absolute -top-16 -right-10 h-44 w-44 rounded-full bg-slate-500/15 blur-3xl"
+                className="hero-glow-pulse absolute left-1/2 top-[12%] h-64 w-64 -translate-x-1/2 rounded-full bg-[radial-gradient(circle,rgba(56,120,190,0.32),transparent_68%)] blur-3xl pointer-events-none"
                 aria-hidden="true"
               />
               <div
-                className="absolute -bottom-20 -left-12 h-40 w-40 rounded-full bg-slate-600/10 blur-3xl"
+                className="absolute -left-10 bottom-0 h-40 w-40 rounded-full bg-[radial-gradient(circle,rgba(20,70,130,0.35),transparent_70%)] blur-3xl pointer-events-none"
                 aria-hidden="true"
               />
               <div
-                className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-slate-400/25 to-transparent"
+                className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-sky-300/35 to-transparent"
+                aria-hidden="true"
+              />
+              <div
+                className="absolute inset-x-8 bottom-0 h-px bg-gradient-to-r from-transparent via-blue-500/20 to-transparent"
                 aria-hidden="true"
               />
 
-              <div className="relative z-10 px-5 py-6 sm:px-7 sm:py-7">
-                <p className="font-serif text-xl text-slate-300/80 arabic-text leading-none select-none" dir="rtl">
-                  القرآن الكريم
-                </p>
-                <h2 className="mt-2.5 text-3xl sm:text-[2.15rem] font-black tracking-tight text-white">
-                  Quranify
-                </h2>
-                <p className="mt-2 max-w-md text-[13px] leading-relaxed text-slate-400">
-                  Écoutez le Coran avec les plus belles voix, où que vous soyez.
-                </p>
+              <div className="relative z-10 flex flex-col items-center px-6 pt-10 pb-9 sm:px-10 sm:pt-12 sm:pb-11 md:flex-row md:items-center md:gap-10 md:px-12 md:py-12">
+                <div className="hero-fade-up relative mb-7 md:mb-0 md:order-2 md:flex-1 flex justify-center">
+                  <img
+                    src="/icons/sansfond.png"
+                    alt=""
+                    className="hero-logo-float relative h-32 w-32 sm:h-40 sm:w-40 md:h-44 md:w-44 object-contain bg-transparent drop-shadow-[0_8px_28px_rgba(30,80,140,0.45)]"
+                    draggable={false}
+                  />
+                </div>
 
-                <div className="mt-5 flex flex-col gap-2.5">
-                  <button
-                    type="button"
-                    onClick={() => handleNavigate('listen')}
-                    className="group w-full inline-flex items-center justify-center gap-2 rounded-2xl bg-gradient-to-b from-slate-200 to-slate-300 px-5 py-3 text-[13px] font-bold text-slate-950 shadow-[0_8px_24px_rgba(0,0,0,0.35)] hover:from-white hover:to-slate-200 transition-all tap-feedback"
+                <div className="w-full max-w-md text-center md:order-1 md:flex-1 md:text-left">
+                  <p
+                    className="hero-fade-up hero-fade-up-delay-1 font-serif text-[1.35rem] sm:text-2xl text-sky-100/85 arabic-text leading-none select-none"
+                    dir="rtl"
                   >
-                    <Headphones className="h-4 w-4" />
-                    Écouter maintenant
-                    <ArrowRight className="h-3.5 w-3.5 transition-transform group-hover:translate-x-0.5" />
-                  </button>
+                    القرآن الكريم
+                  </p>
 
-                  {currentTrack && (
+                  <h2 className="hero-fade-up hero-fade-up-delay-2 mt-3 text-[2.35rem] sm:text-5xl font-black tracking-tight text-white leading-[1.05]">
+                    Quranify
+                  </h2>
+
+                  <p className="hero-fade-up hero-fade-up-delay-3 mt-3 text-[14px] sm:text-[15px] leading-relaxed text-sky-100/55 max-w-sm mx-auto md:mx-0">
+                    Écoutez le Coran avec les plus belles voix, où que vous soyez.
+                  </p>
+
+                  <div className="hero-fade-up hero-fade-up-delay-4 mt-7 flex flex-col gap-3 items-stretch md:items-start">
                     <button
                       type="button"
-                      onClick={handleResumeListening}
-                      className="w-full inline-flex items-center gap-3 rounded-2xl border border-white/[0.08] bg-white/[0.04] px-3.5 py-2.5 text-left hover:bg-white/[0.07] transition-colors tap-feedback"
+                      onClick={() => handleNavigate('listen')}
+                      className="group inline-flex w-full md:w-auto items-center justify-center gap-2.5 rounded-full bg-slate-100 px-7 py-3.5 text-[14px] font-bold text-slate-950 shadow-[0_10px_30px_rgba(0,20,50,0.45)] hover:bg-white transition-colors tap-feedback"
                     >
-                      <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-slate-200 text-slate-950">
-                        <Play className="h-3.5 w-3.5 fill-current ml-0.5" />
-                      </span>
-                      <span className="min-w-0 flex-1">
-                        <span className="block text-[9px] font-bold uppercase tracking-[0.14em] text-slate-400">
-                          Continuer
+                      <Headphones className="h-4 w-4" />
+                      Écouter maintenant
+                      <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5" />
+                    </button>
+
+                    {currentTrack && (
+                      <button
+                        type="button"
+                        onClick={handleResumeListening}
+                        className="inline-flex w-full md:w-auto max-w-full items-center gap-3 rounded-full border border-sky-300/15 bg-sky-950/35 px-3 py-2.5 pr-5 text-left hover:bg-sky-900/40 hover:border-sky-300/25 transition-colors tap-feedback"
+                      >
+                        <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-slate-100 text-slate-950">
+                          <Play className="h-3.5 w-3.5 fill-current ml-0.5" />
                         </span>
-                        <span className="block text-[13px] font-semibold text-slate-100 truncate">
-                          {currentTrack.surah.name}
-                          <span className="font-normal text-slate-400"> · {currentTrack.reciter.name}</span>
+                        <span className="min-w-0">
+                          <span className="block text-[10px] font-bold uppercase tracking-[0.16em] text-sky-200/50">
+                            Continuer
+                          </span>
+                          <span className="block text-[13px] font-semibold text-slate-100 truncate">
+                            {currentTrack.surah.name}
+                            <span className="font-normal text-sky-100/45"> · {currentTrack.reciter.name}</span>
+                          </span>
                         </span>
-                      </span>
-                    </button>
-                  )}
-
-                  <div className="grid grid-cols-2 gap-2 mt-0.5">
-                    <button
-                      type="button"
-                      disabled
-                      aria-disabled="true"
-                      title="Bientôt disponible sur l’App Store"
-                      className="relative flex items-center gap-2.5 overflow-hidden rounded-2xl border border-white/[0.1] bg-gradient-to-b from-white/[0.08] to-white/[0.02] px-3 py-2.5 text-left cursor-not-allowed"
-                    >
-                      <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-slate-950/60 text-slate-100 ring-1 ring-white/10">
-                        <svg viewBox="0 0 24 24" className="h-4 w-4 fill-current" aria-hidden="true">
-                          <path d="M18.71 19.5C17.88 20.74 17 21.95 15.66 21.97C14.32 22 13.89 21.18 12.37 21.18C10.84 21.18 10.37 21.95 9.1 22C7.79 22.05 6.8 20.68 5.96 19.47C4.25 16.76 2.93 11.84 4.7 8.55C5.57 6.91 7.24 5.95 9.03 5.9C10.32 5.86 11.53 6.79 12.3 6.79C13.06 6.79 14.54 5.7 16.14 5.87C16.82 5.9 18.69 6.15 19.9 7.9C19.8 7.97 17.23 9.5 17.27 12.53C17.32 16.07 20.33 17.27 20.4 17.3C20.36 17.42 19.91 18.98 18.71 19.5ZM13 3.5C13.73 2.67 14.94 2.04 15.94 2C16.07 3.17 15.6 4.35 14.9 5.19C14.21 6.04 13.07 6.7 11.95 6.61C11.8 5.46 12.36 4.26 13 3.5Z" />
-                        </svg>
-                      </span>
-                      <span className="min-w-0">
-                        <span className="block text-[9px] font-medium text-slate-400">App Store</span>
-                        <span className="block text-xs font-semibold text-slate-200">Bientôt</span>
-                      </span>
-                      <span className="absolute top-1.5 right-1.5 rounded-full bg-amber-400/15 px-1.5 py-0.5 text-[8px] font-bold uppercase tracking-wide text-amber-200/90">
-                        Soon
-                      </span>
-                    </button>
-
-                    <button
-                      type="button"
-                      disabled
-                      aria-disabled="true"
-                      title="Bientôt disponible sur Google Play"
-                      className="relative flex items-center gap-2.5 overflow-hidden rounded-2xl border border-white/[0.1] bg-gradient-to-b from-white/[0.08] to-white/[0.02] px-3 py-2.5 text-left cursor-not-allowed"
-                    >
-                      <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-slate-950/60 text-slate-100 ring-1 ring-white/10">
-                        <svg viewBox="0 0 24 24" className="h-4 w-4 fill-current" aria-hidden="true">
-                          <path d="M3.18 23.04c-.34-.17-.55-.5-.55-.88V1.84c0-.38.21-.71.55-.88l10.8 11.04L3.18 23.04zm12.04-7.13l-2.45-2.5 2.45-2.5 4.66 2.66c.55.31.55 1.07 0 1.38l-4.66.96zm.7-8.3L4.14.4C4.4.25 4.73.22 5.02.36l12.46 7.12-1.56 1.13zM5.02 23.64c-.29.14-.62.11-.88-.04l11.9-7.25 1.56 1.13L5.02 23.64z" />
-                        </svg>
-                      </span>
-                      <span className="min-w-0">
-                        <span className="block text-[9px] font-medium text-slate-400">Google Play</span>
-                        <span className="block text-xs font-semibold text-slate-200">Bientôt</span>
-                      </span>
-                      <span className="absolute top-1.5 right-1.5 rounded-full bg-amber-400/15 px-1.5 py-0.5 text-[8px] font-bold uppercase tracking-wide text-amber-200/90">
-                        Soon
-                      </span>
-                    </button>
+                      </button>
+                    )}
                   </div>
-
-                  <a
-                    href={GOMUSLIMLIFE_URL}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="mt-0.5 w-full inline-flex items-center justify-center gap-2 rounded-2xl border border-white/[0.08] bg-transparent px-4 py-2.5 text-[12px] font-semibold text-slate-300 hover:text-slate-100 hover:border-white/20 hover:bg-white/[0.04] transition-all tap-feedback"
-                  >
-                    Apprenez-en plus sur votre religion
-                    <ExternalLink className="h-3.5 w-3.5 opacity-60" />
-                  </a>
                 </div>
               </div>
             </section>
+
+            <div className="flex flex-wrap items-center justify-center gap-x-4 gap-y-2 px-1 text-[11px] text-slate-500">
+              <span className="inline-flex items-center gap-1.5">
+                <span className="h-1 w-1 rounded-full bg-slate-600" />
+                App Store &amp; Google Play — bientôt
+              </span>
+              <a
+                href={GOMUSLIMLIFE_URL}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-1.5 text-slate-400 hover:text-slate-200 transition-colors"
+              >
+                GoMuslimLife
+                <ExternalLink className="h-3 w-3 opacity-60" />
+              </a>
+            </div>
 
             <section className="flex flex-col gap-3">
               <div className="flex items-end justify-between gap-3 px-0.5">
