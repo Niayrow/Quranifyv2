@@ -308,7 +308,7 @@ const LoadingHome: React.FC<{ progress: number; reciterCount: number }> = ({ pro
       <main className="relative w-full max-w-sm flex flex-col items-center text-center gap-8">
         <div className="flex flex-col items-center gap-4">
           <img
-            src="/icons/logo.png"
+            src="/icons/sansfond.png"
             alt="Quranify"
             className="w-32 h-32 object-contain drop-shadow-[0_0_24px_rgba(0,0,0,0.45)]"
           />
@@ -744,7 +744,7 @@ const AppContent: React.FC = () => {
         <div className="flex items-center">
           <h1 className="sr-only">Quranify — Lecteur Coranique Premium</h1>
           <img
-            src="/icons/logo.png"
+            src="/icons/sansfond.png"
             alt="Quranify"
             className="h-16 w-auto object-contain drop-shadow-[0_0_16px_rgba(122, 145, 159,0.35)]"
           />

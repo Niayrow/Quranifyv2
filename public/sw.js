@@ -1,4 +1,4 @@
-const CACHE_VERSION = 'quranify-pwa-v102-20260608';
+const CACHE_VERSION = 'quranify-pwa-v105-20260727';
 const APP_SHELL_CACHE = `${CACHE_VERSION}-shell`;
 const RUNTIME_CACHE = `${CACHE_VERSION}-runtime`;
 const OFFLINE_URL = '/offline.html';
@@ -14,7 +14,10 @@ const APP_SHELL_ASSETS = [
   '/icons/apple-touch-icon.png',
   '/icons/android-chrome-192x192.png',
   '/icons/android-chrome-512x512.png',
+  '/icons/maskable-192x192.png',
+  '/icons/maskable-512x512.png',
   '/icons/logo.png',
+  '/icons/sansfond.png',
   '/icons/artwork.png',
   '/og-image.png'
 ];
