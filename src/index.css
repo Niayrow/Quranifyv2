@@ -89,8 +89,8 @@
   }
 
   .mobile-shell-padding {
-    /* Player + navbar docked as one block (~5rem bar + ~5rem nav + margin) */
-    padding-bottom: calc(11.25rem + env(safe-area-inset-bottom, 0px));
+    /* Player (~5rem) + navbar (~4.35rem) + dock offset (0.5rem) */
+    padding-bottom: calc(10.5rem + env(safe-area-inset-bottom, 0px));
   }
 
   @media (min-width: 768px) {
@@ -328,4 +328,60 @@
 
 .hero-fade-up-delay-4 {
   animation-delay: 0.32s;
+}
+
+/* Subtle cue: disc can expand the player */
+@keyframes player-disc-hint {
+  0%, 100% {
+    opacity: 0.35;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.75;
+    transform: scale(1.04);
+  }
+}
+
+.player-disc-hint {
+  animation: player-disc-hint 2.8s ease-in-out infinite;
+}
+
+/* Overflowing track labels scroll left */
+@keyframes player-marquee {
+  0%, 12% {
+    transform: translateX(0);
+  }
+  88%, 100% {
+    transform: translateX(calc(-1 * var(--marquee-distance, 0px)));
+  }
+}
+
+.player-marquee-text {
+  display: inline-block;
+  white-space: nowrap;
+  will-change: transform;
+}
+
+.player-marquee-text.is-overflowing {
+  animation: player-marquee 9s ease-in-out infinite;
+}
+
+/* Shared mobile dock chrome (player + navbar) */
+@media (max-width: 767px) {
+  .mobile-dock-chrome {
+    background: rgba(8, 21, 40, 0.96) !important;
+    border-color: rgba(56, 100, 150, 0.32) !important;
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+  }
+
+  /* Player sits flush on navbar: no downward shadow onto the nav */
+  .mobile-dock-player {
+    box-shadow: 0 -14px 32px rgba(0, 12, 28, 0.42) !important;
+  }
+
+  /* Single shared drop shadow under the whole dock unit */
+  .mobile-dock-nav {
+    box-shadow: 0 14px 32px rgba(0, 12, 28, 0.42) !important;
+  }
 }

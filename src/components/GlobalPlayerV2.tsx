@@ -3,7 +3,7 @@ import { useAudio } from '../context/AudioContext';
 import {
   Play, Pause, SkipForward, SkipBack, ChevronDown, Volume2, VolumeX,
   Disc, ListMusic, Search, X, Settings, Sparkles, Check, Moon, Repeat,
-  Repeat1, Clock, RotateCcw, RotateCw, Gauge, SlidersHorizontal, MonitorSmartphone
+  Repeat1, Clock, RotateCcw, RotateCw, Gauge, Maximize2, SlidersHorizontal, MonitorSmartphone
 } from 'lucide-react';
 import { PLAYER_THEMES, PLAYER_THEME_IDS, type PlayerThemeId } from './player/playerThemes';
 import {
@@ -24,6 +24,41 @@ const formatSleepTime = (seconds: number) => {
   const mins = Math.floor(seconds / 60);
   const secs = seconds % 60;
   return `${mins}m ${secs.toString().padStart(2, '0')}s`;
+};
+
+/** Scrolls left when the label overflows its container */
+const MarqueeText: React.FC<{ text: string; className?: string }> = ({ text, className = '' }) => {
+  const containerRef = useRef<HTMLSpanElement | null>(null);
+  const textRef = useRef<HTMLSpanElement | null>(null);
+  const [overflowing, setOverflowing] = useState(false);
+
+  useEffect(() => {
+    const container = containerRef.current;
+    const label = textRef.current;
+    if (!container || !label) return;
+
+    const measure = () => {
+      const distance = Math.max(0, label.scrollWidth - container.clientWidth);
+      container.style.setProperty('--marquee-distance', `${distance}px`);
+      setOverflowing(distance > 2);
+    };
+
+    measure();
+    const ro = new ResizeObserver(measure);
+    ro.observe(container);
+    return () => ro.disconnect();
+  }, [text]);
+
+  return (
+    <span ref={containerRef} className={`min-w-0 overflow-hidden ${className}`}>
+      <span
+        ref={textRef}
+        className={overflowing ? 'player-marquee-text is-overflowing' : 'block truncate'}
+      >
+        {text}
+      </span>
+    </span>
+  );
 };
 
 const DENSITY_META: Record<PlayerBarDensity, { label: string; barClass: string; padClass: string }> = {
@@ -84,12 +119,45 @@ export const GlobalPlayerV2: React.FC = () => {
   const [drawerSearch, setDrawerSearch] = useState('');
   const currentSurahRowRef = useRef<HTMLButtonElement | null>(null);
   const volumeWrapRef = useRef<HTMLDivElement | null>(null);
+  const swipeStartYRef = useRef<number | null>(null);
+  const progressTrackRef = useRef<HTMLDivElement | null>(null);
+  const [progressArmed, setProgressArmed] = useState(false);
+  const [isScrubbing, setIsScrubbing] = useState(false);
   const [liveRemotePos, setLiveRemotePos] = useState(0);
   const remoteClockAnchorRef = useRef<{ pos: number; at: number; key: string } | null>(null);
 
   const theme = PLAYER_THEMES[(playerTheme as PlayerThemeId)] || PLAYER_THEMES.emerald;
   const progressPercent = duration > 0 ? (currentTime / duration) * 100 : 0;
   const speedOptions = [0.75, 0.9, 1, 1.25, 1.5, 1.75, 2];
+
+  const seekFromClientX = (clientX: number) => {
+    const track = progressTrackRef.current;
+    if (!track || duration <= 0) return;
+    const rect = track.getBoundingClientRect();
+    const ratio = Math.min(1, Math.max(0, (clientX - rect.left) / rect.width));
+    seekTo(ratio * duration);
+  };
+
+  const onMiniBarTouchStart = (e: React.TouchEvent) => {
+    const target = e.target as HTMLElement | null;
+    if (target?.closest('[role="slider"], input, [data-player-transport]')) {
+      swipeStartYRef.current = null;
+      return;
+    }
+    swipeStartYRef.current = e.touches[0]?.clientY ?? null;
+  };
+
+  const onMiniBarTouchEnd = (e: React.TouchEvent) => {
+    const startY = swipeStartYRef.current;
+    swipeStartYRef.current = null;
+    if (startY == null) return;
+    const endY = e.changedTouches[0]?.clientY;
+    if (endY == null) return;
+    // Swipe up opens fullscreen player
+    if (startY - endY > 52) {
+      setIsExpanded(true);
+    }
+  };
 
   // Smooth second-by-second clock for remote playback banner
   useEffect(() => {
@@ -260,18 +328,20 @@ export const GlobalPlayerV2: React.FC = () => {
     <>
       {/* ── Mini bar: docks with navbar on mobile, full on desktop ── */}
       <div
-        className={`fixed z-[51] transition-all duration-300
+        className={`fixed z-[50] transition-all duration-300
           left-1/2 -translate-x-1/2 w-[95%] max-w-md
-          bottom-[calc(5.35rem+env(safe-area-inset-bottom,0px))]
-          md:left-6 md:right-6 md:translate-x-0 md:w-auto md:mx-auto md:max-w-4xl md:bottom-6
+          bottom-[calc(0.5rem+4.35rem-1px+env(safe-area-inset-bottom,0px))]
+          md:left-6 md:right-6 md:translate-x-0 md:w-auto md:mx-auto md:max-w-4xl md:bottom-6 md:z-[51]
           rounded-t-3xl rounded-b-none md:rounded-3xl
-          glass-panel-opaque border border-slate-700/50 border-b-0 md:border md:border-slate-800/60
-          shadow-[0_-8px_24px_rgba(0,0,0,0.35)] md:shadow-2xl
+          mobile-dock-chrome mobile-dock-player glass-panel-opaque border border-slate-700/50 border-b-0 md:border md:border-slate-800/60
+          md:shadow-2xl
           overflow-hidden md:overflow-hidden
           ${remoteSession && !isExpanded ? 'md:min-h-0' : 'md:h-20'}
           ${prefs.showGlow ? `bg-gradient-to-r ${theme.accentGlow} via-transparent to-transparent` : ''}
           ${isExpanded ? 'opacity-0 pointer-events-none translate-y-3 md:opacity-100 md:pointer-events-auto md:translate-y-0' : 'opacity-100'}
         `}
+        onTouchStart={onMiniBarTouchStart}
+        onTouchEnd={onMiniBarTouchEnd}
       >
         {/* Integrated remote strip — part of the player (mobile + desktop) */}
         {remoteSession && !isExpanded && (
@@ -308,44 +378,130 @@ export const GlobalPlayerV2: React.FC = () => {
 
         <div
           className={`relative flex items-center gap-2 md:gap-0 md:grid md:grid-cols-[minmax(0,1.15fr)_minmax(0,1.35fr)_auto] md:items-center p-2 md:px-5 md:py-3 ${
-            remoteSession ? 'pt-1.5 md:pt-2.5' : ''
+            remoteSession ? 'pt-2 md:pt-2.5' : 'pt-3 md:pt-3'
           }`}
         >
-        {/* Seam with navbar — mobile dock only */}
-        <div className="absolute bottom-0 left-3 right-3 h-px bg-slate-700/40 md:hidden" aria-hidden />
-        {/* Thin progress — mobile only */}
-        <div className={`absolute left-3 right-3 h-[3px] rounded-full bg-slate-900/80 overflow-hidden md:hidden ${remoteSession ? 'top-0 opacity-70' : 'top-0'}`}>
+        {/* Progress + time only when listening on this device */}
+        {!remoteSession && (
           <div
-            className="h-full rounded-full transition-[width] duration-100"
-            style={{ width: `${progressPercent}%`, backgroundColor: theme.sliderAccentColor }}
-          />
-        </div>
+            className="group/progress absolute inset-x-0 top-0 z-30 h-5 touch-none cursor-pointer md:hidden"
+            onPointerEnter={() => setProgressArmed(true)}
+            onPointerLeave={() => {
+              if (!isScrubbing) setProgressArmed(false);
+            }}
+            onPointerDown={(e) => {
+              e.stopPropagation();
+              setIsScrubbing(true);
+              setProgressArmed(true);
+              e.currentTarget.setPointerCapture(e.pointerId);
+              seekFromClientX(e.clientX);
+            }}
+            onPointerMove={(e) => {
+              if (!e.currentTarget.hasPointerCapture(e.pointerId)) return;
+              seekFromClientX(e.clientX);
+            }}
+            onPointerUp={(e) => {
+              if (e.currentTarget.hasPointerCapture(e.pointerId)) {
+                e.currentTarget.releasePointerCapture(e.pointerId);
+              }
+              setIsScrubbing(false);
+              setProgressArmed(false);
+            }}
+            onPointerCancel={() => {
+              setIsScrubbing(false);
+              setProgressArmed(false);
+            }}
+            onKeyDown={(e) => {
+              if (e.key === 'ArrowRight') jumpBy(prefs.seekStep);
+              if (e.key === 'ArrowLeft') jumpBy(-prefs.seekStep);
+            }}
+            role="slider"
+            aria-label="Progression de la sourate"
+            aria-valuemin={0}
+            aria-valuemax={Math.round(duration || 0)}
+            aria-valuenow={Math.round(currentTime)}
+            tabIndex={0}
+          >
+            <div
+              ref={progressTrackRef}
+              className="absolute left-3.5 right-3.5 top-[5px] h-[4px] rounded-full bg-sky-950/70 ring-1 ring-sky-400/20"
+            >
+              <div
+                className="absolute inset-y-0 left-0 rounded-full transition-[width] duration-100"
+                style={{
+                  width: `${progressPercent}%`,
+                  background: `linear-gradient(90deg, #8fa3b0, ${theme.sliderAccentColor})`,
+                }}
+              />
+              <span
+                className={`pointer-events-none absolute top-1/2 h-3 w-3 -translate-x-1/2 -translate-y-1/2 rounded-full border-2 border-white/90 shadow-[0_0_0_3px_rgba(122,145,159,0.28)] transition-opacity duration-150 ${
+                  progressArmed || isScrubbing ? 'opacity-100' : 'opacity-0'
+                }`}
+                style={{
+                  left: `${progressPercent}%`,
+                  backgroundColor: theme.sliderAccentColor,
+                }}
+                aria-hidden
+              />
+            </div>
+          </div>
+        )}
 
         {/* Track info */}
-        <div className="flex items-center gap-2.5 min-w-0 flex-1 md:col-span-1 md:gap-3 pt-1 md:pt-0">
+        <div className={`flex items-center gap-2.5 min-w-0 flex-1 md:col-span-1 md:gap-3 ${remoteSession ? 'pt-0' : 'pt-1'} md:pt-0`}>
           <button
             type="button"
             onClick={() => setIsExpanded(true)}
-            className="relative shrink-0 tap-feedback md:pointer-events-none"
-            title="Agrandir le lecteur"
-            aria-label="Agrandir le lecteur"
+            className="group/disc relative shrink-0 md:pointer-events-none"
+            title="Agrandir le lecteur en plein écran"
+            aria-label="Agrandir le lecteur en plein écran"
           >
-            <div className="w-11 h-11 md:w-11 md:h-11 rounded-xl bg-slate-950 border border-slate-800 flex items-center justify-center">
+            <span
+              className="pointer-events-none absolute -inset-0.5 rounded-[0.85rem] bg-sky-400/0 ring-1 ring-sky-300/0 transition-all duration-300 md:hidden group-hover/disc:bg-sky-400/[0.07] group-hover/disc:ring-sky-300/25 group-active/disc:scale-95"
+              aria-hidden
+            />
+            <span
+              className="player-disc-hint pointer-events-none absolute -inset-[3px] rounded-[0.9rem] ring-1 ring-sky-300/25 md:hidden"
+              aria-hidden
+            />
+            <div className="relative w-11 h-11 md:w-11 md:h-11 rounded-xl bg-[#061222] border border-sky-800/50 flex items-center justify-center shadow-[inset_0_1px_0_rgba(255,255,255,0.04)] transition-transform duration-150 group-active/disc:scale-95 md:group-active/disc:scale-100">
               <Disc className={`w-5 h-5 ${theme.glowDisc} ${playbackStatus === 'playing' ? 'animate-[spin_10s_linear_infinite]' : ''}`} />
             </div>
+            <span
+              className="absolute -bottom-0.5 -right-0.5 flex h-4 w-4 items-center justify-center rounded-full border border-sky-400/35 bg-[#081528] text-sky-200/90 shadow-md md:hidden"
+              aria-hidden
+            >
+              <Maximize2 className="w-2.5 h-2.5" strokeWidth={2.5} />
+            </span>
           </button>
 
           <button
             type="button"
-            onClick={() => setIsExpanded(true)}
-            className="min-w-0 flex-1 text-left rounded-xl px-0.5 py-1 tap-feedback md:hidden"
-            title="Ouvrir le lecteur"
+            onClick={openPlaylist}
+            className="min-w-0 flex-1 text-left rounded-xl px-0.5 py-1 md:hidden"
+            title="Liste des sourates"
+            aria-label="Ouvrir la liste des sourates"
           >
-            <p className="text-sm font-semibold text-slate-100 truncate">
-              {currentTrack.surah.name}
-            </p>
-            <p className="text-[11px] text-slate-400 truncate mt-0.5">
-              {currentTrack.reciter.name}
+            <MarqueeText
+              text={currentTrack.surah.name}
+              className="block text-sm font-semibold text-slate-100 leading-tight"
+            />
+            <p className="mt-0.5 flex items-center gap-1.5 min-w-0 text-[11px] leading-tight">
+              <MarqueeText text={currentTrack.reciter.name} className="flex-1 text-slate-400" />
+              {!remoteSession && (
+                <>
+                  <span className="shrink-0 text-slate-600" aria-hidden>
+                    ·
+                  </span>
+                  <span className="shrink-0 tabular-nums text-sky-200/85 font-medium">
+                    {formatTime(currentTime)}
+                    <span className="text-slate-500 font-normal">
+                      {' / '}
+                      {formatTime(duration)}
+                    </span>
+                  </span>
+                </>
+              )}
             </p>
           </button>
 
@@ -369,25 +525,36 @@ export const GlobalPlayerV2: React.FC = () => {
           </button>
 
           {/* Mobile primary controls — prev / play / next */}
-          <div className="flex items-center gap-1 shrink-0 md:hidden">
+          <div
+            className={`flex items-center gap-1 shrink-0 md:hidden ${remoteSession ? 'opacity-40' : ''}`}
+            data-player-transport
+          >
             <button
               type="button"
+              disabled={Boolean(remoteSession)}
               onClick={(e) => {
                 e.stopPropagation();
+                if (remoteSession) return;
                 playPrevTrack();
               }}
-              className="w-11 h-11 rounded-full bg-slate-900 border border-slate-800 text-slate-200 flex items-center justify-center tap-feedback"
+              className="w-11 h-11 rounded-full bg-slate-900 border border-slate-800 text-slate-200 flex items-center justify-center tap-feedback disabled:pointer-events-none disabled:grayscale"
               aria-label="Précédent"
             >
               <SkipBack className="w-5 h-5 fill-current" />
             </button>
             <button
               type="button"
+              disabled={Boolean(remoteSession)}
               onClick={(e) => {
                 e.stopPropagation();
+                if (remoteSession) return;
                 togglePlay();
               }}
-              className={`w-12 h-12 rounded-full ${theme.accent} text-slate-950 flex items-center justify-center tap-feedback shadow-md ${theme.accentShadow}`}
+              className={`w-12 h-12 rounded-full flex items-center justify-center tap-feedback disabled:pointer-events-none disabled:grayscale ${
+                remoteSession
+                  ? 'bg-slate-700 text-slate-400 shadow-none'
+                  : `${theme.accent} text-slate-950 shadow-md ${theme.accentShadow}`
+              }`}
               aria-label={playbackStatus === 'playing' ? 'Pause' : 'Lecture'}
             >
               {playbackStatus === 'playing' ? (
@@ -398,11 +565,13 @@ export const GlobalPlayerV2: React.FC = () => {
             </button>
             <button
               type="button"
+              disabled={Boolean(remoteSession)}
               onClick={(e) => {
                 e.stopPropagation();
+                if (remoteSession) return;
                 playNextTrack();
               }}
-              className="w-11 h-11 rounded-full bg-slate-900 border border-slate-800 text-slate-200 flex items-center justify-center tap-feedback"
+              className="w-11 h-11 rounded-full bg-slate-900 border border-slate-800 text-slate-200 flex items-center justify-center tap-feedback disabled:pointer-events-none disabled:grayscale"
               aria-label="Suivant"
             >
               <SkipForward className="w-5 h-5 fill-current" />
@@ -411,23 +580,47 @@ export const GlobalPlayerV2: React.FC = () => {
         </div>
 
         {/* Center controls — desktop */}
-        <div className="hidden md:flex flex-col items-center gap-1.5 col-span-1 px-2">
+        <div
+          className={`hidden md:flex flex-col items-center gap-1.5 col-span-1 px-2 ${
+            remoteSession ? 'opacity-40' : ''
+          }`}
+        >
           <div className="flex items-center gap-3">
             <button
               type="button"
-              onClick={() => jumpBy(-prefs.seekStep)}
-              className="text-slate-500 hover:text-slate-200 p-1.5 rounded-lg hover:bg-slate-900/60"
+              disabled={Boolean(remoteSession)}
+              onClick={() => {
+                if (remoteSession) return;
+                jumpBy(-prefs.seekStep);
+              }}
+              className="text-slate-500 hover:text-slate-200 p-1.5 rounded-lg hover:bg-slate-900/60 disabled:pointer-events-none"
               title={`−${prefs.seekStep}s`}
             >
               <RotateCcw className="w-3.5 h-3.5" />
             </button>
-            <button type="button" onClick={playPrevTrack} className="text-slate-400 hover:text-slate-100 p-1.5">
+            <button
+              type="button"
+              disabled={Boolean(remoteSession)}
+              onClick={() => {
+                if (remoteSession) return;
+                playPrevTrack();
+              }}
+              className="text-slate-400 hover:text-slate-100 p-1.5 disabled:pointer-events-none"
+            >
               <SkipBack className="w-4 h-4 fill-current" />
             </button>
             <button
               type="button"
-              onClick={togglePlay}
-              className={`w-10 h-10 rounded-full ${theme.accent} text-slate-950 flex items-center justify-center shadow-lg ${theme.accentShadow} tap-feedback`}
+              disabled={Boolean(remoteSession)}
+              onClick={() => {
+                if (remoteSession) return;
+                togglePlay();
+              }}
+              className={`w-10 h-10 rounded-full flex items-center justify-center tap-feedback disabled:pointer-events-none ${
+                remoteSession
+                  ? 'bg-slate-700 text-slate-400 shadow-none'
+                  : `${theme.accent} text-slate-950 shadow-lg ${theme.accentShadow}`
+              }`}
             >
               {playbackStatus === 'playing' ? (
                 <Pause className="w-4.5 h-4.5 fill-current" />
@@ -435,32 +628,46 @@ export const GlobalPlayerV2: React.FC = () => {
                 <Play className="w-4.5 h-4.5 fill-current ml-0.5" />
               )}
             </button>
-            <button type="button" onClick={playNextTrack} className="text-slate-400 hover:text-slate-100 p-1.5">
+            <button
+              type="button"
+              disabled={Boolean(remoteSession)}
+              onClick={() => {
+                if (remoteSession) return;
+                playNextTrack();
+              }}
+              className="text-slate-400 hover:text-slate-100 p-1.5 disabled:pointer-events-none"
+            >
               <SkipForward className="w-4 h-4 fill-current" />
             </button>
             <button
               type="button"
-              onClick={() => jumpBy(prefs.seekStep)}
-              className="text-slate-500 hover:text-slate-200 p-1.5 rounded-lg hover:bg-slate-900/60"
+              disabled={Boolean(remoteSession)}
+              onClick={() => {
+                if (remoteSession) return;
+                jumpBy(prefs.seekStep);
+              }}
+              className="text-slate-500 hover:text-slate-200 p-1.5 rounded-lg hover:bg-slate-900/60 disabled:pointer-events-none"
               title={`+${prefs.seekStep}s`}
             >
               <RotateCw className="w-3.5 h-3.5" />
             </button>
           </div>
-          <div className="flex items-center gap-2 w-full max-w-sm text-[9px] font-mono font-bold text-slate-500">
-            <span className="w-8 text-right tabular-nums">{formatTime(currentTime)}</span>
-            <input
-              type="range"
-              min={0}
-              max={duration || 100}
-              step={0.1}
-              value={currentTime}
-              onChange={(e) => seekTo(parseFloat(e.target.value))}
-              className="flex-1 h-1 rounded-lg appearance-none cursor-pointer bg-slate-800"
-              style={{ background: theme.sliderBackground(progressPercent), accentColor: theme.sliderAccentColor }}
-            />
-            <span className="w-8 tabular-nums">{formatTime(duration)}</span>
-          </div>
+          {!remoteSession && (
+            <div className="flex items-center gap-2 w-full max-w-sm text-[9px] font-mono font-bold text-slate-500">
+              <span className="w-8 text-right tabular-nums">{formatTime(currentTime)}</span>
+              <input
+                type="range"
+                min={0}
+                max={duration || 100}
+                step={0.1}
+                value={currentTime}
+                onChange={(e) => seekTo(parseFloat(e.target.value))}
+                className="flex-1 h-1 rounded-lg appearance-none cursor-pointer bg-slate-800"
+                style={{ background: theme.sliderBackground(progressPercent), accentColor: theme.sliderAccentColor }}
+              />
+              <span className="w-8 tabular-nums">{formatTime(duration)}</span>
+            </div>
+          )}
         </div>
 
         {/* Right tools — desktop only on mini bar */}

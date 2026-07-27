@@ -1,11 +1,52 @@
 import React from 'react';
 import {
   Compass, Cloud, HardDrive, Headphones, Shield, Sparkles, Trash2, Wifi,
-  MonitorSmartphone, ListMusic, Smartphone, BookOpenText, ExternalLink,
+  MonitorSmartphone, ListMusic, Smartphone, BookOpenText, ExternalLink, History,
 } from 'lucide-react';
 import { useAudio } from '../context/AudioContext';
 
-const APP_VERSION = '1.1.0';
+export const APP_VERSION = '1.2.0';
+
+const UPDATE_HISTORY: Array<{
+  version: string;
+  date: string;
+  title: string;
+  items: string[];
+}> = [
+  {
+    version: '1.2.0',
+    date: '27 juil. 2026',
+    title: 'Identité & expérience mobile',
+    items: [
+      'Nouveau logo et icônes PWA / app (fond transparent).',
+      'Accueil redesigné : hero compact, accès rapide, lieux et favoris.',
+      'Navbar mobile : sélection marine, dock collé au lecteur, sans logo.',
+      'Player bar : temps, progression seekable, swipe plein écran, liste des sourates au tap.',
+      'Lecture distante : contrôles grisés + masquage temps/progression hors appareil local.',
+    ],
+  },
+  {
+    version: '1.1.0',
+    date: '2026',
+    title: 'Sync & lecteur V2',
+    items: [
+      'Lecteur V2 personnalisable (thèmes, densité, contrôles).',
+      'Synchronisation cloud des favoris, préférences et boucle de sourates.',
+      'Bandeau multi-appareils « Basculer ici » et reprise de lecture.',
+      'Palette marine et accents UI harmonisés.',
+    ],
+  },
+  {
+    version: '1.0.0',
+    date: '2026',
+    title: 'Première version publique',
+    items: [
+      'Streaming des récitateurs, favoris et mode hors-ligne.',
+      'Lecture ayah par ayah et installation PWA.',
+      'Compte GoMuslimLife partagé.',
+    ],
+  },
+];
 
 export const AboutPanel: React.FC = () => {
   const { cacheInfo, clearCache } = useAudio();
@@ -61,17 +102,32 @@ export const AboutPanel: React.FC = () => {
 
   return (
     <div className="flex flex-col gap-5 pb-8">
-      <div className="relative overflow-hidden rounded-3xl border border-white/[0.08] bg-gradient-to-b from-slate-500/[0.08] to-slate-950/40 p-6">
-        <div className="absolute -top-16 -right-10 h-40 w-40 rounded-full bg-slate-500/15 blur-3xl pointer-events-none" />
+      <div className="relative overflow-hidden rounded-3xl border border-white/[0.08] bg-gradient-to-b from-sky-500/[0.08] to-slate-950/40 p-6">
+        <div className="absolute -top-16 -right-10 h-40 w-40 rounded-full bg-sky-500/15 blur-3xl pointer-events-none" />
         <div className="relative">
-          <div className="flex items-center gap-2">
-            <Compass className="w-5 h-5 text-slate-300" />
-            <h2 className="text-xl font-bold text-slate-100">À propos de Quranify</h2>
+          <div className="flex items-center gap-3">
+            <img
+              src="/icons/sansfond.png"
+              alt=""
+              className="h-11 w-11 object-contain drop-shadow-[0_2px_10px_rgba(122,145,159,0.35)]"
+              draggable={false}
+            />
+            <div>
+              <div className="flex items-center gap-2">
+                <Compass className="w-4 h-4 text-sky-300" />
+                <h2 className="text-xl font-bold text-slate-100">À propos de Quranify</h2>
+              </div>
+              <p className="mt-1 text-sm leading-relaxed text-slate-400">
+                Lecteur coranique simple et rapide — web &amp; bientôt en app.
+              </p>
+            </div>
           </div>
-          <p className="mt-2 text-sm leading-relaxed text-slate-400 max-w-lg">
-            Lecteur coranique simple et rapide — sur le web et bientôt en application.
-            Version <span className="text-slate-200 font-semibold">{APP_VERSION}</span>.
-          </p>
+          <div className="mt-4 flex flex-wrap items-center gap-2">
+            <span className="inline-flex items-center rounded-full border border-sky-400/25 bg-sky-500/10 px-3 py-1 text-[11px] font-bold uppercase tracking-wider text-sky-200">
+              v{APP_VERSION}
+            </span>
+            <span className="text-[11px] text-slate-500">Dernière maj · 27 juil. 2026</span>
+          </div>
           <a
             href="https://gomuslimlife.com"
             target="_blank"
@@ -81,6 +137,42 @@ export const AboutPanel: React.FC = () => {
             Découvrir GoMuslimLife.com
             <ExternalLink className="h-3.5 w-3.5 opacity-70" />
           </a>
+        </div>
+      </div>
+
+      <div className="glass-panel rounded-3xl border border-slate-800/70 p-5 flex flex-col gap-4">
+        <div className="flex items-center gap-2">
+          <History className="w-4 h-4 text-sky-300" />
+          <h3 className="text-sm font-bold text-slate-100">Historique des mises à jour</h3>
+        </div>
+
+        <div className="relative flex flex-col gap-5 pl-1">
+          <div className="absolute left-[7px] top-2 bottom-2 w-px bg-slate-800" aria-hidden />
+          {UPDATE_HISTORY.map((release, index) => (
+            <div key={release.version} className="relative pl-6">
+              <span
+                className={`absolute left-0 top-1.5 h-3.5 w-3.5 rounded-full border-2 ${
+                  index === 0
+                    ? 'border-sky-300 bg-sky-500/40'
+                    : 'border-slate-600 bg-slate-900'
+                }`}
+                aria-hidden
+              />
+              <div className="flex flex-wrap items-baseline gap-x-2 gap-y-0.5">
+                <span className="text-sm font-bold text-slate-100">v{release.version}</span>
+                <span className="text-[11px] text-slate-500">{release.date}</span>
+              </div>
+              <p className="mt-0.5 text-xs font-semibold text-sky-200/80">{release.title}</p>
+              <ul className="mt-2 flex flex-col gap-1.5">
+                {release.items.map((item) => (
+                  <li key={item} className="text-[12px] leading-relaxed text-slate-400 flex gap-2">
+                    <span className="mt-1.5 h-1 w-1 shrink-0 rounded-full bg-slate-600" aria-hidden />
+                    <span>{item}</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          ))}
         </div>
       </div>
 
