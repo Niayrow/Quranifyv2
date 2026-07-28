@@ -21,7 +21,7 @@ export const ReciterCard: React.FC<ReciterCardProps> = ({
   onToggleFavorite,
   searchQuery
 }) => {
-  const { getAvailableSurahs, currentTrack, playbackStatus } = useAudio();
+  const { currentTrack, playbackStatus } = useAudio();
 
   const highlightMatch = (text: string, query: string) => {
     if (!query || !query.trim()) return <span>{text}</span>;
@@ -59,8 +59,6 @@ export const ReciterCard: React.FC<ReciterCardProps> = ({
     );
   };
 
-  const currentCardMoshaf = reciter.moshaf[0];
-  const availableSurahs = getAvailableSurahs(reciter, currentCardMoshaf);
   const isPlayingThisReciter = currentTrack?.reciter.id === reciter.id && playbackStatus === 'playing';
   const imageUrl = getReciterImage(reciter);
   const fallbackImage = getGeneratedReciterAvatar(reciter);
@@ -120,10 +118,6 @@ export const ReciterCard: React.FC<ReciterCardProps> = ({
           <h3 className={`font-semibold text-lg truncate transition-colors ${isSelected ? 'text-[#f1d4c1]' : 'text-[#f6f8fb] group-hover:text-[#f1d4c1]'}`}>
             {highlightMatch(reciter.name, searchQuery || '')}
           </h3>
-          <p className="text-xs text-[#aab7c5] mt-0.5">
-            {availableSurahs.length} sourates
-            {reciter.moshaf.length > 1 ? ` · ${reciter.moshaf.length} riwayat` : ''}
-          </p>
         </div>
       </div>
 

@@ -1,34 +1,39 @@
 ﻿import type { Reciter } from '../types';
 
 /**
- * Real portraits for featured + category reciters (mp3quran IDs).
- * External URLs: Quran.com CDN when available, otherwise Wikimedia Commons.
- * Everyone else falls back to getGeneratedReciterAvatar.
+ * Local portraits in /public/reciters (preferred).
+ * IDs without a local file fall back to getGeneratedReciterAvatar.
  */
 export const RECITER_IMAGES: Record<number, string> = {
-  // Featured / Quran.com CDN portraits
-  123: 'https://static.qurancdn.com/images/reciters/6/mishary-rashid-alafasy-profile.jpeg', // Mishary Rachid Al-Afasy
-  54: 'https://static.qurancdn.com/images/reciters/2/abdul-rahman-al-sudais-profile.jpeg', // Abderrahmane Al-Soudais
-  31: 'https://static.qurancdn.com/images/reciters/8/saoud-shuraim-profile.jpeg', // Saoud Al-Shuraim
-  4: 'https://static.qurancdn.com/images/reciters/3/abu-bakr-al-shatri-pofile.jpeg', // Abou Bakr Al-Chatri
-  118: 'https://static.qurancdn.com/images/reciters/5/mahmoud-khalil-al-hussary-profile.png', // Mahmoud Khalil Al-Housary
-  112: 'https://static.qurancdn.com/images/reciters/7/mohamed-siddiq-el-minshawi-profile.jpeg', // Mohamed Siddiq El-Menchaoui
+  // Curated — local assets
+  123: '/reciters/alafasy.png', // Mishary Rachid Al-Afasy
+  54: '/reciters/sudais.png', // Abderrahmane Al-Soudais
+  102: '/reciters/maher.png', // Maher Al-Mouaiqly
+  92: '/reciters/dosari.png', // Yasser Al-Dossary
+  30: '/reciters/sghamdi.png', // Saad El-Ghamidi
+  31: '/reciters/shuraim.png', // Saoud Al-Shuraim
+  51: '/reciters/basit.png', // Abdel Bassit Abdel Samad
+  112: '/reciters/minshawi.png', // Mohamed Siddiq El-Menchaoui
+  118: '/reciters/husary.png', // Mahmoud Khalil Al-Housary
+  4: '/reciters/shatri.png', // Abou Bakr Al-Chatri
+  5: '/reciters/ajmi.png', // Ahmed El-Ajami
+  89: '/reciters/arrefay.png', // Hani Arrifai
+  86: '/reciters/qatami.png', // Nasser Al-Qatami
+  12: '/reciters/abkar.png', // Idris Abkar
+  81: '/reciters/abbad.png', // Fares Abbad
+  60: '/reciters/basferr.png', // Abdullah Basfar
+  225: '/reciters/ossi.png', // Abdulrahman Aloosi
+  111: '/reciters/jibreel.jpg', // Mohamed Jibreel
+  221: '/reciters/kurdi.png', // Raad Al-Kurdi
+  272: '/reciters/kameny.png', // Okasha Kameny
+  107: '/reciters/luhaidan.png', // Mohamed El-Louhaïdan
+  245: '/reciters/salimi.png', // Mansour Al-Salemi
+  254: '/reciters/turki.png', // Badr Al-Turki
+  20: '/reciters/jalil.png', // Khaled Al-Jalil
 
-  // Wikimedia Commons
-  102: 'https://upload.wikimedia.org/wikipedia/commons/b/b8/Maher_Al_Mueaqly.jpg', // Maher Al-Mouaiqly
-  30: 'https://upload.wikimedia.org/wikipedia/commons/4/43/Saad_al_Ghamdi.jpg', // Saad El-Ghamidi
-  5: 'https://upload.wikimedia.org/wikipedia/commons/e/e5/Ahmad_bin_Ali_Al-Ajmi.png', // Ahmed El-Ajami
-  92: 'https://upload.wikimedia.org/wikipedia/commons/8/8b/Yasser_Al-Dosari_%28cropped%29.jpg', // Yasser Al-Dossary
-  86: 'https://upload.wikimedia.org/wikipedia/commons/c/ca/%D8%B5%D9%88%D8%B1%D8%A9_%D8%B4%D8%AE%D8%B5%D9%8A%D8%A9_%D8%A7%D9%84%D8%B4%D9%8A%D8%AE_%D9%86%D8%A7%D8%B5%D8%B1_%D8%A7%D9%84%D9%82%D8%B7%D8%A7%D9%85%D9%8A.jpg', // Nasser Al-Qatami
-  217: 'https://upload.wikimedia.org/wikipedia/commons/8/87/Bandar_Baleela.jpg', // Bandar Balilah
-  62: 'https://upload.wikimedia.org/wikipedia/commons/2/25/Abdullah_Al_Juhany_%28Cropped%29.png', // Abdullah Al-Johani
-  160: 'https://upload.wikimedia.org/wikipedia/commons/8/82/Kalbani.jpg', // Adel Al-Khalbani
-  74: 'https://upload.wikimedia.org/wikipedia/commons/d/d7/Huthaify.jpg', // Ali Al-Houdhayfi
-  43: 'https://upload.wikimedia.org/wikipedia/commons/d/df/Salah_Ibn_Mohammed_Al_Budair.jpg', // Salah Al-Boudeir
-  49: "https://upload.wikimedia.org/wikipedia/commons/f/ff/Abdulbari_ath-Thubaity_delivering_sermon_at_Prophet%27s_Mosque_Medina.jpg", // Abdel Bari Al-Toubaïty
-  67: 'https://upload.wikimedia.org/wikipedia/commons/2/2c/Abdul_Mohsin_Al-Qasim.jpg', // Abdelmohsen Al-Qasim
-  221: 'https://upload.wikimedia.org/wikipedia/commons/d/d7/Raad_Mohammad_Al_Kurdi.png', // Raad Al-Kurdi
-  245: 'https://upload.wikimedia.org/wikipedia/commons/0/09/Mansurahsalme.jpg', // Mansour Al-Salemi
+  // Extra local assets (kept if they appear elsewhere)
+  1: '/reciters/akhdar.png', // Ibrahim Al-Akhdar
+  62: '/reciters/juhany.png', // Abdullah Al-Johani
 };
 
 const AVATAR_PALETTES = [

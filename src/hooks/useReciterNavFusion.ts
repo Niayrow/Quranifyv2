@@ -1,13 +1,14 @@
 import { useEffect, useRef, useState, useCallback } from 'react';
 
 const DESKTOP_MIN = 768;
-const MERGE_SCROLL_RANGE = 140;
+const MERGE_SCROLL_RANGE = 460;
 
 /**
  * Desktop-only fusion progress (0→1).
  * Uses a sentinel placed just above the sticky header:
  * once the sentinel leaves the viewport under the navbar, further scroll
  * drives the merge into the navbar capsule.
+ * Mobile keeps a simple sticky header (no fusion — too unstable with sticky + transforms).
  */
 export function useReciterNavFusion(enabled: boolean) {
   const [progress, setProgress] = useState(0);

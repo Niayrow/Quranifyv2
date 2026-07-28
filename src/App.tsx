@@ -81,7 +81,7 @@ const getInitialTab = (): TabId => {
   return mapLegacyTab(tab);
 };
 
-const FEATURED_RECITER_IDS = [123, 54, 31, 30, 102, 5];
+const FEATURED_RECITER_IDS = [123, 54, 102, 92, 30, 31];
 const GOMUSLIMLIFE_URL = 'https://gomuslimlife.com';
 const MAKKAH_MOMENTS = [
   {
@@ -557,6 +557,7 @@ const AppContent: React.FC = () => {
     play,
     cachedUrls,
     getAvailableSurahs,
+    playTrack,
   } = useAudio();
   const { user, loading: authLoading } = useAuth();
 
@@ -716,6 +717,14 @@ const AppContent: React.FC = () => {
       return updated;
     });
   };
+
+  const handlePlayFatihah = useCallback(() => {
+    if (!activeReciter || !activeMoshaf) return;
+    const available = getAvailableSurahs(activeReciter, activeMoshaf);
+    const fatihah = available.find((s) => s.id === 1) ?? available[0];
+    if (!fatihah) return;
+    playTrack(activeReciter, activeMoshaf, fatihah);
+  }, [activeReciter, activeMoshaf, getAvailableSurahs, playTrack]);
 
   const dismissAuthPrompt = () => {
     setShowAuthPrompt(false);
@@ -923,7 +932,9 @@ const AppContent: React.FC = () => {
   }
 
   return (
-    <div className="flex-1 flex flex-col pt-4 px-4 max-w-lg mx-auto w-full mobile-shell-padding mobile-app-shell max-md:pt-0 max-md:px-0 md:pt-28 md:pb-12 md:max-w-4xl md:px-8">
+    <div className={`flex-1 flex flex-col px-4 max-w-lg mx-auto w-full mobile-shell-padding mobile-app-shell max-md:px-0 md:pt-28 md:w-[min(72rem,calc(100%-4rem))] md:max-w-6xl md:px-0 ${
+      currentTrack ? 'md:pb-44' : 'md:pb-12'
+    }`}>
       <CloudSync favorites={favorites} setFavorites={setFavorites} />
       <AuthPromptModal
         open={showAuthPrompt && !user}
@@ -934,8 +945,21 @@ const AppContent: React.FC = () => {
       <h1 className="sr-only">Quranify — Lecteur Coranique Premium</h1>
 
       {/* 2. Main Tab Views */}
-      <main className="flex-1 flex flex-col gap-5 mobile-app-main">
-        <div key={activeTab} className="animate-page-enter flex flex-col gap-5">
+      <main
+        className={`flex-1 flex flex-col mobile-app-main ${
+          activeTab === 'listen' && listenStep === 'surahs' && activeReciter
+            ? 'max-md:gap-0 gap-5'
+            : 'gap-5'
+        }`}
+      >
+        <div
+          key={activeTab}
+          className={`flex flex-col ${
+            activeTab === 'listen' && listenStep === 'surahs' && activeReciter
+              ? 'max-md:gap-0 gap-5 max-md:animate-none animate-page-enter'
+              : 'gap-5 animate-page-enter'
+          }`}
+        >
         
         {activeTab === 'home' && (
           <div className="flex flex-col gap-4 md:gap-7 pb-16 sm:pb-20 max-md:pt-4">
@@ -1236,7 +1260,13 @@ const AppContent: React.FC = () => {
 
         {/* 2.1 Listening Hub — wizard: reciters then surahs */}
         {activeTab === 'listen' && (
-          <div className={`flex flex-col gap-5 ${listenStep === 'surahs' && activeReciter ? '' : 'max-md:pt-4'}`}>
+          <div
+            className={`flex flex-col ${
+              listenStep === 'surahs' && activeReciter
+                ? 'gap-5 max-md:gap-0'
+                : 'gap-5 max-md:pt-4'
+            }`}
+          >
             {error && (
               <div className="glass-panel p-4 rounded-2xl border-[#f08c8c]/25 bg-[#f08c8c]/8 flex gap-3 items-start">
                 <AlertTriangle className="w-5 h-5 text-[#f2a3a3] shrink-0 mt-0.5" />
@@ -1369,19 +1399,21 @@ const AppContent: React.FC = () => {
             )}
 
             {listenStep === 'surahs' && activeReciter && (
-              <div className="flex flex-col gap-5 max-md:gap-4">
+              <div className="listen-surahs-panel flex flex-col gap-5 max-md:gap-0">
                 <ListenReciterHeader
                   activeReciter={activeReciter}
                   activeMoshaf={activeMoshaf}
                   fusionEnabled={reciterFusionEnabled}
+                  isFavorite={favorites.includes(activeReciter.id)}
                   onFusionProgressChange={handleReciterFusionProgress}
                   onChangeReciter={handleChangeReciter}
                   onSelectMoshaf={setActiveMoshaf}
+                  onToggleFavorite={(e) => toggleFavorite(activeReciter.id, e)}
+                  onPlay={handlePlayFatihah}
                   sectionRef={surahSectionRef}
                 />
 
-                <div className="max-md:px-0">
-                  <h3 className="text-sm font-bold text-[#d7e4ef] mb-3">Choisis une sourate</h3>
+                <div className="max-md:px-0 max-md:pt-4">
                   <Suspense fallback={<div className="shimmer-loader h-40 rounded-2xl border border-slate-900" />}>
                     <SurahList onChooseReciter={handleChangeReciter} />
                   </Suspense>

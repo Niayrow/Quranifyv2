@@ -1,5 +1,6 @@
 ﻿import type { LucideIcon } from 'lucide-react';
 import { Landmark, MoonStar, Building2, Sparkles } from 'lucide-react';
+import { CURATED_RECITER_ID_SET } from './curatedReciters';
 
 export type ReciterCategoryId = 'makkah' | 'madinah' | 'riyadh' | 'quranify';
 
@@ -22,9 +23,11 @@ export interface ReciterCategory {
   reciterIds: number[];
 }
 
+const onlyCurated = (ids: number[]) => ids.filter((id) => CURATED_RECITER_ID_SET.has(id));
+
 /**
  * Curated city / editorial groupings (mp3quran IDs).
- * Only IDs present in the loaded catalogue are shown in the UI.
+ * Only IDs present in the curated catalogue are shown.
  */
 export const RECITER_CATEGORIES: ReciterCategory[] = [
   {
@@ -42,15 +45,13 @@ export const RECITER_CATEGORIES: ReciterCategory[] = [
       badge: 'bg-amber-400/10 border-amber-400/25 text-amber-300',
       iconBg: 'bg-amber-400/15 text-amber-300',
     },
-    reciterIds: [
-      54,  // Abderrahmane Al-Soudais
-      31,  // Saoud Al-Shuraim
+    reciterIds: onlyCurated([
+      54, // Abderrahmane Al-Soudais
+      31, // Saoud Al-Shuraim
       102, // Maher Al-Mouaiqly
-      92,  // Yasser Al-Dossary
+      92, // Yasser Al-Dossary
       217, // Bandar Balilah
-      62,  // Abdullah Al-Johani
-      160, // Adel Al-Khalbani
-    ],
+    ]),
   },
   {
     id: 'madinah',
@@ -62,20 +63,16 @@ export const RECITER_CATEGORIES: ReciterCategory[] = [
     accent: {
       border: 'border-emerald-400/35',
       bg: 'bg-gradient-to-br from-emerald-500/15 via-slate-900/80 to-slate-950',
-      glow: 'shadow-[0_12px_40px_rgba(122, 145, 159,0.18)]',
+      glow: 'shadow-[0_12px_40px_rgba(122,145,159,0.18)]',
       text: 'text-emerald-300',
       badge: 'bg-emerald-400/10 border-emerald-400/25 text-emerald-300',
       iconBg: 'bg-emerald-400/15 text-emerald-300',
     },
-    reciterIds: [
-      74,  // Ali Al-Houdhayfi
-      43,  // Salah Al-Boudeir
-      67,  // Abdelmohsen Al-Qasim
-      49,  // Abdel Bari Al-Toubaïty
+    reciterIds: onlyCurated([
+      74, // Ali Al-Houdhayfi
+      43, // Salah Al-Boudeir
       109, // Mohamed Ayyoub
-      1,   // Ibrahim Al-Akhdar
-      71,  // Abdelwadoud Hanif
-    ],
+    ]),
   },
   {
     id: 'riyadh',
@@ -92,15 +89,13 @@ export const RECITER_CATEGORIES: ReciterCategory[] = [
       badge: 'bg-sky-400/10 border-sky-400/25 text-sky-300',
       iconBg: 'bg-sky-400/15 text-sky-300',
     },
-    reciterIds: [
-      86,  // Nasser Al-Qatami
-      20,  // Khaled Al-Jalil
-      30,  // Saad El-Ghamidi
-      226, // Khalid Al-Ghamdi
-      5,   // Ahmed El-Ajami
-      21,  // Khaled Al-Qahtani
-      4,   // Abou Bakr Al-Chatri
-    ],
+    reciterIds: onlyCurated([
+      86, // Nasser Al-Qatami
+      20, // Khaled Al-Jalil
+      30, // Saad El-Ghamidi
+      5, // Ahmed El-Ajami
+      4, // Abou Bakr Al-Chatri
+    ]),
   },
   {
     id: 'quranify',
@@ -117,18 +112,18 @@ export const RECITER_CATEGORIES: ReciterCategory[] = [
       badge: 'bg-rose-400/10 border-rose-400/25 text-rose-300',
       iconBg: 'bg-rose-400/15 text-rose-300',
     },
-    reciterIds: [
-      86,  // Nasser Al-Qatami
-      31,  // Saoud Al-Shuraim
+    reciterIds: onlyCurated([
+      86, // Nasser Al-Qatami
+      31, // Saoud Al-Shuraim
       107, // Mohamed El-Louhaïdan
       245, // Mansour Al-Salemi
-      12,  // Idrees Abkar
+      12, // Idris Abkar
       254, // Badr Al-Turki
-      20,  // Khaled Al-Jalil
+      20, // Khaled Al-Jalil
       221, // Raad Al-Kurdi
-      92,  // Yasser Al-Dossary
+      92, // Yasser Al-Dossary
       272, // Okasha Kameny
-    ],
+    ]),
   },
 ];
 

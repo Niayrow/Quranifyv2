@@ -2,6 +2,7 @@ import React, { createContext, useContext, useState, useEffect, useRef, useCallb
 import type { Reciter, Moshaf, Surah, AudioTrack, PlaybackStatus } from '../types';
 import { SURAHS } from '../data/surahs';
 import { SEEDED_RECITERS } from '../data/recitersSeed';
+import { filterCuratedReciters, CURATED_RECITER_IDS } from '../data/curatedReciters';
 import { getAudioUrl } from '../utils/audioUrl';
 import { syncWidgetPlayback } from '../utils/widgetSync';
 import {
@@ -116,7 +117,7 @@ const AudioContext = createContext<AudioContextType | undefined>(undefined);
 const LOCAL_STORAGE_PREFIX = 'quran_streamer_';
 const RECITERS_CACHE_KEY = `${LOCAL_STORAGE_PREFIX}reciters_cache`;
 const ARTWORK_URL = '/icons/artwork.png';
-const API_RECITERS_URL = 'https://mp3quran.net/api/v3/reciters?language=fr';
+const API_RECITERS_URL = 'https://www.mp3quran.net/api/v3/reciters?language=fr';
 
 const readStorage = (key: string): string | null => {
   try {
@@ -157,13 +158,21 @@ const RECITER_NAME_CORRECTIONS: Record<number, string> = {
   51:  'Abdel Bassit Abdel Samad',
   74:  'Ali Al-Houdhayfi',
   76:  'Ali Jaber',
+  81:  'Fares Abbad',
+  84:  'Fawaz Alkabi',
   86:  'Nasser Al-Qatami',
+  89:  'Hani Arrifai',
   92:  'Yasser Al-Dossary',
+  111: 'Mohamed Jibreel',
+  121: 'Mahmoud Ali Albanna',
+  125: 'Mustafa Ismail',
+  137: 'Ahmad Talib bin Humaid',
+  152: 'Yasser Salamah',
+  225: 'Abdulrahman Aloosi',
   226: 'Khalid Al-Ghamdi',
   106: 'Mohamed Tablaoui',
   107: 'Mohamed El-Louhaïdan',
   109: 'Mohamed Ayyoub',
-  111: 'Mohamed Jibreel',
   4:   'Abou Bakr Al-Chatri',
   49:  'Abdel Bari Al-Toubaïty',
   43:  'Salah Al-Boudeir',
@@ -211,18 +220,26 @@ const applyNameCorrections = (reciters: Reciter[]): Reciter[] =>
 
 const stabilizeFirstScreenReciters = (apiReciters: Reciter[]) => {
   const corrected = applyNameCorrections(apiReciters);
-  if (SEEDED_RECITERS.length === 0) return corrected;
+  const curated = filterCuratedReciters(corrected);
+  const byId = new Map(curated.map((reciter) => [reciter.id, reciter]));
 
-  const seededIds = new Set(SEEDED_RECITERS.map((reciter) => reciter.id));
-  return [
-    ...SEEDED_RECITERS,  // seed already has correct names
-    ...corrected.filter((reciter) => !seededIds.has(reciter.id))
-  ];
+  // Prefer curated catalogue order; fall back to seed entries until API has them.
+  const ordered: Reciter[] = [];
+  for (const id of CURATED_RECITER_IDS) {
+    const fromApi = byId.get(id);
+    if (fromApi) {
+      ordered.push(fromApi);
+      continue;
+    }
+    const fromSeed = SEEDED_RECITERS.find((reciter) => reciter.id === id);
+    if (fromSeed) ordered.push(fromSeed);
+  }
+  return ordered;
 };
 
 
 export const AudioProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [reciters, setReciters] = useState<Reciter[]>(SEEDED_RECITERS);
+  const [reciters, setReciters] = useState<Reciter[]>(() => filterCuratedReciters(SEEDED_RECITERS));
   const [isLoadingReciters, setIsLoadingReciters] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -353,7 +370,7 @@ export const AudioProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         if (data && data.reciters) {
           const stabilized = stabilizeFirstScreenReciters(data.reciters);
           setReciters(stabilized);
-          writeStorage(RECITERS_CACHE_KEY, JSON.stringify(data.reciters));
+          writeStorage(RECITERS_CACHE_KEY, JSON.stringify(stabilized));
           // Always restore from corrected names so the player matches the list
           restoreFromLocalStorage(stabilized);
         } else {

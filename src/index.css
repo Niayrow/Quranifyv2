@@ -37,6 +37,7 @@
     -webkit-text-size-adjust: 100%;
     text-size-adjust: 100%;
     touch-action: manipulation;
+    overscroll-behavior-y: none;
   }
 
   body {
@@ -117,8 +118,8 @@
   }
 
   .mobile-shell-padding {
-    /* Player (~5rem) + navbar (~4.35rem) + dock offset (0.5rem) */
-    padding-bottom: calc(10.5rem + env(safe-area-inset-bottom, 0px));
+    /* Player (~5rem) + navbar (~4.35rem) */
+    padding-bottom: calc(9.5rem + env(safe-area-inset-bottom, 0px));
   }
 
   @media (max-width: 767px) {
@@ -137,20 +138,34 @@
     }
 
     .mobile-shell-padding {
-      /* Player + navbar dock (~95% width floating) + offset */
-      padding-bottom: calc(10.5rem + env(safe-area-inset-bottom, 0px));
+      /* Player (~5rem) + full-width navbar (~4.35rem) + safe area */
+      padding-bottom: calc(9.5rem + env(safe-area-inset-bottom, 0px));
     }
 
     .listen-surah-header {
       width: auto;
       max-width: none;
-      /* Escape mobile-app-main horizontal inset + pin to absolute top */
       margin-left: calc(-1 * max(1rem, env(safe-area-inset-left, 0px)));
       margin-right: calc(-1 * max(1rem, env(safe-area-inset-right, 0px)));
-      margin-top: 0;
-      top: 0;
+      margin-top: 0 !important;
+      top: 0 !important;
+      position: -webkit-sticky;
+      position: sticky;
       background:
         linear-gradient(180deg, rgba(22, 37, 56, 0.98) 0%, rgba(12, 21, 34, 0.98) 100%);
+      /* Kill rubber-band gap above the sticky chrome */
+      overscroll-behavior: none;
+    }
+
+    .listen-surah-header::before {
+      content: '';
+      position: absolute;
+      left: 0;
+      right: 0;
+      bottom: 100%;
+      height: max(100vh, 100dvh);
+      background: #162538;
+      pointer-events: none;
     }
 
     .listen-surah-header-inner {
@@ -162,11 +177,17 @@
       border-bottom-color: rgba(166, 184, 203, 0.14) !important;
       padding-left: max(1rem, env(safe-area-inset-left, 0px)) !important;
       padding-right: max(1rem, env(safe-area-inset-right, 0px)) !important;
-      /* Content inset only — background already covers safe area via section */
-      padding-top: max(0.85rem, env(safe-area-inset-top, 0px)) !important;
-      padding-bottom: 0.85rem !important;
+      padding-top: max(0.75rem, env(safe-area-inset-top, 0px)) !important;
+      padding-bottom: 1rem !important;
       box-shadow: none !important;
       background: transparent !important;
+      gap: 0.85rem;
+      margin-top: 0 !important;
+    }
+
+    .listen-surahs-panel {
+      margin-top: 0;
+      padding-top: 0;
     }
   }
 
@@ -183,8 +204,33 @@
     padding-top: 0 !important;
   }
 
+  .listen-surahs-panel {
+    margin-top: 0 !important;
+    padding-top: 0 !important;
+  }
+
   .listen-surah-header {
     margin-top: 0 !important;
+    top: 0 !important;
+    position: -webkit-sticky;
+    position: sticky;
+  }
+
+  .listen-surah-header-inner {
+    padding-top: max(0.75rem, env(safe-area-inset-top, 0px)) !important;
+    margin-top: 0 !important;
+  }
+
+  /* Avoid page-enter translate leaving a visual gap on this view */
+  .listen-surahs-panel {
+    animation: none;
+    transform: none !important;
+  }
+
+  .mobile-app-shell:has(.listen-surahs-panel),
+  .mobile-app-main:has(.listen-surahs-panel) {
+    transform: none !important;
+    animation: none !important;
   }
 }
 
@@ -557,16 +603,16 @@
   .nav-reciter-fusion-shell {
     --fusion-p: 0;
     transition:
-      border-radius 0.28s cubic-bezier(0.22, 1, 0.36, 1),
       box-shadow 0.28s cubic-bezier(0.22, 1, 0.36, 1);
   }
 
   .nav-reciter-fusion-shell.is-fusing {
-    border-radius: calc(999px - var(--fusion-p) * (999px - 1.25rem)) !important;
+    /* Stable card radius aligned with the wide desktop chrome */
+    border-radius: 1.35rem !important;
     box-shadow:
-      inset 0 1px 0 rgba(240, 209, 188, calc(0.05 + var(--fusion-p) * 0.04)),
-      0 20px 55px rgba(0, 0, 0, calc(0.4 + var(--fusion-p) * 0.08)),
-      0 0 calc(var(--fusion-p) * 28px) rgba(206, 166, 135, calc(var(--fusion-p) * 0.12));
+      inset 0 1px 0 rgba(240, 209, 188, calc(0.05 + var(--fusion-p) * 0.05)),
+      0 20px 55px rgba(0, 0, 0, calc(0.4 + var(--fusion-p) * 0.1)),
+      0 0 calc(12px + var(--fusion-p) * 28px) rgba(206, 166, 135, calc(0.06 + var(--fusion-p) * 0.14));
   }
 
   .nav-reciter-fusion-dock {
@@ -575,13 +621,31 @@
 
   .nav-reciter-fusion-shell.is-fusing .nav-reciter-fusion-dock {
     display: flex;
-    max-height: calc(var(--fusion-p) * 4.5rem);
-    opacity: var(--fusion-p);
-    border-top: 1px solid rgba(166, 184, 203, calc(var(--fusion-p) * 0.16));
-    transform: translateY(calc((1 - var(--fusion-p)) * -0.4rem));
-    padding-top: calc(var(--fusion-p) * 0.65rem);
+    /* Open early and rise into place — reads as receiving the card, not a pop-in */
+    max-height: calc(var(--fusion-p) * 5rem);
+    opacity: calc(min(1, var(--fusion-p) / 0.55));
+    border-top: 1px solid rgba(206, 166, 135, calc(var(--fusion-p) * 0.28));
+    transform: translateY(calc((1 - var(--fusion-p)) * 1.35rem))
+      scale(calc(0.88 + var(--fusion-p) * 0.12));
+    transform-origin: top center;
+    padding-top: calc(var(--fusion-p) * 0.7rem);
+    padding-bottom: calc(var(--fusion-p) * 0.15rem);
     overflow: hidden;
     will-change: max-height, opacity, transform;
+    filter: blur(calc((1 - var(--fusion-p)) * 2.5px));
+  }
+
+  .nav-reciter-fusion-avatar {
+    width: calc(2.25rem + (1 - var(--fusion-p)) * 1.35rem);
+    height: calc(2.25rem + (1 - var(--fusion-p)) * 1.35rem);
+    border-radius: calc(0.55rem + (1 - var(--fusion-p)) * 999px);
+    border-color: rgba(206, 166, 135, calc(0.35 + (1 - var(--fusion-p)) * 0.2));
+    box-shadow: 0 0 calc((1 - var(--fusion-p)) * 18px) rgba(206, 166, 135, calc((1 - var(--fusion-p)) * 0.22));
+  }
+
+  .nav-reciter-fusion-meta {
+    opacity: calc(min(1, (var(--fusion-p) - 0.12) / 0.5));
+    transform: translateX(calc((1 - var(--fusion-p)) * -0.4rem));
   }
 
   .listen-surah-header {
@@ -589,52 +653,82 @@
   }
 
   .reciter-fusion-card {
-    transform: translateY(calc(var(--fusion-p) * -14px)) scale(calc(1 - var(--fusion-p) * 0.03));
-    opacity: calc(1 - var(--fusion-p));
-    border-radius: calc(1rem * (1 - var(--fusion-p) * 0.85));
+    /* Physically travel up into the navbar zone while shrinking */
+    transform: translateY(calc(var(--fusion-p) * -88px))
+      scale(calc(1 - var(--fusion-p) * 0.48));
+    transform-origin: top center;
+    /* Stay readable while moving, then hand off to the dock */
+    opacity: calc(1 - max(0, (var(--fusion-p) - 0.28) / 0.72));
+    border-radius: calc(1rem - var(--fusion-p) * 0.35rem);
     box-shadow:
-      0 14px 30px rgba(0, 0, 0, calc(0.2 * (1 - var(--fusion-p)))),
-      0 0 calc(var(--fusion-p) * 20px) rgba(206, 166, 135, calc(var(--fusion-p) * 0.08));
-    border-color: rgba(166, 184, 203, calc(0.12 * (1 - var(--fusion-p) * 0.9)));
+      0 14px 30px rgba(0, 0, 0, calc(0.22 * (1 - var(--fusion-p)))),
+      0 0 calc(18px + var(--fusion-p) * 24px)
+        rgba(206, 166, 135, calc(0.1 + var(--fusion-p) * 0.16));
+    border-color: rgba(
+      206,
+      166,
+      135,
+      calc(0.14 + var(--fusion-p) * 0.22)
+    );
     will-change: transform, opacity;
     transition: none;
+    filter: blur(calc(var(--fusion-p) * 1.8px));
   }
 
   .listen-surah-header.is-fusing .reciter-fusion-card {
     pointer-events: none;
   }
 
+  .listen-surah-header.is-fusing .reciter-fusion-actions {
+    max-height: calc((1 - min(1, var(--fusion-p) / 0.4)) * 4.5rem);
+    opacity: calc(1 - min(1, var(--fusion-p) / 0.4));
+    overflow: hidden;
+  }
+
   .reciter-fusion-riwaya {
-    max-height: calc((1 - min(1, var(--fusion-p) / 0.35)) * 10rem);
-    opacity: calc(1 - min(1, var(--fusion-p) / 0.35));
+    max-height: calc((1 - min(1, var(--fusion-p) / 0.28)) * 10rem);
+    opacity: calc(1 - min(1, var(--fusion-p) / 0.28));
     overflow: hidden;
   }
 
   .reciter-fusion-step {
-    opacity: calc(1 - min(1, var(--fusion-p) / 0.45));
+    opacity: calc(1 - min(1, var(--fusion-p) / 0.35));
+    transform: translateY(calc(var(--fusion-p) * -6px));
   }
 
   .reciter-fusion-avatar {
-    transform: scale(calc(1 - var(--fusion-p) * 0.1));
+    transform: scale(calc(1 - var(--fusion-p) * 0.22));
+    border-width: calc(2px - var(--fusion-p) * 1px);
+  }
+
+  .reciter-fusion-name {
+    transform: scale(calc(1 - var(--fusion-p) * 0.08));
+    transform-origin: left center;
   }
 }
 
-/* Shared mobile dock chrome (player + navbar) */
+/* Shared mobile bottom chrome (player + navbar) — brand panel, flush join */
 @media (max-width: 767px) {
   .mobile-dock-chrome {
-    background: rgba(8, 21, 40, 0.96) !important;
-    border-color: rgba(56, 100, 150, 0.32) !important;
-    backdrop-filter: blur(20px);
-    -webkit-backdrop-filter: blur(20px);
+    background: rgba(17, 29, 45, 0.98) !important;
+    border-left: none !important;
+    border-right: none !important;
+    border-bottom: none !important;
+    backdrop-filter: blur(22px) saturate(1.12);
+    -webkit-backdrop-filter: blur(22px) saturate(1.12);
   }
 
-  /* Player sits flush on navbar: no downward shadow onto the nav */
   .mobile-dock-player {
-    box-shadow: 0 -14px 32px rgba(0, 12, 28, 0.42) !important;
+    z-index: 51;
+    border-bottom: none !important;
+    box-shadow:
+      inset 0 1px 0 rgba(240, 209, 188, 0.08),
+      0 -14px 28px rgba(7, 17, 29, 0.22) !important;
   }
 
-  /* Single shared drop shadow under the whole dock unit */
-  .mobile-dock-nav {
-    box-shadow: 0 14px 32px rgba(0, 12, 28, 0.42) !important;
+  .mobile-bar-nav-docked {
+    border-top: none !important;
+    box-shadow: none !important;
+    background: rgba(17, 29, 45, 0.98) !important;
   }
 }

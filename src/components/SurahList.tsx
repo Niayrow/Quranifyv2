@@ -1,8 +1,8 @@
-﻿import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo } from 'react';
 import { useAudio } from '../context/AudioContext';
 import type { Surah } from '../types';
 import {
-  Search, Play, Pause, Disc, MoreHorizontal, Download, CheckCircle2, Trash2,
+  Search, Play, Pause, Disc, CloudDownload, CheckCircle2,
   Repeat1, Repeat, X,
 } from 'lucide-react';
 import { getAudioUrl } from '../utils/audioUrl';
@@ -31,7 +31,6 @@ export const SurahList: React.FC<SurahListProps> = ({ onChooseReciter }) => {
   } = useAudio();
 
   const [searchQuery, setSearchQuery] = useState('');
-  const [openMenuId, setOpenMenuId] = useState<number | null>(null);
 
   const availableSurahs = useMemo(() => {
     return getAvailableSurahs(activeReciter, activeMoshaf);
@@ -117,34 +116,30 @@ export const SurahList: React.FC<SurahListProps> = ({ onChooseReciter }) => {
         )}
       </div>
 
-      <div className="glass-panel p-4 rounded-2xl flex items-center justify-between gap-3 border-[#cea687]/25 bg-[#f0d1bc]/6">
-        <div className="min-w-0">
-          <span className="text-[10px] uppercase font-bold tracking-wider text-[#f0d1bc]">Récitateur sélectionné</span>
-          <h4 className="font-semibold text-[#f6f8fb] truncate">{activeReciter.name}</h4>
-          <p className="text-xs text-[#b4c0ce] truncate">
-            {playlistActive
-              ? `Boucle active · ${selectedSurahIds.size} sourate${selectedSurahIds.size > 1 ? 's' : ''}`
-              : `${activeMoshaf.name} · « Boucle » pour répéter une sélection`}
-          </p>
-        </div>
-        <div className="flex items-center gap-2 shrink-0">
+      <div className="flex items-center justify-between gap-3 px-0.5">
+        <p className="min-w-0 truncate text-[11px] font-medium text-[#95a7ba]">
+          {playlistActive
+            ? `Boucle · ${selectedSurahIds.size} sourate${selectedSurahIds.size > 1 ? 's' : ''}`
+            : 'Touche « Boucle » pour répéter une sélection'}
+        </p>
+        <div className="flex items-center gap-1.5 shrink-0">
           <button
             type="button"
             onClick={() => setRepeatMode(repeatMode === 'one' ? 'all' : 'one')}
             title={repeatMode === 'one' ? 'Répétition d’une seule sourate active' : 'Répéter la même sourate'}
-            className={`w-9 h-9 rounded-full flex items-center justify-center transition-all border ${
+            className={`h-8 w-8 rounded-full flex items-center justify-center transition-all border ${
               repeatMode === 'one'
-                ? 'bg-[#f0d1bc]/16 border-[#cea687]/45 text-[#f1d4c1] shadow-[0_0_12px_rgba(206,166,135,0.25)]'
-                : 'bg-[#162538]/60 border-[#46607b] text-[#aab7c5] hover:text-[#f6f8fb]'
+                ? 'bg-[#f0d1bc]/16 border-[#cea687]/45 text-[#f1d4c1]'
+                : 'bg-transparent border-[#46607b]/70 text-[#aab7c5] hover:text-[#f6f8fb]'
             }`}
           >
-            <Repeat1 className="w-4 h-4" />
+            <Repeat1 className="w-3.5 h-3.5" />
           </button>
           {playlistActive && (
             <button
               type="button"
               onClick={() => setSelectedSurahIds(new Set())}
-              className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg border border-[#46607b] text-[11px] font-semibold text-[#aab7c5] hover:text-[#f6f8fb]"
+              className="inline-flex items-center gap-1 rounded-full border border-[#46607b]/70 px-2.5 py-1.5 text-[10px] font-semibold text-[#aab7c5] hover:text-[#f6f8fb]"
               title="Lire toutes les sourates"
             >
               <X className="w-3 h-3" />
@@ -173,7 +168,6 @@ export const SurahList: React.FC<SurahListProps> = ({ onChooseReciter }) => {
             const isDownloaded = cachedUrls.has(url);
             const progress = downloadProgress[url];
             const isDownloading = progress !== undefined;
-            const menuOpen = openMenuId === surah.id;
 
             return (
               <div
@@ -294,57 +288,50 @@ export const SurahList: React.FC<SurahListProps> = ({ onChooseReciter }) => {
                   )}
                 </button>
 
-                <div className="relative shrink-0">
-                  <button
-                    type="button"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      setOpenMenuId(menuOpen ? null : surah.id);
-                    }}
-                    className="w-8 h-8 rounded-full flex items-center justify-center text-[#95a7ba] hover:text-[#f6f8fb] hover:bg-[#162538]/85 transition-colors tap-feedback"
-                    aria-label="Plus d'actions"
-                  >
-                    {isDownloading ? (
-                      <span className="text-[9px] font-black text-[#f0d1bc]">{progress}%</span>
-                    ) : isDownloaded ? (
-                      <CheckCircle2 className="w-4 h-4 text-[#f0d1bc]" />
-                    ) : (
-                      <MoreHorizontal className="w-4 h-4" />
-                    )}
-                  </button>
-
-                  {menuOpen && (
-                    <div className="absolute right-0 top-full mt-1 z-30 min-w-[160px] rounded-xl border border-[#46607b] bg-[#111d2d] shadow-xl py-1">
-                      <button
-                        type="button"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          if (isDownloaded) {
-                            if (confirm(`Supprimer « ${surah.name} » du hors-ligne ?`)) {
-                              deleteSurah(activeReciter, activeMoshaf, surah);
-                            }
-                          } else {
-                            downloadSurah(activeReciter, activeMoshaf, surah);
-                          }
-                          setOpenMenuId(null);
-                        }}
-                        className="w-full flex items-center gap-2 px-3 py-2 text-xs font-semibold text-[#e6edf5] hover:bg-[#162538] tap-feedback"
-                      >
-                        {isDownloaded ? (
-                          <>
-                            <Trash2 className="w-3.5 h-3.5 text-[#f2a3a3]" />
-                            Supprimer hors-ligne
-                          </>
-                        ) : (
-                          <>
-                            <Download className="w-3.5 h-3.5 text-[#f0d1bc]" />
-                            Télécharger
-                          </>
-                        )}
-                      </button>
-                    </div>
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    if (isDownloading) return;
+                    if (isDownloaded) {
+                      if (confirm(`Supprimer « ${surah.name} » du hors-ligne ?`)) {
+                        deleteSurah(activeReciter, activeMoshaf, surah);
+                      }
+                      return;
+                    }
+                    downloadSurah(activeReciter, activeMoshaf, surah);
+                  }}
+                  disabled={isDownloading}
+                  className={`w-10 h-10 rounded-full flex items-center justify-center transition-all shrink-0 tap-feedback border ${
+                    isDownloaded
+                      ? 'border-[#cea687]/45 bg-[#f0d1bc]/18 text-[#f0d1bc] shadow-[0_0_14px_rgba(206,166,135,0.22)]'
+                      : isDownloading
+                        ? 'border-[#cea687]/35 bg-[#162538] text-[#f0d1bc]'
+                        : 'border-[#46607b] bg-[#162538] text-[#f0d1bc] hover:border-[#cea687]/50 hover:bg-[#f0d1bc]/14 hover:shadow-[0_0_12px_rgba(206,166,135,0.18)]'
+                  }`}
+                  title={
+                    isDownloaded
+                      ? 'Supprimer le téléchargement hors-ligne'
+                      : isDownloading
+                        ? 'Téléchargement…'
+                        : 'Télécharger hors-ligne'
+                  }
+                  aria-label={
+                    isDownloaded
+                      ? `Supprimer ${surah.name} du hors-ligne`
+                      : isDownloading
+                        ? `Téléchargement de ${surah.name}`
+                        : `Télécharger ${surah.name}`
+                  }
+                >
+                  {isDownloading ? (
+                    <span className="text-[10px] font-black tabular-nums tracking-tight">{progress}%</span>
+                  ) : isDownloaded ? (
+                    <CheckCircle2 className="w-5 h-5" strokeWidth={2.25} />
+                  ) : (
+                    <CloudDownload className="w-5 h-5" strokeWidth={2.25} />
                   )}
-                </div>
+                </button>
               </div>
             );
           })}

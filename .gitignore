@@ -22,3 +22,6 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# Reciter portrait originals (backup before brand recolor)
+public/reciters/_original/
