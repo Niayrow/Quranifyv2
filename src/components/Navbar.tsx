@@ -1,13 +1,23 @@
 ﻿import React from 'react';
 import { Heart, Home, Headphones, Play, Settings } from 'lucide-react';
+import type { Reciter, Moshaf } from '../types';
+import { getGeneratedReciterAvatar, getReciterImage } from '../utils/images';
 
 type NavTabId = 'home' | 'listen' | 'moments' | 'favorites' | 'more';
+
+export interface ReciterNavFusionProps {
+  progress: number;
+  reciter: Reciter;
+  activeMoshaf: Moshaf | null;
+  onChangeReciter: () => void;
+}
 
 interface NavbarProps {
   activeTab: NavTabId;
   setActiveTab: (tab: NavTabId) => void;
   /** When true on mobile, navbar visually docks with the player bar */
   dockWithPlayer?: boolean;
+  reciterFusion?: ReciterNavFusionProps | null;
 }
 
 const LOGO_SRC = '/icons/sansfond.png';
@@ -16,6 +26,7 @@ export const Navbar: React.FC<NavbarProps> = ({
   activeTab,
   setActiveTab,
   dockWithPlayer = false,
+  reciterFusion = null,
 }) => {
   const mainTabs: Array<{ id: NavTabId; label: string; icon: typeof Home }> = [
     { id: 'home', label: 'Accueil', icon: Home },
@@ -95,15 +106,25 @@ export const Navbar: React.FC<NavbarProps> = ({
     );
   };
 
+  const fusionProgress = reciterFusion?.progress ?? 0;
+  const isFusing = Boolean(reciterFusion) && fusionProgress > 0.01;
+  const fusionStyle = reciterFusion
+    ? ({ ['--fusion-p' as string]: String(fusionProgress) } as React.CSSProperties)
+    : undefined;
+
   return (
     <nav
-      className={`fixed z-50 left-1/2 -translate-x-1/2 w-[95%] max-w-md md:max-w-4xl md:w-auto md:top-6 md:bottom-auto md:h-auto glass-panel-opaque border px-0 py-0 md:px-2.5 md:py-2 backdrop-blur-2xl transition-all duration-300 overflow-hidden md:overflow-visible ${
+      style={fusionStyle}
+      className={`fixed z-50 left-1/2 -translate-x-1/2 w-[95%] max-w-md md:max-w-4xl md:w-auto md:top-6 md:bottom-auto md:h-auto glass-panel-opaque border px-0 py-0 md:px-2.5 md:py-2 backdrop-blur-2xl transition-[border-radius,box-shadow] duration-300 ease-out overflow-hidden md:overflow-hidden nav-reciter-fusion-shell ${
+        isFusing ? 'is-fusing' : ''
+      } ${
         dockWithPlayer
           ? 'mobile-dock-chrome mobile-dock-nav bottom-[calc(0.5rem+env(safe-area-inset-bottom,0px))] h-[4.35rem] md:h-auto rounded-t-none rounded-b-3xl border-t-0 md:rounded-full md:border md:border-[#46607b]/40 md:shadow-2xl md:shadow-black/40'
           : 'bottom-6 h-[4.35rem] md:h-auto rounded-3xl md:rounded-full border-[#46607b]/40 shadow-2xl shadow-black/40'
       }`}
     >
-      <div className="flex h-full items-stretch md:items-center justify-between gap-0 md:gap-3">
+      <div className="flex h-full flex-col">
+      <div className="flex h-full items-stretch md:items-center justify-between gap-0 md:gap-3 shrink-0">
         {/* Brand — desktop only */}
         <button
           type="button"
@@ -131,6 +152,47 @@ export const Navbar: React.FC<NavbarProps> = ({
 
           {renderTab('more', 'Options', Settings, { rotateActive: true })}
         </div>
+      </div>
+
+      {reciterFusion && (
+        <div
+          className="nav-reciter-fusion-dock items-center gap-3 px-3 pb-3 pt-0"
+          aria-hidden={fusionProgress < 0.05}
+          style={{ pointerEvents: fusionProgress >= 0.85 ? 'auto' : 'none' }}
+        >
+          <div className="w-9 h-9 rounded-lg overflow-hidden border border-[#46607b]/55 bg-[#111d2d] shrink-0">
+            <img
+              src={getReciterImage(reciterFusion.reciter)}
+              alt={reciterFusion.reciter.name}
+              width="36"
+              height="36"
+              className="w-full h-full object-cover"
+              onError={(e) => {
+                const img = e.currentTarget;
+                const fallback = getGeneratedReciterAvatar(reciterFusion.reciter);
+                if (img.src !== fallback) img.src = fallback;
+              }}
+            />
+          </div>
+          <div className="min-w-0 flex-1">
+            <p className="text-[10px] uppercase font-bold tracking-wider text-[#f0d1bc]/90">
+              Récitateur
+            </p>
+            <p className="text-sm font-semibold text-[#f6f8fb] truncate">{reciterFusion.reciter.name}</p>
+            {reciterFusion.activeMoshaf && (
+              <p className="text-[11px] text-[#b4c0ce] truncate">{reciterFusion.activeMoshaf.name}</p>
+            )}
+          </div>
+          <button
+            type="button"
+            onClick={reciterFusion.onChangeReciter}
+            className="brand-button-secondary shrink-0 rounded-xl px-3 py-2 text-[11px] font-bold transition-colors tap-feedback"
+            tabIndex={fusionProgress >= 0.85 ? 0 : -1}
+          >
+            Changer
+          </button>
+        </div>
+      )}
       </div>
     </nav>
   );

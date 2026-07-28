@@ -12,6 +12,7 @@ import type { Reciter } from './types';
 import { getGeneratedReciterAvatar, getReciterImage } from './utils/images';
 import { getReciterCategory, type ReciterCategoryId } from './data/reciterCategories';
 import { ReciterCategoryGrid, ReciterCategoryModal } from './components/ReciterCategoryModal';
+import { ListenReciterHeader } from './components/ListenReciterHeader';
 import { CloudSync } from './components/CloudSync';
 import { AuthPromptModal } from './components/AuthPromptModal';
 import { useAuth } from './context/AuthContext';
@@ -571,6 +572,14 @@ const AppContent: React.FC = () => {
   const surahSectionRef = useRef<HTMLElement | null>(null);
   const didRestoreListenStep = useRef(false);
   const authPromptShownRef = useRef(false);
+  const [reciterFusionProgress, setReciterFusionProgress] = useState(0);
+
+  const handleReciterFusionProgress = useCallback((progress: number) => {
+    setReciterFusionProgress(progress);
+  }, []);
+
+  const reciterFusionEnabled =
+    activeTab === 'listen' && listenStep === 'surahs' && Boolean(activeReciter);
 
   const applyDeepLink = useCallback((rawUrl: string) => {
     try {
@@ -914,7 +923,7 @@ const AppContent: React.FC = () => {
   }
 
   return (
-    <div className="flex-1 flex flex-col pt-4 px-4 max-w-lg mx-auto w-full mobile-shell-padding md:pt-28 md:pb-12 md:max-w-4xl md:px-8">
+    <div className="flex-1 flex flex-col pt-4 px-4 max-w-lg mx-auto w-full mobile-shell-padding mobile-app-shell max-md:pt-0 max-md:px-0 md:pt-28 md:pb-12 md:max-w-4xl md:px-8">
       <CloudSync favorites={favorites} setFavorites={setFavorites} />
       <AuthPromptModal
         open={showAuthPrompt && !user}
@@ -925,11 +934,11 @@ const AppContent: React.FC = () => {
       <h1 className="sr-only">Quranify — Lecteur Coranique Premium</h1>
 
       {/* 2. Main Tab Views */}
-      <main className="flex-1 flex flex-col gap-5">
+      <main className="flex-1 flex flex-col gap-5 mobile-app-main">
         <div key={activeTab} className="animate-page-enter flex flex-col gap-5">
         
         {activeTab === 'home' && (
-          <div className="flex flex-col gap-4 md:gap-7 pb-16 sm:pb-20">
+          <div className="flex flex-col gap-4 md:gap-7 pb-16 sm:pb-20 max-md:pt-4">
             <section className="relative isolate overflow-hidden rounded-[1.75rem] md:rounded-[2.4rem] ring-1 ring-[#30455c]/90 brand-card">
               <div
                 className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,rgba(240,209,188,0.24),transparent_42%),radial-gradient(circle_at_85%_18%,rgba(121,144,161,0.24),transparent_28%),linear-gradient(160deg,#162538_0%,#0f1a29_46%,#08111c_100%)]"
@@ -1227,7 +1236,7 @@ const AppContent: React.FC = () => {
 
         {/* 2.1 Listening Hub — wizard: reciters then surahs */}
         {activeTab === 'listen' && (
-          <div className="flex flex-col gap-5">
+          <div className={`flex flex-col gap-5 ${listenStep === 'surahs' && activeReciter ? '' : 'max-md:pt-4'}`}>
             {error && (
               <div className="glass-panel p-4 rounded-2xl border-[#f08c8c]/25 bg-[#f08c8c]/8 flex gap-3 items-start">
                 <AlertTriangle className="w-5 h-5 text-[#f2a3a3] shrink-0 mt-0.5" />
@@ -1360,76 +1369,18 @@ const AppContent: React.FC = () => {
             )}
 
             {listenStep === 'surahs' && activeReciter && (
-              <div className="flex flex-col gap-5">
-                <section
-                  ref={surahSectionRef}
-                  className="sticky top-0 z-20 scroll-mt-6 md:top-24"
-                >
-                  <div className="rounded-2xl brand-card backdrop-blur-md p-4 flex flex-col gap-3 shadow-lg shadow-black/20">
-                    <div className="flex items-center gap-3">
-                      <div className="w-12 h-12 rounded-xl overflow-hidden border border-[#46607b]/60 bg-[#111d2d] shrink-0">
-                        <img
-                          src={getReciterImage(activeReciter)}
-                          alt={activeReciter.name}
-                          width="48"
-                          height="48"
-                          className="w-full h-full object-cover"
-                          onError={(e) => {
-                            const img = e.currentTarget;
-                            const fallback = getGeneratedReciterAvatar(activeReciter);
-                            if (img.src !== fallback) img.src = fallback;
-                          }}
-                        />
-                      </div>
-                      <div className="min-w-0 flex-1">
-                        <span className="text-[10px] uppercase font-bold tracking-wider text-[#f0d1bc]">
-                          Étape 2 · Sourates
-                        </span>
-                        <h2 className="font-semibold text-[#f6f8fb] truncate">{activeReciter.name}</h2>
-                        {activeMoshaf && (
-                          <p className="text-xs text-[#b4c0ce] truncate">{activeMoshaf.name}</p>
-                        )}
-                      </div>
-                      <button
-                        type="button"
-                        onClick={handleChangeReciter}
-                        className="brand-button-secondary shrink-0 rounded-xl px-3 py-2 text-[11px] font-bold transition-colors tap-feedback"
-                      >
-                        Changer
-                      </button>
-                    </div>
+              <div className="flex flex-col gap-5 max-md:gap-4">
+                <ListenReciterHeader
+                  activeReciter={activeReciter}
+                  activeMoshaf={activeMoshaf}
+                  fusionEnabled={reciterFusionEnabled}
+                  onFusionProgressChange={handleReciterFusionProgress}
+                  onChangeReciter={handleChangeReciter}
+                  onSelectMoshaf={setActiveMoshaf}
+                  sectionRef={surahSectionRef}
+                />
 
-                    {activeReciter.moshaf.length > 1 && (
-                      <div className="flex flex-col gap-1.5">
-                        <span className="text-[10px] uppercase font-bold tracking-widest text-[#95a7ba] flex items-center gap-1.5">
-                          <Disc className="w-3 h-3 text-[#f0d1bc]" />
-                          Riwaya
-                        </span>
-                        <div className="flex flex-wrap gap-1.5">
-                          {activeReciter.moshaf.map((m) => {
-                            const isMoshafSelected = activeMoshaf?.id === m.id;
-                            return (
-                              <button
-                                key={m.id}
-                                type="button"
-                                onClick={() => setActiveMoshaf(m)}
-                                className={`text-[10px] font-medium px-2.5 py-1 rounded-lg border transition-all tap-feedback ${
-                                  isMoshafSelected
-                                    ? 'bg-[#f0d1bc]/12 border-[#cea687]/35 text-[#f1d4c1]'
-                                    : 'bg-[#111d2d]/68 border-[#30455c] text-[#b4c0ce] hover:bg-[#162538] hover:text-[#e6edf5]'
-                                }`}
-                              >
-                                {m.name}
-                              </button>
-                            );
-                          })}
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                </section>
-
-                <div>
+                <div className="max-md:px-0">
                   <h3 className="text-sm font-bold text-[#d7e4ef] mb-3">Choisis une sourate</h3>
                   <Suspense fallback={<div className="shimmer-loader h-40 rounded-2xl border border-slate-900" />}>
                     <SurahList onChooseReciter={handleChangeReciter} />
@@ -1441,7 +1392,7 @@ const AppContent: React.FC = () => {
         )}
 
         {activeTab === 'moments' && (
-          <div className="flex flex-col gap-5 pb-16 sm:pb-20">
+          <div className="flex flex-col gap-5 pb-16 sm:pb-20 max-md:pt-4">
             <section className="relative overflow-hidden rounded-3xl border border-[#30455c]/55 bg-[linear-gradient(180deg,rgba(17,29,45,0.94),rgba(9,17,28,0.98))] p-5 sm:p-6">
               <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,rgba(240,209,188,0.12),transparent_42%),radial-gradient(circle_at_85%_20%,rgba(121,144,161,0.14),transparent_28%)]" aria-hidden="true" />
               <div className="relative z-10 flex flex-col gap-5">
@@ -1500,7 +1451,7 @@ const AppContent: React.FC = () => {
 
         {/* 2.2 Tab Favorites View */}
         {activeTab === 'favorites' && (
-          <div className="flex flex-col gap-5 pb-16 sm:pb-20">
+          <div className="flex flex-col gap-5 pb-16 sm:pb-20 max-md:pt-4">
             <h2 className="text-lg font-bold text-[#f6f8fb] flex items-center gap-2">
               <Heart className="w-5 h-5 text-red-500 fill-current" />
               Vos Récitateurs Favoris
@@ -1541,7 +1492,7 @@ const AppContent: React.FC = () => {
 
         {/* 2.3 Tab More View */}
         {activeTab === 'more' && (
-          <div className="flex flex-col gap-5">
+          <div className="flex flex-col gap-5 max-md:pt-4">
             <section className="glass-panel rounded-3xl border border-[#30455c]/60 p-5">
               <div className="flex items-start justify-between gap-3">
                 <div>
@@ -1733,6 +1684,16 @@ const AppContent: React.FC = () => {
         activeTab={activeTab}
         setActiveTab={handleSetActiveTab}
         dockWithPlayer={Boolean(currentTrack)}
+        reciterFusion={
+          reciterFusionEnabled && activeReciter
+            ? {
+                progress: reciterFusionProgress,
+                reciter: activeReciter,
+                activeMoshaf,
+                onChangeReciter: handleChangeReciter,
+              }
+            : null
+        }
       />
 
     </div>

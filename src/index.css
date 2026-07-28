@@ -36,6 +36,7 @@
     background: #07111d;
     -webkit-text-size-adjust: 100%;
     text-size-adjust: 100%;
+    touch-action: manipulation;
   }
 
   body {
@@ -76,6 +77,14 @@
     touch-action: manipulation;
   }
 
+  @media (max-width: 767px) {
+    input,
+    select,
+    textarea {
+      font-size: 16px;
+    }
+  }
+
   /* Custom Premium Scrollbar */
   ::-webkit-scrollbar {
     width: 6px;
@@ -112,10 +121,70 @@
     padding-bottom: calc(10.5rem + env(safe-area-inset-bottom, 0px));
   }
 
+  @media (max-width: 767px) {
+    .mobile-app-shell {
+      padding-top: 0 !important;
+      padding-left: 0 !important;
+      padding-right: 0 !important;
+      max-width: none !important;
+      margin-left: 0 !important;
+      margin-right: 0 !important;
+    }
+
+    .mobile-app-main {
+      padding-left: max(1rem, env(safe-area-inset-left, 0px));
+      padding-right: max(1rem, env(safe-area-inset-right, 0px));
+    }
+
+    .mobile-shell-padding {
+      /* Player + navbar dock (~95% width floating) + offset */
+      padding-bottom: calc(10.5rem + env(safe-area-inset-bottom, 0px));
+    }
+
+    .listen-surah-header {
+      width: auto;
+      max-width: none;
+      /* Escape mobile-app-main horizontal inset + pin to absolute top */
+      margin-left: calc(-1 * max(1rem, env(safe-area-inset-left, 0px)));
+      margin-right: calc(-1 * max(1rem, env(safe-area-inset-right, 0px)));
+      margin-top: 0;
+      top: 0;
+      background:
+        linear-gradient(180deg, rgba(22, 37, 56, 0.98) 0%, rgba(12, 21, 34, 0.98) 100%);
+    }
+
+    .listen-surah-header-inner {
+      border-radius: 0 !important;
+      border-left-width: 0 !important;
+      border-right-width: 0 !important;
+      border-top-width: 0 !important;
+      border-bottom-width: 1px !important;
+      border-bottom-color: rgba(166, 184, 203, 0.14) !important;
+      padding-left: max(1rem, env(safe-area-inset-left, 0px)) !important;
+      padding-right: max(1rem, env(safe-area-inset-right, 0px)) !important;
+      /* Content inset only — background already covers safe area via section */
+      padding-top: max(0.85rem, env(safe-area-inset-top, 0px)) !important;
+      padding-bottom: 0.85rem !important;
+      box-shadow: none !important;
+      background: transparent !important;
+    }
+  }
+
   @media (min-width: 768px) {
     .mobile-shell-padding {
       padding-bottom: 8rem;
     }
+  }
+}
+
+/* Force flush reciter header on mobile (outside utilities layer for specificity) */
+@media (max-width: 767px) {
+  .mobile-app-shell {
+    padding-top: 0 !important;
+  }
+
+  .listen-surah-header {
+    margin-top: 0 !important;
   }
 }
 
@@ -481,6 +550,73 @@
 
 .player-marquee-text.is-overflowing {
   animation: player-marquee 9s ease-in-out infinite;
+}
+
+/* Desktop — fusion bandeau récitateur ↔ navbar */
+@media (min-width: 768px) {
+  .nav-reciter-fusion-shell {
+    --fusion-p: 0;
+    transition:
+      border-radius 0.28s cubic-bezier(0.22, 1, 0.36, 1),
+      box-shadow 0.28s cubic-bezier(0.22, 1, 0.36, 1);
+  }
+
+  .nav-reciter-fusion-shell.is-fusing {
+    border-radius: calc(999px - var(--fusion-p) * (999px - 1.25rem)) !important;
+    box-shadow:
+      inset 0 1px 0 rgba(240, 209, 188, calc(0.05 + var(--fusion-p) * 0.04)),
+      0 20px 55px rgba(0, 0, 0, calc(0.4 + var(--fusion-p) * 0.08)),
+      0 0 calc(var(--fusion-p) * 28px) rgba(206, 166, 135, calc(var(--fusion-p) * 0.12));
+  }
+
+  .nav-reciter-fusion-dock {
+    display: none;
+  }
+
+  .nav-reciter-fusion-shell.is-fusing .nav-reciter-fusion-dock {
+    display: flex;
+    max-height: calc(var(--fusion-p) * 4.5rem);
+    opacity: var(--fusion-p);
+    border-top: 1px solid rgba(166, 184, 203, calc(var(--fusion-p) * 0.16));
+    transform: translateY(calc((1 - var(--fusion-p)) * -0.4rem));
+    padding-top: calc(var(--fusion-p) * 0.65rem);
+    overflow: hidden;
+    will-change: max-height, opacity, transform;
+  }
+
+  .listen-surah-header {
+    --fusion-p: 0;
+  }
+
+  .reciter-fusion-card {
+    transform: translateY(calc(var(--fusion-p) * -14px)) scale(calc(1 - var(--fusion-p) * 0.03));
+    opacity: calc(1 - var(--fusion-p));
+    border-radius: calc(1rem * (1 - var(--fusion-p) * 0.85));
+    box-shadow:
+      0 14px 30px rgba(0, 0, 0, calc(0.2 * (1 - var(--fusion-p)))),
+      0 0 calc(var(--fusion-p) * 20px) rgba(206, 166, 135, calc(var(--fusion-p) * 0.08));
+    border-color: rgba(166, 184, 203, calc(0.12 * (1 - var(--fusion-p) * 0.9)));
+    will-change: transform, opacity;
+    transition: none;
+  }
+
+  .listen-surah-header.is-fusing .reciter-fusion-card {
+    pointer-events: none;
+  }
+
+  .reciter-fusion-riwaya {
+    max-height: calc((1 - min(1, var(--fusion-p) / 0.35)) * 10rem);
+    opacity: calc(1 - min(1, var(--fusion-p) / 0.35));
+    overflow: hidden;
+  }
+
+  .reciter-fusion-step {
+    opacity: calc(1 - min(1, var(--fusion-p) / 0.45));
+  }
+
+  .reciter-fusion-avatar {
+    transform: scale(calc(1 - var(--fusion-p) * 0.1));
+  }
 }
 
 /* Shared mobile dock chrome (player + navbar) */
