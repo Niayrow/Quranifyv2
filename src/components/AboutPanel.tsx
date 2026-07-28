@@ -1,7 +1,7 @@
 import React from 'react';
 import {
   Compass, Cloud, HardDrive, Headphones, Shield, Sparkles, Trash2, Wifi,
-  MonitorSmartphone, ListMusic, Smartphone, BookOpenText, ExternalLink, History,
+  MonitorSmartphone, ListMusic, Smartphone, ExternalLink, History,
 } from 'lucide-react';
 import { useAudio } from '../context/AudioContext';
 
@@ -42,7 +42,7 @@ const UPDATE_HISTORY: Array<{
     title: 'Première version publique',
     items: [
       'Streaming des récitateurs, favoris et mode hors-ligne.',
-      'Lecture ayah par ayah et installation PWA.',
+      'Installation PWA.',
       'Compte GoMuslimLife partagé.',
     ],
   },
@@ -77,11 +77,6 @@ export const AboutPanel: React.FC = () => {
       icon: HardDrive,
       title: 'Mode hors-ligne',
       body: 'Téléchargez des sourates pour les écouter sans connexion. Vos réglages locaux restent mémorisés sur l’appareil.',
-    },
-    {
-      icon: BookOpenText,
-      title: 'Lecture ayah par ayah',
-      body: 'Parcourez le texte du Coran sourate par sourate dans l’onglet dédié, en complément de l’écoute audio.',
     },
     {
       icon: Cloud,

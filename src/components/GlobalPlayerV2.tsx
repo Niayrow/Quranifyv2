@@ -376,79 +376,14 @@ export const GlobalPlayerV2: React.FC = () => {
           </div>
         )}
 
+        <div className="relative flex flex-col md:block">
         <div
-          className={`relative flex items-center gap-2 md:gap-0 md:grid md:grid-cols-[minmax(0,1.15fr)_minmax(0,1.35fr)_auto] md:items-center p-2 md:px-5 md:py-3 ${
-            remoteSession ? 'pt-2 md:pt-2.5' : 'pt-3 md:pt-3'
+          className={`relative flex items-center gap-2 md:gap-0 md:grid md:grid-cols-[minmax(0,1.15fr)_minmax(0,1.35fr)_auto] md:items-center px-2 pt-2 pb-1.5 md:p-3 md:px-5 ${
+            remoteSession ? 'pt-2 md:pt-2.5' : ''
           }`}
         >
-        {/* Progress + time only when listening on this device */}
-        {!remoteSession && (
-          <div
-            className="group/progress absolute inset-x-0 top-0 z-30 h-5 touch-none cursor-pointer md:hidden"
-            onPointerEnter={() => setProgressArmed(true)}
-            onPointerLeave={() => {
-              if (!isScrubbing) setProgressArmed(false);
-            }}
-            onPointerDown={(e) => {
-              e.stopPropagation();
-              setIsScrubbing(true);
-              setProgressArmed(true);
-              e.currentTarget.setPointerCapture(e.pointerId);
-              seekFromClientX(e.clientX);
-            }}
-            onPointerMove={(e) => {
-              if (!e.currentTarget.hasPointerCapture(e.pointerId)) return;
-              seekFromClientX(e.clientX);
-            }}
-            onPointerUp={(e) => {
-              if (e.currentTarget.hasPointerCapture(e.pointerId)) {
-                e.currentTarget.releasePointerCapture(e.pointerId);
-              }
-              setIsScrubbing(false);
-              setProgressArmed(false);
-            }}
-            onPointerCancel={() => {
-              setIsScrubbing(false);
-              setProgressArmed(false);
-            }}
-            onKeyDown={(e) => {
-              if (e.key === 'ArrowRight') jumpBy(prefs.seekStep);
-              if (e.key === 'ArrowLeft') jumpBy(-prefs.seekStep);
-            }}
-            role="slider"
-            aria-label="Progression de la sourate"
-            aria-valuemin={0}
-            aria-valuemax={Math.round(duration || 0)}
-            aria-valuenow={Math.round(currentTime)}
-            tabIndex={0}
-          >
-            <div
-              ref={progressTrackRef}
-              className="absolute left-3.5 right-3.5 top-[5px] h-[4px] rounded-full bg-[#111d2d]/80 ring-1 ring-[#7990a1]/20"
-            >
-              <div
-                className="absolute inset-y-0 left-0 rounded-full transition-[width] duration-100"
-                style={{
-                  width: `${progressPercent}%`,
-                  background: `linear-gradient(90deg, #8fa3b0, ${theme.sliderAccentColor})`,
-                }}
-              />
-              <span
-                className={`pointer-events-none absolute top-1/2 h-3 w-3 -translate-x-1/2 -translate-y-1/2 rounded-full border-2 border-white/90 shadow-[0_0_0_3px_rgba(122,145,159,0.28)] transition-opacity duration-150 ${
-                  progressArmed || isScrubbing ? 'opacity-100' : 'opacity-0'
-                }`}
-                style={{
-                  left: `${progressPercent}%`,
-                  backgroundColor: theme.sliderAccentColor,
-                }}
-                aria-hidden
-              />
-            </div>
-          </div>
-        )}
-
         {/* Track info */}
-        <div className={`flex items-center gap-2.5 min-w-0 flex-1 md:col-span-1 md:gap-3 ${remoteSession ? 'pt-0' : 'pt-1'} md:pt-0`}>
+        <div className="flex items-center gap-2.5 min-w-0 flex-1 md:col-span-1 md:gap-3 md:pt-0">
           <button
             type="button"
             onClick={() => setIsExpanded(true)}
@@ -758,6 +693,77 @@ export const GlobalPlayerV2: React.FC = () => {
             <SlidersHorizontal className="w-4 h-4" />
           </button>
         </div>
+        </div>
+
+        {/* Mobile progress — integrated at the bottom edge of the docked player */}
+        {!remoteSession && (
+          <div
+            className="group/progress relative z-30 mx-3 mb-1.5 touch-none cursor-pointer md:hidden"
+            onPointerEnter={() => setProgressArmed(true)}
+            onPointerLeave={() => {
+              if (!isScrubbing) setProgressArmed(false);
+            }}
+            onPointerDown={(e) => {
+              e.stopPropagation();
+              setIsScrubbing(true);
+              setProgressArmed(true);
+              e.currentTarget.setPointerCapture(e.pointerId);
+              seekFromClientX(e.clientX);
+            }}
+            onPointerMove={(e) => {
+              if (!e.currentTarget.hasPointerCapture(e.pointerId)) return;
+              seekFromClientX(e.clientX);
+            }}
+            onPointerUp={(e) => {
+              if (e.currentTarget.hasPointerCapture(e.pointerId)) {
+                e.currentTarget.releasePointerCapture(e.pointerId);
+              }
+              setIsScrubbing(false);
+              setProgressArmed(false);
+            }}
+            onPointerCancel={() => {
+              setIsScrubbing(false);
+              setProgressArmed(false);
+            }}
+            onKeyDown={(e) => {
+              if (e.key === 'ArrowRight') jumpBy(prefs.seekStep);
+              if (e.key === 'ArrowLeft') jumpBy(-prefs.seekStep);
+            }}
+            role="slider"
+            aria-label="Progression de la sourate"
+            aria-valuemin={0}
+            aria-valuemax={Math.round(duration || 0)}
+            aria-valuenow={Math.round(currentTime)}
+            tabIndex={0}
+          >
+            <div
+              ref={progressTrackRef}
+              className={`relative w-full rounded-full bg-[#1b2d43]/90 transition-[height] duration-150 ${
+                progressArmed || isScrubbing ? 'h-[5px]' : 'h-[3px]'
+              }`}
+            >
+              <div
+                className="absolute inset-y-0 left-0 rounded-full transition-[width] duration-100"
+                style={{
+                  width: `${progressPercent}%`,
+                  background: `linear-gradient(90deg, ${theme.sliderAccentColor}aa, ${theme.sliderAccentColor})`,
+                }}
+              />
+              <span
+                className={`pointer-events-none absolute top-1/2 h-2.5 w-2.5 -translate-x-1/2 -translate-y-1/2 rounded-full border border-white/70 shadow-[0_0_0_2px_rgba(7,17,29,0.45)] transition-all duration-150 ${
+                  progressArmed || isScrubbing
+                    ? 'h-3.5 w-3.5 opacity-100'
+                    : 'opacity-70'
+                }`}
+                style={{
+                  left: `${progressPercent}%`,
+                  backgroundColor: theme.sliderAccentColor,
+                }}
+                aria-hidden
+              />
+            </div>
+          </div>
+        )}
         </div>
       </div>
 

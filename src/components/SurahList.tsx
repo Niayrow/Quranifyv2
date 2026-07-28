@@ -8,7 +8,6 @@ import {
 import { getAudioUrl } from '../utils/audioUrl';
 
 interface SurahListProps {
-  mode?: 'listen' | 'ayah';
   onChooseReciter?: () => void;
 }
 

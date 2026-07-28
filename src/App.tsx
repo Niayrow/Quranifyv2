@@ -4,7 +4,7 @@ import { AuthProvider } from './context/AuthContext';
 import { ReciterCard } from './components/ReciterCard';
 import { Navbar } from './components/Navbar';
 import { 
-  Search, Heart, AlertTriangle, Headphones, Play, ArrowRight, BookOpenText,
+  Search, Heart, AlertTriangle, Headphones, Play, ArrowRight,
   Bookmark, Download, Disc, ExternalLink, ArrowLeftRight, Cloud, WifiOff
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
@@ -17,13 +17,12 @@ import { AuthPromptModal } from './components/AuthPromptModal';
 import { useAuth } from './context/AuthContext';
 
 const SurahList = lazy(() => import('./components/SurahList').then((module) => ({ default: module.SurahList })));
-const EveryAyahReader = lazy(() => import('./components/EveryAyahReader').then((module) => ({ default: module.EveryAyahReader })));
 const GlobalPlayerV2 = lazy(() => import('./components/GlobalPlayerV2').then((module) => ({ default: module.GlobalPlayerV2 })));
 // Legacy player kept for reference: ./components/GlobalPlayer
 const AboutPanel = lazy(() => import('./components/AboutPanel').then((module) => ({ default: module.AboutPanel })));
 const ReciterCompare = lazy(() => import('./components/ReciterCompare').then((module) => ({ default: module.ReciterCompare })));
 const AccountPanel = lazy(() => import('./components/AccountPanel').then((module) => ({ default: module.AccountPanel })));
-const TAB_IDS = ['home', 'listen', 'ayah', 'favorites', 'more'] as const;
+const TAB_IDS = ['home', 'listen', 'favorites', 'more'] as const;
 type TabId = typeof TAB_IDS[number];
 type MorePanel = 'account' | 'priorities' | 'compare' | 'about';
 type ListenStep = 'reciters' | 'surahs';
@@ -43,13 +42,6 @@ const PRODUCT_PRIORITIES: Array<{
     icon: Download,
   },
   {
-    id: 'text',
-    title: 'Texte du Coran et suivi par verset',
-    summary: 'Ajouter la lecture ayah par ayah avec affichage du texte et suivi synchronisé.',
-    detail: 'L’app deviendrait un vrai compagnon de lecture, révision et mémorisation.',
-    icon: BookOpenText,
-  },
-  {
     id: 'library',
     title: 'Bibliothèque personnelle',
     summary: 'Étendre les favoris vers des signets de sourates, historique et reprise ciblée.',
@@ -66,7 +58,7 @@ const mapLegacyTab = (tab: string | null): TabId => {
       return 'listen';
     case 'ayah':
     case 'everyayah':
-      return 'ayah';
+      return 'home';
     case 'favorites':
       return 'favorites';
     case 'more':
@@ -488,10 +480,9 @@ const AppContent: React.FC = () => {
         rawUrl.includes('tab=surahs') ||
         rawUrl.includes('tab=reciters') ||
         rawUrl.includes('tab=listen') ||
-        rawUrl.includes('tab=ayah') ||
         rawUrl.includes('quranify://surah')
       ) {
-        setActiveTab(rawUrl.includes('tab=ayah') ? 'ayah' : 'listen');
+        setActiveTab('listen');
       }
     }
   }, []);
@@ -893,13 +884,6 @@ const AppContent: React.FC = () => {
                   onClick: () => handleNavigate('listen'),
                 },
                 {
-                  id: 'ayah',
-                  label: 'Lecture',
-                  hint: 'Ayah par ayah',
-                  icon: BookOpenText,
-                  onClick: () => handleNavigate('ayah'),
-                },
-                {
                   id: 'favorites',
                   label: 'Favoris',
                   hint: favoritedReciters.length
@@ -937,18 +921,17 @@ const AppContent: React.FC = () => {
             </section>
 
             {/* Atouts */}
-            <section className="flex gap-2 overflow-x-auto pb-0.5 -mx-0.5 px-0.5 scrollbar-thin scrollbar-thumb-slate-800">
+            <section className="flex flex-wrap gap-2">
               {[
                 { icon: WifiOff, label: 'Hors-ligne' },
                 { icon: Cloud, label: 'Multi-appareils' },
-                { icon: BookOpenText, label: 'Texte ayah' },
                 { icon: Disc, label: 'Lecteur pro' },
               ].map((item) => {
                 const Icon = item.icon;
                 return (
                   <span
                     key={item.label}
-                    className="inline-flex shrink-0 items-center gap-1.5 rounded-full border border-[#46607b]/30 bg-[#162538]/60 px-3 py-1.5 text-[11px] font-semibold text-[#d7e4ef]"
+                    className="inline-flex items-center gap-1.5 rounded-full border border-[#46607b]/30 bg-[#162538]/60 px-3 py-1.5 text-[11px] font-semibold text-[#d7e4ef]"
                   >
                     <Icon className="h-3.5 w-3.5 text-[#f0d1bc]" />
                     {item.label}
@@ -1245,34 +1228,11 @@ const AppContent: React.FC = () => {
                 <div>
                   <h3 className="text-sm font-bold text-[#d7e4ef] mb-3">Choisis une sourate</h3>
                   <Suspense fallback={<div className="shimmer-loader h-40 rounded-2xl border border-slate-900" />}>
-                    <SurahList mode="listen" onChooseReciter={handleChangeReciter} />
+                    <SurahList onChooseReciter={handleChangeReciter} />
                   </Suspense>
                 </div>
               </div>
             )}
-          </div>
-        )}
-
-        {activeTab === 'ayah' && (
-          <div className="flex flex-col gap-5">
-            <section className="glass-panel rounded-3xl border border-[#30455c]/60 p-5">
-              <div className="flex items-start justify-between gap-3">
-                <div>
-                  <span className="brand-chip inline-flex items-center gap-2 rounded-full px-3 py-1 text-[10px] font-black uppercase tracking-widest">
-                    <BookOpenText className="h-3.5 w-3.5" />
-                    EveryAyah
-                  </span>
-                  <h2 className="mt-3 text-lg font-black text-[#f6f8fb]">Lecture verset par verset</h2>
-                  <p className="mt-1 text-xs leading-relaxed text-[#b4c0ce]">
-                    Cette section est dédiée au texte, à la phonétique et à la lecture ayah par ayah avec timing exact.
-                  </p>
-                </div>
-              </div>
-            </section>
-
-            <Suspense fallback={<div className="shimmer-loader h-40 rounded-2xl border border-slate-900" />}>
-              <EveryAyahReader />
-            </Suspense>
           </div>
         )}
 
@@ -1421,7 +1381,7 @@ const AppContent: React.FC = () => {
       )}
 
       {/* 3. Global Audio Player Sheet */}
-      {currentTrack && activeTab !== 'ayah' && (
+      {currentTrack && (
         <Suspense fallback={null}>
           <GlobalPlayerV2 />
         </Suspense>
@@ -1431,7 +1391,7 @@ const AppContent: React.FC = () => {
       <Navbar
         activeTab={activeTab}
         setActiveTab={handleSetActiveTab}
-        dockWithPlayer={Boolean(currentTrack && activeTab !== 'ayah')}
+        dockWithPlayer={Boolean(currentTrack)}
       />
 
     </div>

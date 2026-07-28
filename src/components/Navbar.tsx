@@ -1,7 +1,7 @@
 ﻿import React from 'react';
-import { BookOpenText, Heart, Home, Headphones, Settings } from 'lucide-react';
+import { Heart, Home, Headphones, Settings } from 'lucide-react';
 
-type NavTabId = 'home' | 'listen' | 'ayah' | 'favorites' | 'more';
+type NavTabId = 'home' | 'listen' | 'favorites' | 'more';
 
 interface NavbarProps {
   activeTab: NavTabId;
@@ -20,7 +20,6 @@ export const Navbar: React.FC<NavbarProps> = ({
   const mainTabs: Array<{ id: NavTabId; label: string; icon: typeof Home }> = [
     { id: 'home', label: 'Accueil', icon: Home },
     { id: 'listen', label: 'Écouter', icon: Headphones },
-    { id: 'ayah', label: 'Lecture', icon: BookOpenText },
     { id: 'favorites', label: 'Favoris', icon: Heart },
   ];
 
@@ -42,13 +41,13 @@ export const Navbar: React.FC<NavbarProps> = ({
         key={id}
         type="button"
         onClick={() => setActiveTab(id)}
-        className={`group relative flex flex-col md:flex-row items-center justify-center flex-1 md:flex-none h-full md:h-auto px-1.5 md:px-3.5 py-1.5 md:py-2 transition-colors duration-300 overflow-hidden md:overflow-visible ${
+        className={`group relative flex flex-col md:flex-row items-center justify-center flex-1 md:flex-none h-full md:h-auto px-1.5 md:px-3.5 py-1.5 md:py-2 transition-all duration-300 overflow-hidden md:overflow-visible ${
           isFirst ? 'rounded-bl-[1.35rem] md:rounded-full' : ''
         } ${isLast ? 'rounded-br-[1.35rem] md:rounded-full' : ''} ${
           !isFirst && !isLast ? 'md:rounded-full' : ''
         } ${
           isActive
-            ? 'md:bg-[#162538] md:text-white md:ring-1 md:ring-[#f0d1bc]/20'
+            ? 'md:bg-gradient-to-b md:from-[#243850] md:to-[#162538] md:text-[#f6f8fb] md:ring-1 md:ring-[#f0d1bc]/45 md:shadow-[inset_0_1px_0_rgba(240,209,188,0.18),0_0_22px_rgba(206,166,135,0.16)]'
             : 'text-[#9fb1c3] hover:bg-[#162538]/70 hover:text-[#eef3f8]'
         }`}
         aria-label={label}
@@ -57,7 +56,7 @@ export const Navbar: React.FC<NavbarProps> = ({
         {/* Mobile: full-height navy selection column */}
         {isActive && (
           <span
-            className={`pointer-events-none absolute inset-y-0 md:hidden bg-[#162538] ${
+            className={`pointer-events-none absolute inset-y-0 md:hidden bg-gradient-to-b from-[#243850] to-[#162538] ${
               dockWithPlayer ? '-top-px' : ''
             } ${
               isFirst
@@ -70,20 +69,12 @@ export const Navbar: React.FC<NavbarProps> = ({
           />
         )}
 
-        {/* Desktop accent */}
-        {isActive && (
-          <span
-            className="pointer-events-none absolute left-1/2 top-0 hidden md:block h-1 w-8 -translate-x-1/2 rounded-full bg-[#f0d1bc]/80"
-            aria-hidden
-          />
-        )}
-
         <div className="relative z-10 flex flex-col md:flex-row items-center gap-1 md:gap-2 transition-transform duration-100 ease-out group-active:scale-95">
           <Icon
-            strokeWidth={isActive ? 2.5 : 2}
+            strokeWidth={isActive ? 2.6 : 2}
             className={`w-5 h-5 md:w-[20px] md:h-[20px] transition-all duration-300 ${
               isActive
-                ? `scale-110 text-[#f1d4c1] md:text-white ${
+                ? `scale-110 text-[#f0d1bc] drop-shadow-[0_0_10px_rgba(240,209,188,0.35)] ${
                     options?.rotateActive ? 'rotate-90' : ''
                   }`
                 : `text-[#9fb1c3] group-hover:scale-110 group-hover:text-[#eef3f8] ${
@@ -93,7 +84,7 @@ export const Navbar: React.FC<NavbarProps> = ({
           />
           <span
             className={`text-[10px] md:text-xs font-bold tracking-wide transition-colors ${
-              isActive ? 'text-white' : 'text-[#9fb1c3] group-hover:text-[#eef3f8]'
+              isActive ? 'text-[#f6f8fb] md:text-[#f1d4c1]' : 'text-[#9fb1c3] group-hover:text-[#eef3f8]'
             }`}
           >
             {label}

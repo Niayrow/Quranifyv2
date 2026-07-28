@@ -20,12 +20,6 @@ export interface Surah {
   englishTranslation: string;
 }
 
-export interface Verse {
-  id: number;
-  text: string;
-  transliteration?: string;
-}
-
 export interface AudioTrack {
   reciter: Reciter;
   moshaf: Moshaf;
