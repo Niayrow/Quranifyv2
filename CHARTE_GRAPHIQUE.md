@@ -279,8 +279,28 @@ Préférence :
 
 #### Sans-serif principale
 
+- police recommandée : `Manrope`
 - usage : toute l'interface
-- ton : moderne, propre, lisible, sobre
+- ton : moderne, premium, lisible, sobre, moins déjà-vu que les sans-serif UI les plus courantes
+
+Pourquoi `Manrope` :
+
+- rend l'interface plus raffinée sans extravagance
+- fonctionne très bien sur fond sombre
+- garde une excellente lisibilité mobile
+- apporte une légère signature premium sans effet “startup générique”
+- reste solide sur les titres, boutons, labels et textes de contenu
+
+Règles d'usage de `Manrope` :
+
+- `400` à `500` pour le texte courant
+- `600` à `700` pour les labels et boutons
+- `800` pour les titres forts
+- éviter le `900` partout pour ne pas durcir inutilement l'interface
+
+Fallback recommandé :
+
+- `"Manrope", ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif`
 
 #### Serif secondaire
 

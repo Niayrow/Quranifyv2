@@ -1,7 +1,7 @@
 ﻿import React from 'react';
-import { Heart, Home, Headphones, Settings } from 'lucide-react';
+import { Heart, Home, Headphones, Play, Settings } from 'lucide-react';
 
-type NavTabId = 'home' | 'listen' | 'favorites' | 'more';
+type NavTabId = 'home' | 'listen' | 'moments' | 'favorites' | 'more';
 
 interface NavbarProps {
   activeTab: NavTabId;
@@ -20,6 +20,7 @@ export const Navbar: React.FC<NavbarProps> = ({
   const mainTabs: Array<{ id: NavTabId; label: string; icon: typeof Home }> = [
     { id: 'home', label: 'Accueil', icon: Home },
     { id: 'listen', label: 'Écouter', icon: Headphones },
+    { id: 'moments', label: 'Moments', icon: Play },
     { id: 'favorites', label: 'Favoris', icon: Heart },
   ];
 

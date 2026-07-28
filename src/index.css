@@ -1,7 +1,8 @@
-﻿@import "tailwindcss";
+﻿@import url('https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap');
+@import "tailwindcss";
 
 @theme {
-  --font-sans: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  --font-sans: "Manrope", ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
   --font-serif: "Times New Roman", Georgia, serif;
   --color-brand-night: #07111d;
   --color-brand-night-soft: #0d1725;
@@ -258,14 +259,28 @@
   animation: double-pulse 2s infinite ease-in-out;
 }
 
-/* Sourate active — contour cuivre/acier discret */
+/* Sourate active — contour cuivre/acier animé */
+@property --surah-border-angle {
+  syntax: '<angle>';
+  initial-value: 0deg;
+  inherits: false;
+}
+
+@keyframes surah-active-border-spin {
+  to {
+    --surah-border-angle: 360deg;
+  }
+}
+
 .surah-row-active {
   position: relative;
+  isolation: isolate;
   border-color: transparent !important;
-  background: rgba(17, 29, 45, 0.82);
+  background: rgba(17, 29, 45, 0.9);
   box-shadow:
-    0 0 0 1px rgba(206, 166, 135, 0.08),
-    0 10px 28px -18px rgba(206, 166, 135, 0.25);
+    0 0 0 1px rgba(206, 166, 135, 0.1),
+    0 14px 30px -18px rgba(0, 0, 0, 0.42),
+    0 10px 24px -16px rgba(206, 166, 135, 0.32);
 }
 
 .surah-row-active::before {
@@ -274,20 +289,37 @@
   inset: 0;
   border-radius: inherit;
   padding: 1.5px;
-  background: linear-gradient(
-    115deg,
-    rgba(240, 209, 188, 0.84) 0%,
-    rgba(206, 166, 135, 0.48) 48%,
-    rgba(121, 144, 161, 0.35) 76%,
-    rgba(255, 255, 255, 0.34) 100%
+  background: conic-gradient(
+    from var(--surah-border-angle),
+    rgba(240, 209, 188, 0.12) 0deg,
+    rgba(240, 209, 188, 0.95) 48deg,
+    rgba(206, 166, 135, 0.78) 96deg,
+    rgba(121, 144, 161, 0.38) 160deg,
+    rgba(240, 209, 188, 0.1) 220deg,
+    rgba(206, 166, 135, 0.62) 300deg,
+    rgba(240, 209, 188, 0.12) 360deg
   );
   -webkit-mask:
     linear-gradient(#fff 0 0) content-box,
     linear-gradient(#fff 0 0);
   -webkit-mask-composite: xor;
   mask-composite: exclude;
+  animation: surah-active-border-spin 3.8s linear infinite;
   pointer-events: none;
   z-index: 1;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .surah-row-active::before {
+    animation: none;
+    background: linear-gradient(
+      115deg,
+      rgba(240, 209, 188, 0.84) 0%,
+      rgba(206, 166, 135, 0.48) 48%,
+      rgba(121, 144, 161, 0.35) 76%,
+      rgba(255, 255, 255, 0.34) 100%
+    );
+  }
 }
 
 .surah-row-active::after {
@@ -296,8 +328,8 @@
   inset: 1px;
   border-radius: calc(1rem - 1px);
   background:
-    radial-gradient(ellipse 70% 140% at 0% 50%, rgba(206, 166, 135, 0.12), transparent 58%),
-    radial-gradient(ellipse 45% 120% at 100% 50%, rgba(121, 144, 161, 0.08), transparent 55%);
+    radial-gradient(ellipse 70% 140% at 0% 50%, rgba(206, 166, 135, 0.16), transparent 58%),
+    radial-gradient(ellipse 45% 120% at 100% 50%, rgba(121, 144, 161, 0.1), transparent 55%);
   pointer-events: none;
   z-index: 0;
 }
