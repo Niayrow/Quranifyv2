@@ -51,7 +51,7 @@ export const ReciterCard: React.FC<ReciterCardProps> = ({
     return (
       <span>
         {before}
-        <span className="text-emerald-400 font-extrabold bg-emerald-400/10 px-0.5 rounded border-b border-emerald-500/30 shadow-[0_0_8px_rgba(122, 145, 159,0.2)]">
+        <span className="text-[#f1d4c1] font-extrabold bg-[#f0d1bc]/10 px-0.5 rounded border-b border-[#cea687]/35 shadow-[0_0_8px_rgba(206,166,135,0.18)]">
           {match}
         </span>
         {after}
@@ -78,19 +78,19 @@ export const ReciterCard: React.FC<ReciterCardProps> = ({
       }}
       className={`glass-panel-interactive content-visibility-auto cursor-pointer p-4 rounded-2xl flex items-center justify-between gap-4 tap-feedback relative overflow-hidden group ${
         isSelected
-          ? 'border-emerald-500/40 bg-slate-900/80 shadow-[0_0_20px_rgba(122, 145, 159,0.1)] ring-1 ring-emerald-500/20'
-          : 'hover:border-slate-800'
+          ? 'border-[#cea687]/35 bg-[#111d2d]/88 shadow-[0_0_20px_rgba(206,166,135,0.12)] ring-1 ring-[#f0d1bc]/20'
+          : 'hover:border-[#46607b]'
       }`}
     >
       {isSelected && (
-        <div className="absolute top-0 right-0 w-32 h-32 bg-emerald-500/5 blur-3xl rounded-full pointer-events-none -mr-8 -mt-8" />
+        <div className="absolute top-0 right-0 w-32 h-32 bg-[#f0d1bc]/8 blur-3xl rounded-full pointer-events-none -mr-8 -mt-8" />
       )}
 
       <div className="flex items-center gap-4 flex-1 min-w-0">
         <div className={`relative w-14 h-14 rounded-2xl shrink-0 flex items-center justify-center font-bold text-lg overflow-hidden transition-transform duration-300 ${
           isSelected
-            ? 'bg-gradient-to-tr from-emerald-500 to-amber-500 text-slate-950 shadow-lg ring-2 ring-emerald-500 ring-offset-2 ring-offset-slate-950'
-            : 'bg-gradient-to-tr from-slate-800 to-slate-900 text-slate-400 border border-slate-700/50 group-hover:border-emerald-500/40'
+            ? 'bg-gradient-to-tr from-[#7990a1] via-[#b8c7d2] to-[#f0d1bc] text-[#111d2d] shadow-lg ring-2 ring-[#f0d1bc] ring-offset-2 ring-offset-[#07111d]'
+            : 'bg-gradient-to-tr from-[#162538] to-[#111d2d] text-[#9fb1c3] border border-[#46607b]/50 group-hover:border-[#cea687]/40'
         }`}>
           <img
             src={imageUrl}
@@ -112,15 +112,15 @@ export const ReciterCard: React.FC<ReciterCardProps> = ({
         <div className="flex-1 min-w-0">
           {isPlayingThisReciter && (
             <div className="mb-1.5">
-              <span className="inline-flex items-center gap-1 text-[10px] uppercase font-bold tracking-wider text-emerald-400 bg-emerald-400/10 px-2 py-0.5 rounded-full">
+              <span className="inline-flex items-center gap-1 text-[10px] uppercase font-bold tracking-wider text-[#f1d4c1] bg-[#f0d1bc]/10 px-2 py-0.5 rounded-full">
                 <Volume2 className="w-3 h-3 animate-playback-pulse" /> Lecture en cours
               </span>
             </div>
           )}
-          <h3 className={`font-semibold text-lg truncate transition-colors ${isSelected ? 'text-emerald-400' : 'text-slate-100 group-hover:text-emerald-400'}`}>
+          <h3 className={`font-semibold text-lg truncate transition-colors ${isSelected ? 'text-[#f1d4c1]' : 'text-[#f6f8fb] group-hover:text-[#f1d4c1]'}`}>
             {highlightMatch(reciter.name, searchQuery || '')}
           </h3>
-          <p className="text-xs text-slate-400 mt-0.5">
+          <p className="text-xs text-[#aab7c5] mt-0.5">
             {availableSurahs.length} sourates
             {reciter.moshaf.length > 1 ? ` · ${reciter.moshaf.length} riwayat` : ''}
           </p>
@@ -133,8 +133,8 @@ export const ReciterCard: React.FC<ReciterCardProps> = ({
           onClick={onToggleFavorite}
           className={`w-9 h-9 rounded-full flex items-center justify-center transition-all border tap-feedback ${
             isFavorite
-              ? 'bg-red-500/15 border-red-500/30 text-red-400 shadow-[0_0_12px_rgba(239,68,68,0.1)]'
-              : 'bg-slate-950/60 border-slate-800/80 text-slate-500 hover:text-red-400 hover:bg-red-500/10'
+              ? 'bg-[#f08c8c]/14 border-[#f08c8c]/30 text-[#f2a3a3] shadow-[0_0_12px_rgba(240,140,140,0.14)]'
+              : 'bg-[#07111d]/60 border-[#30455c]/80 text-[#95a7ba] hover:text-[#f2a3a3] hover:bg-[#f08c8c]/10'
           }`}
           title={isFavorite ? 'Retirer des favoris' : 'Ajouter aux favoris'}
         >
@@ -144,8 +144,8 @@ export const ReciterCard: React.FC<ReciterCardProps> = ({
         <span
           className={`w-11 h-11 rounded-full flex items-center justify-center transition-all ${
             isSelected
-              ? 'bg-emerald-500 text-slate-950 shadow-lg shadow-emerald-500/20'
-              : 'bg-slate-800/80 text-slate-300 border border-slate-700/50 group-hover:bg-emerald-500 group-hover:text-slate-950'
+              ? 'bg-[#f0d1bc] text-[#111d2d] shadow-lg shadow-[#b98d6e]/20'
+              : 'bg-[#162538]/85 text-[#d0d9e3] border border-[#46607b]/50 group-hover:bg-[#f0d1bc] group-hover:text-[#111d2d]'
           }`}
         >
           {isPlayingThisReciter ? (

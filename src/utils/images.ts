@@ -32,14 +32,12 @@ export const RECITER_IMAGES: Record<number, string> = {
 };
 
 const AVATAR_PALETTES = [
-  ['#0f766e', '#22c55e', '#f59e0b'],
-  ['#155e75', '#06b6d4', '#fbbf24'],
-  ['#1d4ed8', '#38bdf8', '#8fa3b0'],
-  ['#6d28d9', '#a78bfa', '#f59e0b'],
-  ['#9f1239', '#fb7185', '#fbbf24'],
-  ['#166534', '#4ade80', '#fde68a'],
-  ['#7c2d12', '#fb923c', '#8fa3b0'],
-  ['#312e81', '#818cf8', '#22c55e'],
+  ['#07111d', '#162538', '#f0d1bc', '#7990a1'],
+  ['#0d1725', '#1b2d43', '#cea687', '#8fa3b0'],
+  ['#111d2d', '#22364f', '#ddbca3', '#b8c7d2'],
+  ['#09131f', '#203249', '#f1d4c1', '#95a7ba'],
+  ['#0b1622', '#16293e', '#d7b299', '#7f97ab'],
+  ['#07111d', '#1a2b3f', '#e6c8b3', '#aab7c5'],
 ];
 
 const hashString = (input: string) => {
@@ -52,44 +50,53 @@ const hashString = (input: string) => {
 
 export const getGeneratedReciterAvatar = (reciter: Reciter) => {
   const hash = hashString(`${reciter.id}-${reciter.name}`);
-  const [deep, accent, gold] = AVATAR_PALETTES[hash % AVATAR_PALETTES.length];
-  const offset = hash % 18;
-  const waveShift = (hash % 7) - 3;
-  const starShift = hash % 28;
+  const [night, panel, warm, mist] = AVATAR_PALETTES[hash % AVATAR_PALETTES.length];
+  const arcOffset = hash % 24;
+  const beamShift = hash % 18;
+  const sparkX = 30 + (hash % 52);
+  const sparkY = 26 + (hash % 18);
+  const lineOffset = hash % 14;
 
   const svg = `
     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 160 160" role="img" aria-label="${reciter.name}">
       <defs>
         <linearGradient id="bg" x1="18" y1="12" x2="142" y2="148" gradientUnits="userSpaceOnUse">
-          <stop offset="0" stop-color="${accent}"/>
-          <stop offset=".52" stop-color="${deep}"/>
-          <stop offset="1" stop-color="#020617"/>
+          <stop offset="0" stop-color="${panel}"/>
+          <stop offset=".52" stop-color="${night}"/>
+          <stop offset="1" stop-color="#050b14"/>
         </linearGradient>
-        <radialGradient id="glow" cx="50%" cy="24%" r="70%">
-          <stop offset="0" stop-color="${gold}" stop-opacity=".48"/>
-          <stop offset=".55" stop-color="${accent}" stop-opacity=".14"/>
-          <stop offset="1" stop-color="#020617" stop-opacity="0"/>
+        <radialGradient id="topGlow" cx="50%" cy="18%" r="78%">
+          <stop offset="0" stop-color="${warm}" stop-opacity=".34"/>
+          <stop offset=".46" stop-color="${mist}" stop-opacity=".12"/>
+          <stop offset="1" stop-color="#050b14" stop-opacity="0"/>
         </radialGradient>
+        <linearGradient id="beam" x1="48" y1="26" x2="126" y2="138" gradientUnits="userSpaceOnUse">
+          <stop offset="0" stop-color="${warm}" stop-opacity=".95"/>
+          <stop offset=".58" stop-color="${mist}" stop-opacity=".42"/>
+          <stop offset="1" stop-color="#ffffff" stop-opacity=".08"/>
+        </linearGradient>
+        <linearGradient id="beamSoft" x1="60" y1="22" x2="120" y2="132" gradientUnits="userSpaceOnUse">
+          <stop offset="0" stop-color="#ffffff" stop-opacity=".65"/>
+          <stop offset=".65" stop-color="${mist}" stop-opacity=".1"/>
+          <stop offset="1" stop-color="#ffffff" stop-opacity="0"/>
+        </linearGradient>
         <filter id="softShadow" x="-20%" y="-20%" width="140%" height="140%">
-          <feDropShadow dx="0" dy="10" stdDeviation="9" flood-color="#020617" flood-opacity=".45"/>
+          <feDropShadow dx="0" dy="14" stdDeviation="12" flood-color="#020617" flood-opacity=".52"/>
         </filter>
       </defs>
       <rect width="160" height="160" rx="34" fill="url(#bg)"/>
-      <rect width="160" height="160" rx="34" fill="url(#glow)"/>
-      <path d="M28 132 C42 102 43 75 80 38 C117 75 118 102 132 132 Z" fill="#020617" opacity=".45" filter="url(#softShadow)"/>
-      <path d="M43 130 C52 102 56 80 80 55 C104 80 108 102 117 130 Z" fill="none" stroke="${gold}" stroke-opacity=".75" stroke-width="4"/>
-      <path d="M61 126 C66 108 69 92 80 77 C91 92 94 108 99 126" fill="none" stroke="#ffffff" stroke-opacity=".72" stroke-width="3" stroke-linecap="round"/>
-      <circle cx="${44 + starShift * 0.3}" cy="${35 + offset * 0.2}" r="3" fill="${gold}" opacity=".9"/>
-      <circle cx="${114 - starShift * 0.18}" cy="${45 + offset * 0.28}" r="2" fill="#ffffff" opacity=".55"/>
-      <circle cx="${35 + offset * 0.5}" cy="96" r="2" fill="#ffffff" opacity=".42"/>
-      <g transform="translate(${waveShift} 0)" fill="none" stroke="${accent}" stroke-width="5" stroke-linecap="round">
-        <path d="M61 88 C56 81 56 73 61 66" opacity=".95"/>
-        <path d="M99 88 C104 81 104 73 99 66" opacity=".95"/>
-        <path d="M71 92 C65 81 65 69 71 58" opacity=".7"/>
-        <path d="M89 92 C95 81 95 69 89 58" opacity=".7"/>
+      <rect width="160" height="160" rx="34" fill="url(#topGlow)"/>
+      <circle cx="112" cy="38" r="44" fill="${warm}" opacity=".08"/>
+      <path d="M22 122 C46 ${118 + lineOffset} 63 ${104 + lineOffset} 80 86 C96 ${104 + lineOffset} 114 118 138 122" fill="none" stroke="${mist}" stroke-opacity=".18" stroke-width="2"/>
+      <path d="M36 130 C49 102 58 80 80 58 C102 80 111 102 124 130 Z" fill="#050b14" opacity=".44" filter="url(#softShadow)"/>
+      <path d="M52 ${124 + arcOffset * 0.08} C62 94 74 71 95 49 C109 63 118 80 128 112" fill="none" stroke="url(#beam)" stroke-width="5" stroke-linecap="round" opacity=".92"/>
+      <path d="M62 ${123 + beamShift * 0.06} C70 96 80 77 95 58" fill="none" stroke="url(#beamSoft)" stroke-width="2.6" stroke-linecap="round"/>
+      <path d="M47 136 H113" stroke="${mist}" stroke-opacity=".18" stroke-width="2"/>
+      <g transform="translate(${sparkX} ${sparkY})">
+        <path d="M0 -5.5 L1.6 -1.6 L5.5 0 L1.6 1.6 L0 5.5 L-1.6 1.6 L-5.5 0 L-1.6 -1.6 Z" fill="${warm}" opacity=".92"/>
       </g>
-      <circle cx="80" cy="78" r="7" fill="${gold}"/>
-      <path d="M32 138 H128" stroke="#ffffff" stroke-opacity=".16" stroke-width="2"/>
+      <circle cx="${118 - beamShift * 0.4}" cy="${34 + lineOffset * 0.32}" r="1.8" fill="#ffffff" opacity=".46"/>
+      <circle cx="${42 + lineOffset * 0.45}" cy="101" r="1.5" fill="#ffffff" opacity=".24"/>
     </svg>
   `;
 

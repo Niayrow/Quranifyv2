@@ -333,7 +333,7 @@ export const GlobalPlayerV2: React.FC = () => {
           bottom-[calc(0.5rem+4.35rem-1px+env(safe-area-inset-bottom,0px))]
           md:left-6 md:right-6 md:translate-x-0 md:w-auto md:mx-auto md:max-w-4xl md:bottom-6 md:z-[51]
           rounded-t-3xl rounded-b-none md:rounded-3xl
-          mobile-dock-chrome mobile-dock-player glass-panel-opaque border border-slate-700/50 border-b-0 md:border md:border-slate-800/60
+          mobile-dock-chrome mobile-dock-player glass-panel-opaque border border-[#46607b]/40 border-b-0 md:border md:border-[#30455c]/60
           md:shadow-2xl
           overflow-hidden md:overflow-hidden
           ${remoteSession && !isExpanded ? 'md:min-h-0' : 'md:h-20'}
@@ -345,20 +345,20 @@ export const GlobalPlayerV2: React.FC = () => {
       >
         {/* Integrated remote strip — part of the player (mobile + desktop) */}
         {remoteSession && !isExpanded && (
-          <div className="flex items-center gap-2 px-3 md:px-5 pt-2.5 md:pt-2.5 pb-1.5 md:pb-2 border-b border-[#2dd4a0]/25 bg-[#2dd4a0]/[0.1]">
+          <div className="flex items-center gap-2 px-3 md:px-5 pt-2.5 md:pt-2.5 pb-1.5 md:pb-2 border-b border-[#cea687]/25 bg-[#f0d1bc]/[0.08]">
             <span className="relative flex h-2 w-2 shrink-0">
-              <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-[#2dd4a0]/50" />
-              <span className="relative inline-flex h-2 w-2 rounded-full bg-[#2dd4a0]" />
+              <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-[#cea687]/45" />
+              <span className="relative inline-flex h-2 w-2 rounded-full bg-[#f0d1bc]" />
             </span>
-            <MonitorSmartphone className="w-3.5 h-3.5 md:w-4 md:h-4 text-[#2dd4a0] shrink-0" />
+            <MonitorSmartphone className="w-3.5 h-3.5 md:w-4 md:h-4 text-[#f0d1bc] shrink-0" />
             <div className="min-w-0 flex-1 leading-tight">
-              <p className="text-[11px] md:text-xs font-semibold text-slate-100 truncate">
+              <p className="text-[11px] md:text-xs font-semibold text-[#f6f8fb] truncate">
                 {remoteTrackLabel || 'Autre appareil'}
-                <span className="font-mono text-[#6ee7b7] tabular-nums font-medium">
+                <span className="font-mono text-[#f1d4c1] tabular-nums font-medium">
                   {' · '}{formatTime(liveRemotePos)}
                 </span>
               </p>
-              <p className="text-[9px] md:text-[10px] text-slate-400 truncate">
+              <p className="text-[9px] md:text-[10px] text-[#aab7c5] truncate">
                 Autre appareil
                 {remoteSession.deviceLabel ? ` · ${remoteSession.deviceLabel}` : ''}
               </p>
@@ -369,7 +369,7 @@ export const GlobalPlayerV2: React.FC = () => {
                 e.stopPropagation();
                 void takeOverRemoteSession();
               }}
-              className="shrink-0 rounded-full px-2.5 md:px-3 py-1 md:py-1.5 text-[10px] md:text-[11px] font-bold text-slate-950 bg-[#2dd4a0] hover:bg-[#34d399] tap-feedback"
+              className="brand-button-primary shrink-0 rounded-full px-2.5 md:px-3 py-1 md:py-1.5 text-[10px] md:text-[11px] font-bold tap-feedback"
             >
               Basculer ici
             </button>
@@ -424,7 +424,7 @@ export const GlobalPlayerV2: React.FC = () => {
           >
             <div
               ref={progressTrackRef}
-              className="absolute left-3.5 right-3.5 top-[5px] h-[4px] rounded-full bg-sky-950/70 ring-1 ring-sky-400/20"
+              className="absolute left-3.5 right-3.5 top-[5px] h-[4px] rounded-full bg-[#111d2d]/80 ring-1 ring-[#7990a1]/20"
             >
               <div
                 className="absolute inset-y-0 left-0 rounded-full transition-[width] duration-100"
@@ -457,18 +457,18 @@ export const GlobalPlayerV2: React.FC = () => {
             aria-label="Agrandir le lecteur en plein écran"
           >
             <span
-              className="pointer-events-none absolute -inset-0.5 rounded-[0.85rem] bg-sky-400/0 ring-1 ring-sky-300/0 transition-all duration-300 md:hidden group-hover/disc:bg-sky-400/[0.07] group-hover/disc:ring-sky-300/25 group-active/disc:scale-95"
+              className="pointer-events-none absolute -inset-0.5 rounded-[0.85rem] bg-[#f0d1bc]/0 ring-1 ring-[#f0d1bc]/0 transition-all duration-300 md:hidden group-hover/disc:bg-[#f0d1bc]/[0.07] group-hover/disc:ring-[#f0d1bc]/25 group-active/disc:scale-95"
               aria-hidden
             />
             <span
-              className="player-disc-hint pointer-events-none absolute -inset-[3px] rounded-[0.9rem] ring-1 ring-sky-300/25 md:hidden"
+              className="player-disc-hint pointer-events-none absolute -inset-[3px] rounded-[0.9rem] ring-1 ring-[#f0d1bc]/25 md:hidden"
               aria-hidden
             />
-            <div className="relative w-11 h-11 md:w-11 md:h-11 rounded-xl bg-[#061222] border border-sky-800/50 flex items-center justify-center shadow-[inset_0_1px_0_rgba(255,255,255,0.04)] transition-transform duration-150 group-active/disc:scale-95 md:group-active/disc:scale-100">
+            <div className="relative w-11 h-11 md:w-11 md:h-11 rounded-xl bg-[#07111d] border border-[#46607b]/50 flex items-center justify-center shadow-[inset_0_1px_0_rgba(255,255,255,0.04)] transition-transform duration-150 group-active/disc:scale-95 md:group-active/disc:scale-100">
               <Disc className={`w-5 h-5 ${theme.glowDisc} ${playbackStatus === 'playing' ? 'animate-[spin_10s_linear_infinite]' : ''}`} />
             </div>
             <span
-              className="absolute -bottom-0.5 -right-0.5 flex h-4 w-4 items-center justify-center rounded-full border border-sky-400/35 bg-[#081528] text-sky-200/90 shadow-md md:hidden"
+              className="absolute -bottom-0.5 -right-0.5 flex h-4 w-4 items-center justify-center rounded-full border border-[#cea687]/35 bg-[#111d2d] text-[#f1d4c1]/90 shadow-md md:hidden"
               aria-hidden
             >
               <Maximize2 className="w-2.5 h-2.5" strokeWidth={2.5} />
@@ -484,18 +484,18 @@ export const GlobalPlayerV2: React.FC = () => {
           >
             <MarqueeText
               text={currentTrack.surah.name}
-              className="block text-sm font-semibold text-slate-100 leading-tight"
+              className="block text-sm font-semibold text-[#f6f8fb] leading-tight"
             />
             <p className="mt-0.5 flex items-center gap-1.5 min-w-0 text-[11px] leading-tight">
-              <MarqueeText text={currentTrack.reciter.name} className="flex-1 text-slate-400" />
+              <MarqueeText text={currentTrack.reciter.name} className="flex-1 text-[#aab7c5]" />
               {!remoteSession && (
                 <>
-                  <span className="shrink-0 text-slate-600" aria-hidden>
+                  <span className="shrink-0 text-[#5f7388]" aria-hidden>
                     ·
                   </span>
-                  <span className="shrink-0 tabular-nums text-sky-200/85 font-medium">
+                  <span className="shrink-0 tabular-nums text-[#f1d4c1] font-medium">
                     {formatTime(currentTime)}
-                    <span className="text-slate-500 font-normal">
+                    <span className="text-[#8295aa] font-normal">
                       {' / '}
                       {formatTime(duration)}
                     </span>
@@ -508,18 +508,18 @@ export const GlobalPlayerV2: React.FC = () => {
           <button
             type="button"
             onClick={openPlaylist}
-            className="hidden md:block min-w-0 flex-1 text-left rounded-xl px-1 py-0.5 tap-feedback hover:bg-slate-900/50"
+            className="hidden md:block min-w-0 flex-1 text-left rounded-xl px-1 py-0.5 tap-feedback hover:bg-[#111d2d]/60"
             title="Liste des sourates"
           >
-            <p className={`text-sm font-semibold text-slate-100 truncate ${theme.accentTextHover}`}>
+            <p className={`text-sm font-semibold text-[#f6f8fb] truncate ${theme.accentTextHover}`}>
               {String(currentTrack.surah.id).padStart(3, '0')}. {currentTrack.surah.name}
               {prefs.showArabic && (
-                <span className="ml-1.5 font-serif text-[10px] text-slate-450">
+                <span className="ml-1.5 font-serif text-[10px] text-[#9fb1c3]">
                   ({currentTrack.surah.arabicName})
                 </span>
               )}
             </p>
-            <p className="text-xs text-slate-400 truncate mt-0.5">
+            <p className="text-xs text-[#aab7c5] truncate mt-0.5">
               {currentTrack.reciter.name}
             </p>
           </button>
@@ -537,7 +537,7 @@ export const GlobalPlayerV2: React.FC = () => {
                 if (remoteSession) return;
                 playPrevTrack();
               }}
-              className="w-11 h-11 rounded-full bg-slate-900 border border-slate-800 text-slate-200 flex items-center justify-center tap-feedback disabled:pointer-events-none disabled:grayscale"
+              className="w-11 h-11 rounded-full bg-[#111d2d] border border-[#30455c] text-[#e6edf5] flex items-center justify-center tap-feedback disabled:pointer-events-none disabled:grayscale"
               aria-label="Précédent"
             >
               <SkipBack className="w-5 h-5 fill-current" />
@@ -552,8 +552,8 @@ export const GlobalPlayerV2: React.FC = () => {
               }}
               className={`w-12 h-12 rounded-full flex items-center justify-center tap-feedback disabled:pointer-events-none disabled:grayscale ${
                 remoteSession
-                  ? 'bg-slate-700 text-slate-400 shadow-none'
-                  : `${theme.accent} text-slate-950 shadow-md ${theme.accentShadow}`
+                  ? 'bg-[#30455c] text-[#95a7ba] shadow-none'
+                  : `${theme.accent} text-[#111d2d] shadow-md ${theme.accentShadow}`
               }`}
               aria-label={playbackStatus === 'playing' ? 'Pause' : 'Lecture'}
             >
@@ -571,7 +571,7 @@ export const GlobalPlayerV2: React.FC = () => {
                 if (remoteSession) return;
                 playNextTrack();
               }}
-              className="w-11 h-11 rounded-full bg-slate-900 border border-slate-800 text-slate-200 flex items-center justify-center tap-feedback disabled:pointer-events-none disabled:grayscale"
+              className="w-11 h-11 rounded-full bg-[#111d2d] border border-[#30455c] text-[#e6edf5] flex items-center justify-center tap-feedback disabled:pointer-events-none disabled:grayscale"
               aria-label="Suivant"
             >
               <SkipForward className="w-5 h-5 fill-current" />
@@ -593,7 +593,7 @@ export const GlobalPlayerV2: React.FC = () => {
                 if (remoteSession) return;
                 jumpBy(-prefs.seekStep);
               }}
-              className="text-slate-500 hover:text-slate-200 p-1.5 rounded-lg hover:bg-slate-900/60 disabled:pointer-events-none"
+              className="text-[#95a7ba] hover:text-[#f6f8fb] p-1.5 rounded-lg hover:bg-[#111d2d]/60 disabled:pointer-events-none"
               title={`−${prefs.seekStep}s`}
             >
               <RotateCcw className="w-3.5 h-3.5" />
@@ -605,7 +605,7 @@ export const GlobalPlayerV2: React.FC = () => {
                 if (remoteSession) return;
                 playPrevTrack();
               }}
-              className="text-slate-400 hover:text-slate-100 p-1.5 disabled:pointer-events-none"
+              className="text-[#aab7c5] hover:text-[#f6f8fb] p-1.5 disabled:pointer-events-none"
             >
               <SkipBack className="w-4 h-4 fill-current" />
             </button>
@@ -618,8 +618,8 @@ export const GlobalPlayerV2: React.FC = () => {
               }}
               className={`w-10 h-10 rounded-full flex items-center justify-center tap-feedback disabled:pointer-events-none ${
                 remoteSession
-                  ? 'bg-slate-700 text-slate-400 shadow-none'
-                  : `${theme.accent} text-slate-950 shadow-lg ${theme.accentShadow}`
+                  ? 'bg-[#30455c] text-[#95a7ba] shadow-none'
+                  : `${theme.accent} text-[#111d2d] shadow-lg ${theme.accentShadow}`
               }`}
             >
               {playbackStatus === 'playing' ? (
@@ -635,7 +635,7 @@ export const GlobalPlayerV2: React.FC = () => {
                 if (remoteSession) return;
                 playNextTrack();
               }}
-              className="text-slate-400 hover:text-slate-100 p-1.5 disabled:pointer-events-none"
+              className="text-[#aab7c5] hover:text-[#f6f8fb] p-1.5 disabled:pointer-events-none"
             >
               <SkipForward className="w-4 h-4 fill-current" />
             </button>
@@ -646,14 +646,14 @@ export const GlobalPlayerV2: React.FC = () => {
                 if (remoteSession) return;
                 jumpBy(prefs.seekStep);
               }}
-              className="text-slate-500 hover:text-slate-200 p-1.5 rounded-lg hover:bg-slate-900/60 disabled:pointer-events-none"
+              className="text-[#95a7ba] hover:text-[#f6f8fb] p-1.5 rounded-lg hover:bg-[#111d2d]/60 disabled:pointer-events-none"
               title={`+${prefs.seekStep}s`}
             >
               <RotateCw className="w-3.5 h-3.5" />
             </button>
           </div>
           {!remoteSession && (
-            <div className="flex items-center gap-2 w-full max-w-sm text-[9px] font-mono font-bold text-slate-500">
+            <div className="flex items-center gap-2 w-full max-w-sm text-[9px] font-mono font-bold text-[#95a7ba]">
               <span className="w-8 text-right tabular-nums">{formatTime(currentTime)}</span>
               <input
                 type="range"
@@ -662,7 +662,7 @@ export const GlobalPlayerV2: React.FC = () => {
                 step={0.1}
                 value={currentTime}
                 onChange={(e) => seekTo(parseFloat(e.target.value))}
-                className="flex-1 h-1 rounded-lg appearance-none cursor-pointer bg-slate-800"
+                className="flex-1 h-1 rounded-lg appearance-none cursor-pointer bg-[#162538]"
                 style={{ background: theme.sliderBackground(progressPercent), accentColor: theme.sliderAccentColor }}
               />
               <span className="w-8 tabular-nums">{formatTime(duration)}</span>
@@ -680,7 +680,7 @@ export const GlobalPlayerV2: React.FC = () => {
                 className={`h-8 w-8 rounded-lg border text-[10px] font-bold flex items-center justify-center shrink-0 ${
                   repeatMode !== 'all'
                     ? `${theme.accentBgLight} ${theme.accentBorderActive} ${theme.accentText}`
-                    : 'border-slate-800 text-slate-500 hover:text-slate-200'
+                    : 'border-[#30455c] text-[#95a7ba] hover:text-[#f6f8fb]'
                 }`}
                 title={`Répétition : ${repeatMode}`}
               >
@@ -693,7 +693,7 @@ export const GlobalPlayerV2: React.FC = () => {
                 className={`h-8 px-2 rounded-lg border text-[10px] font-bold flex items-center gap-1 shrink-0 ${
                   playbackSpeed !== 1
                     ? `${theme.accentBgLight} ${theme.accentBorderActive} ${theme.accentText}`
-                    : 'border-slate-800 text-slate-500 hover:text-slate-200'
+                    : 'border-[#30455c] text-[#95a7ba] hover:text-[#f6f8fb]'
                 }`}
                 title="Vitesse"
               >
@@ -714,7 +714,7 @@ export const GlobalPlayerV2: React.FC = () => {
             <button
               type="button"
               onClick={toggleMute}
-              className={`h-9 w-9 rounded-xl flex items-center justify-center border border-slate-800 text-slate-400 hover:text-slate-100 hover:bg-slate-900/70 shrink-0 ${
+              className={`h-9 w-9 rounded-xl flex items-center justify-center border border-[#30455c] text-[#aab7c5] hover:text-[#f6f8fb] hover:bg-[#111d2d]/70 shrink-0 ${
                 isMuted || volume === 0 ? theme.accentText : ''
               }`}
               title="Volume"
@@ -733,7 +733,7 @@ export const GlobalPlayerV2: React.FC = () => {
                 setVolume(v);
                 setIsMuted(v === 0);
               }}
-              className="w-16 lg:w-20 h-1.5 rounded appearance-none cursor-pointer bg-slate-800 shrink-0"
+              className="w-16 lg:w-20 h-1.5 rounded appearance-none cursor-pointer bg-[#162538] shrink-0"
               style={{ accentColor: theme.sliderAccentColor }}
               aria-label="Volume"
             />
@@ -742,7 +742,7 @@ export const GlobalPlayerV2: React.FC = () => {
           <button
             type="button"
             onClick={openPlaylist}
-            className={`h-9 w-9 rounded-xl flex items-center justify-center border border-slate-800 text-slate-400 hover:text-slate-100 hover:bg-slate-900/70 shrink-0 ${theme.accentTextHover}`}
+            className={`h-9 w-9 rounded-xl flex items-center justify-center border border-[#30455c] text-[#aab7c5] hover:text-[#f6f8fb] hover:bg-[#111d2d]/70 shrink-0 ${theme.accentTextHover}`}
             title="Sourates"
           >
             <ListMusic className="w-4 h-4" />
@@ -750,7 +750,7 @@ export const GlobalPlayerV2: React.FC = () => {
           <button
             type="button"
             onClick={openPersonalize}
-            className={`h-9 w-9 rounded-xl flex items-center justify-center border border-slate-800 text-slate-400 hover:text-slate-100 hover:bg-slate-900/70 shrink-0 ${
+            className={`h-9 w-9 rounded-xl flex items-center justify-center border border-[#30455c] text-[#aab7c5] hover:text-[#f6f8fb] hover:bg-[#111d2d]/70 shrink-0 ${
               showPersonalize ? `${theme.accentText} ${theme.accentBgLight}` : ''
             }`}
             title="Personnaliser"
@@ -763,15 +763,15 @@ export const GlobalPlayerV2: React.FC = () => {
 
       {/* ── Expanded mobile sheet ── */}
       {isExpanded && (
-        <div className="fixed inset-0 z-[60] md:hidden flex flex-col bg-slate-950">
+        <div className="fixed inset-0 z-[60] md:hidden flex flex-col bg-[#07111d]">
           <div className={`absolute inset-0 bg-gradient-to-b ${theme.accentGlow} via-transparent to-transparent pointer-events-none`} />
 
           {/* Clear collapse header */}
-          <div className="relative z-10 flex items-center justify-between gap-3 px-4 pt-[calc(0.85rem+env(safe-area-inset-top,0px))] pb-3 border-b border-slate-900/80">
+          <div className="relative z-10 flex items-center justify-between gap-3 px-4 pt-[calc(0.85rem+env(safe-area-inset-top,0px))] pb-3 border-b border-[#111d2d]/80">
             <button
               type="button"
               onClick={() => setIsExpanded(false)}
-              className="inline-flex items-center gap-2 h-11 px-4 rounded-full border border-slate-700 bg-slate-900 text-slate-100 font-bold text-sm tap-feedback"
+              className="inline-flex items-center gap-2 h-11 px-4 rounded-full border border-[#46607b] bg-[#111d2d] text-[#f6f8fb] font-bold text-sm tap-feedback"
               aria-label="Réduire le lecteur"
             >
               <ChevronDown className="w-5 h-5" />
@@ -780,7 +780,7 @@ export const GlobalPlayerV2: React.FC = () => {
             <button
               type="button"
               onClick={openPersonalize}
-              className="h-11 w-11 rounded-full border border-slate-800 flex items-center justify-center text-slate-300 tap-feedback"
+              className="h-11 w-11 rounded-full border border-[#30455c] flex items-center justify-center text-[#d0d9e3] tap-feedback"
               aria-label="Options"
             >
               <Settings className="w-5 h-5" />
@@ -788,20 +788,20 @@ export const GlobalPlayerV2: React.FC = () => {
           </div>
 
           {remoteSession && (
-            <div className="relative z-10 flex items-center gap-2.5 px-4 py-2.5 border-b border-[#2dd4a0]/25 bg-[#2dd4a0]/[0.1]">
+            <div className="relative z-10 flex items-center gap-2.5 px-4 py-2.5 border-b border-[#cea687]/25 bg-[#f0d1bc]/[0.08]">
               <span className="relative flex h-2 w-2 shrink-0">
-                <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-[#2dd4a0]/50" />
-                <span className="relative inline-flex h-2 w-2 rounded-full bg-[#2dd4a0]" />
+                <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-[#cea687]/50" />
+                <span className="relative inline-flex h-2 w-2 rounded-full bg-[#f0d1bc]" />
               </span>
-              <MonitorSmartphone className="w-4 h-4 text-[#2dd4a0] shrink-0" />
+              <MonitorSmartphone className="w-4 h-4 text-[#f0d1bc] shrink-0" />
               <div className="min-w-0 flex-1 leading-tight">
-                <p className="text-xs font-semibold text-slate-100 truncate">
+                <p className="text-xs font-semibold text-[#f6f8fb] truncate">
                   {remoteTrackLabel || 'Autre appareil'}
-                  <span className="font-mono text-[#6ee7b7] tabular-nums font-medium">
+                  <span className="font-mono text-[#f1d4c1] tabular-nums font-medium">
                     {' · '}{formatTime(liveRemotePos)}
                   </span>
                 </p>
-                <p className="text-[10px] text-slate-400 truncate">
+                <p className="text-[10px] text-[#aab7c5] truncate">
                   Autre appareil
                   {remoteSession.deviceLabel ? ` · ${remoteSession.deviceLabel}` : ''}
                 </p>
@@ -811,7 +811,7 @@ export const GlobalPlayerV2: React.FC = () => {
                 onClick={() => {
                   void takeOverRemoteSession();
                 }}
-                className="shrink-0 rounded-full px-3 py-1.5 text-[11px] font-bold text-slate-950 bg-[#2dd4a0] hover:bg-[#34d399] tap-feedback"
+                className="brand-button-primary shrink-0 rounded-full px-3 py-1.5 text-[11px] font-bold tap-feedback"
               >
                 Basculer ici
               </button>
@@ -827,7 +827,7 @@ export const GlobalPlayerV2: React.FC = () => {
               <p className={`text-[11px] font-bold uppercase tracking-widest ${theme.accentText}`}>
                 Sourate {currentTrack.surah.id}
               </p>
-              <h2 className="text-2xl font-black text-slate-100 mt-1.5 leading-tight">
+              <h2 className="text-2xl font-black text-[#f6f8fb] mt-1.5 leading-tight">
                 {currentTrack.surah.name}
               </h2>
               {prefs.showArabic && (
@@ -835,10 +835,10 @@ export const GlobalPlayerV2: React.FC = () => {
                   {currentTrack.surah.arabicName}
                 </p>
               )}
-              <p className="text-sm text-slate-400 mt-2">{currentTrack.reciter.name}</p>
+              <p className="text-sm text-[#aab7c5] mt-2">{currentTrack.reciter.name}</p>
             </button>
 
-            <div className="mx-auto mb-7 w-28 h-28 rounded-full border border-slate-800 bg-slate-900/60 flex items-center justify-center">
+            <div className="mx-auto mb-7 w-28 h-28 rounded-full border border-[#30455c] bg-[#111d2d]/60 flex items-center justify-center">
               <Disc className={`w-12 h-12 ${theme.glowDisc} ${playbackStatus === 'playing' ? 'animate-[spin_12s_linear_infinite]' : ''}`} />
             </div>
 
@@ -850,10 +850,10 @@ export const GlobalPlayerV2: React.FC = () => {
                 step={0.1}
                 value={currentTime}
                 onChange={(e) => seekTo(parseFloat(e.target.value))}
-                className="w-full h-2 rounded-full appearance-none cursor-pointer bg-slate-900"
+                className="w-full h-2 rounded-full appearance-none cursor-pointer bg-[#111d2d]"
                 style={{ background: theme.sliderBackground(progressPercent), accentColor: theme.sliderAccentColor }}
               />
-              <div className="flex justify-between text-xs font-mono text-slate-500 mt-2.5">
+              <div className="flex justify-between text-xs font-mono text-[#95a7ba] mt-2.5">
                 <span>{formatTime(currentTime)}</span>
                 <span>{formatTime(duration)}</span>
               </div>
@@ -863,7 +863,7 @@ export const GlobalPlayerV2: React.FC = () => {
               <button
                 type="button"
                 onClick={() => jumpBy(-prefs.seekStep)}
-                className="w-12 h-12 rounded-full border border-slate-800 bg-slate-900 text-slate-300 flex items-center justify-center tap-feedback"
+                className="w-12 h-12 rounded-full border border-[#30455c] bg-[#111d2d] text-[#d0d9e3] flex items-center justify-center tap-feedback"
                 aria-label={`Reculer de ${prefs.seekStep} secondes`}
               >
                 <RotateCcw className="w-5 h-5" />
@@ -871,7 +871,7 @@ export const GlobalPlayerV2: React.FC = () => {
               <button
                 type="button"
                 onClick={playPrevTrack}
-                className="w-12 h-12 rounded-full border border-slate-800 bg-slate-900 text-slate-200 flex items-center justify-center tap-feedback"
+                className="w-12 h-12 rounded-full border border-[#30455c] bg-[#111d2d] text-[#e6edf5] flex items-center justify-center tap-feedback"
                 aria-label="Précédent"
               >
                 <SkipBack className="w-6 h-6 fill-current" />
@@ -879,7 +879,7 @@ export const GlobalPlayerV2: React.FC = () => {
               <button
                 type="button"
                 onClick={togglePlay}
-                className={`w-[4.25rem] h-[4.25rem] rounded-full ${theme.accent} text-slate-950 flex items-center justify-center shadow-xl ${theme.accentShadow} tap-feedback`}
+                className={`w-[4.25rem] h-[4.25rem] rounded-full ${theme.accent} text-[#111d2d] flex items-center justify-center shadow-xl ${theme.accentShadow} tap-feedback`}
                 aria-label={playbackStatus === 'playing' ? 'Pause' : 'Lecture'}
               >
                 {playbackStatus === 'playing' ? (
@@ -891,7 +891,7 @@ export const GlobalPlayerV2: React.FC = () => {
               <button
                 type="button"
                 onClick={playNextTrack}
-                className="w-12 h-12 rounded-full border border-slate-800 bg-slate-900 text-slate-200 flex items-center justify-center tap-feedback"
+                className="w-12 h-12 rounded-full border border-[#30455c] bg-[#111d2d] text-[#e6edf5] flex items-center justify-center tap-feedback"
                 aria-label="Suivant"
               >
                 <SkipForward className="w-6 h-6 fill-current" />
@@ -899,7 +899,7 @@ export const GlobalPlayerV2: React.FC = () => {
               <button
                 type="button"
                 onClick={() => jumpBy(prefs.seekStep)}
-                className="w-12 h-12 rounded-full border border-slate-800 bg-slate-900 text-slate-300 flex items-center justify-center tap-feedback"
+                className="w-12 h-12 rounded-full border border-[#30455c] bg-[#111d2d] text-[#d0d9e3] flex items-center justify-center tap-feedback"
                 aria-label={`Avancer de ${prefs.seekStep} secondes`}
               >
                 <RotateCw className="w-5 h-5" />
@@ -913,7 +913,7 @@ export const GlobalPlayerV2: React.FC = () => {
                 className={`h-12 rounded-2xl border text-xs font-bold flex items-center justify-center gap-1.5 tap-feedback ${
                   repeatMode !== 'all'
                     ? `${theme.accentBgLight} ${theme.accentBorderActive} ${theme.accentText}`
-                    : 'border-slate-800 text-slate-400'
+                    : 'border-[#30455c] text-[#aab7c5]'
                 }`}
               >
                 <RepeatIcon className="w-4 h-4" />
@@ -922,7 +922,7 @@ export const GlobalPlayerV2: React.FC = () => {
               <button
                 type="button"
                 onClick={openPlaylist}
-                className="h-12 rounded-2xl border border-slate-800 text-xs font-bold text-slate-300 flex items-center justify-center gap-1.5 tap-feedback"
+                className="h-12 rounded-2xl border border-[#30455c] text-xs font-bold text-[#d0d9e3] flex items-center justify-center gap-1.5 tap-feedback"
               >
                 <ListMusic className="w-4 h-4" />
                 Liste
@@ -930,7 +930,7 @@ export const GlobalPlayerV2: React.FC = () => {
               <button
                 type="button"
                 onClick={() => setShowVolumePopover(true)}
-                className="h-12 rounded-2xl border border-slate-800 text-xs font-bold text-slate-300 flex items-center justify-center gap-1.5 tap-feedback"
+                className="h-12 rounded-2xl border border-[#30455c] text-xs font-bold text-[#d0d9e3] flex items-center justify-center gap-1.5 tap-feedback"
               >
                 {isMuted || volume === 0 ? <VolumeX className="w-4 h-4" /> : <Volume2 className="w-4 h-4" />}
                 Volume
@@ -941,7 +941,7 @@ export const GlobalPlayerV2: React.FC = () => {
             <button
               type="button"
               onClick={() => setIsExpanded(false)}
-              className="mt-4 w-full h-12 rounded-2xl border border-slate-700 bg-slate-900/80 text-slate-100 font-bold text-sm flex items-center justify-center gap-2 tap-feedback"
+              className="mt-4 w-full h-12 rounded-2xl border border-[#46607b] bg-[#111d2d]/82 text-[#f6f8fb] font-bold text-sm flex items-center justify-center gap-2 tap-feedback"
             >
               <ChevronDown className="w-5 h-5" />
               Réduire le lecteur
@@ -950,19 +950,19 @@ export const GlobalPlayerV2: React.FC = () => {
 
           {/* Mobile volume sheet */}
           {showVolumePopover && (
-            <div className="absolute inset-0 z-20 flex items-end bg-slate-950/60" onClick={() => setShowVolumePopover(false)}>
+            <div className="absolute inset-0 z-20 flex items-end bg-[#07111d]/65" onClick={() => setShowVolumePopover(false)}>
               <div
-                className="w-full rounded-t-3xl border border-slate-800 bg-slate-950 p-5 pb-[calc(1.25rem+env(safe-area-inset-bottom,0px))]"
+                className="w-full rounded-t-3xl border border-[#30455c] bg-[#07111d] p-5 pb-[calc(1.25rem+env(safe-area-inset-bottom,0px))]"
                 onClick={(e) => e.stopPropagation()}
               >
                 <div className="flex items-center justify-between mb-4">
-                  <span className="text-sm font-bold text-slate-100">Volume</span>
+                  <span className="text-sm font-bold text-[#f6f8fb]">Volume</span>
                   <span className={`text-sm font-mono font-bold ${theme.accentText}`}>
                     {Math.round((isMuted ? 0 : volume) * 100)}%
                   </span>
                 </div>
                 <div className="flex items-center gap-3">
-                  <button type="button" onClick={toggleMute} className="h-11 w-11 rounded-full border border-slate-800 flex items-center justify-center text-slate-300">
+                  <button type="button" onClick={toggleMute} className="h-11 w-11 rounded-full border border-[#30455c] flex items-center justify-center text-[#d0d9e3]">
                     {isMuted || volume === 0 ? <VolumeX className="w-5 h-5" /> : <Volume2 className="w-5 h-5" />}
                   </button>
                   <input
@@ -976,14 +976,14 @@ export const GlobalPlayerV2: React.FC = () => {
                       setVolume(v);
                       setIsMuted(v === 0);
                     }}
-                    className="flex-1 h-2 rounded appearance-none cursor-pointer bg-slate-800"
+                    className="flex-1 h-2 rounded appearance-none cursor-pointer bg-[#162538]"
                     style={{ accentColor: theme.sliderAccentColor }}
                   />
                 </div>
                 <button
                   type="button"
                   onClick={() => setShowVolumePopover(false)}
-                  className="mt-4 w-full h-11 rounded-xl border border-slate-700 text-sm font-bold text-slate-200"
+                  className="mt-4 w-full h-11 rounded-xl border border-[#46607b] text-sm font-bold text-[#e6edf5]"
                 >
                   Fermer
                 </button>
@@ -996,19 +996,19 @@ export const GlobalPlayerV2: React.FC = () => {
       {/* ── Personalization panel ── */}
       {showPersonalize && (
         <div className="fixed inset-0 z-[70] flex items-end sm:items-center justify-center" role="dialog" aria-modal="true">
-          <button type="button" className="absolute inset-0 bg-slate-950/70 backdrop-blur-sm" aria-label="Fermer" onClick={() => setShowPersonalize(false)} />
-          <div className="relative z-10 w-full max-w-lg max-h-[88dvh] overflow-y-auto rounded-t-3xl sm:rounded-3xl border border-slate-800 bg-slate-950 shadow-2xl sm:mx-4 animate-[slide-up_0.28s_cubic-bezier(0.16,1,0.3,1)]">
-            <div className="sticky top-0 z-10 flex items-center justify-between gap-3 px-5 py-4 border-b border-slate-900 bg-slate-950/95 backdrop-blur">
+          <button type="button" className="absolute inset-0 bg-[#07111d]/70 backdrop-blur-sm" aria-label="Fermer" onClick={() => setShowPersonalize(false)} />
+          <div className="relative z-10 w-full max-w-lg max-h-[88dvh] overflow-y-auto rounded-t-3xl sm:rounded-3xl border border-[#30455c] bg-[#07111d] shadow-2xl sm:mx-4 animate-[slide-up_0.28s_cubic-bezier(0.16,1,0.3,1)]">
+            <div className="sticky top-0 z-10 flex items-center justify-between gap-3 px-5 py-4 border-b border-[#111d2d] bg-[#07111d]/95 backdrop-blur">
               <div className="flex items-center gap-2">
                 <span className={`h-9 w-9 rounded-xl flex items-center justify-center ${theme.accentBgLight} ${theme.accentText}`}>
                   <Sparkles className="w-4 h-4" />
                 </span>
                 <div>
-                  <h3 className="font-bold text-slate-100">Personnaliser</h3>
-                  <p className="text-[11px] text-slate-500">Player Bar V2</p>
+                  <h3 className="font-bold text-[#f6f8fb]">Personnaliser</h3>
+                  <p className="text-[11px] text-[#95a7ba]">Player Bar V2</p>
                 </div>
               </div>
-              <button type="button" onClick={() => setShowPersonalize(false)} className="h-9 w-9 rounded-full border border-slate-800 flex items-center justify-center text-slate-400">
+              <button type="button" onClick={() => setShowPersonalize(false)} className="h-9 w-9 rounded-full border border-[#30455c] flex items-center justify-center text-[#aab7c5]">
                 <X className="w-4 h-4" />
               </button>
             </div>
@@ -1017,8 +1017,8 @@ export const GlobalPlayerV2: React.FC = () => {
               {/* Theme */}
               <section>
                 <div className="flex items-center justify-between mb-2">
-                  <h4 className="text-[10px] font-black uppercase tracking-widest text-slate-500">Thème</h4>
-                  <span className="text-[11px] text-slate-400">{theme.name}</span>
+                  <h4 className="text-[10px] font-black uppercase tracking-widest text-[#95a7ba]">Thème</h4>
+                  <span className="text-[11px] text-[#b4c0ce]">{theme.name}</span>
                 </div>
                 <div className="grid grid-cols-5 gap-2">
                   {PLAYER_THEME_IDS.map((id) => {
@@ -1029,7 +1029,7 @@ export const GlobalPlayerV2: React.FC = () => {
                         key={id}
                         type="button"
                         onClick={() => setPlayerTheme(id)}
-                        className={`h-10 rounded-xl border flex items-center justify-center ${active ? `ring-2 ${t.accentRing} ${t.accentBorderActive}` : 'border-slate-800'}`}
+                        className={`h-10 rounded-xl border flex items-center justify-center ${active ? `ring-2 ${t.accentRing} ${t.accentBorderActive}` : 'border-[#30455c]'}`}
                         style={{ backgroundColor: `${t.sliderAccentColor}22` }}
                         title={t.name}
                       >
@@ -1042,7 +1042,7 @@ export const GlobalPlayerV2: React.FC = () => {
 
               {/* Density */}
               <section>
-                <h4 className="text-[10px] font-black uppercase tracking-widest text-slate-500 mb-2">Densité de la barre</h4>
+                <h4 className="text-[10px] font-black uppercase tracking-widest text-[#95a7ba] mb-2">Densité de la barre</h4>
                 <div className="grid grid-cols-3 gap-2">
                   {(Object.keys(DENSITY_META) as PlayerBarDensity[]).map((key) => (
                     <button
@@ -1052,7 +1052,7 @@ export const GlobalPlayerV2: React.FC = () => {
                       className={`rounded-xl border px-2 py-2.5 text-xs font-bold ${
                         prefs.density === key
                           ? `${theme.accentBgLight} ${theme.accentBorderActive} ${theme.accentText}`
-                          : 'border-slate-800 text-slate-400'
+                          : 'border-[#30455c] text-[#aab7c5]'
                       }`}
                     >
                       {DENSITY_META[key].label}
@@ -1063,7 +1063,7 @@ export const GlobalPlayerV2: React.FC = () => {
 
               {/* Seek step */}
               <section>
-                <h4 className="text-[10px] font-black uppercase tracking-widest text-slate-500 mb-2">Saut temporel</h4>
+                <h4 className="text-[10px] font-black uppercase tracking-widest text-[#95a7ba] mb-2">Saut temporel</h4>
                 <div className="grid grid-cols-3 gap-2">
                   {([5, 10, 15] as SeekStepSeconds[]).map((step) => (
                     <button
@@ -1073,7 +1073,7 @@ export const GlobalPlayerV2: React.FC = () => {
                       className={`rounded-xl border px-2 py-2.5 text-xs font-bold ${
                         prefs.seekStep === step
                           ? `${theme.accentBgLight} ${theme.accentBorderActive} ${theme.accentText}`
-                          : 'border-slate-800 text-slate-400'
+                          : 'border-[#30455c] text-[#aab7c5]'
                       }`}
                     >
                       ±{step}s
@@ -1084,7 +1084,7 @@ export const GlobalPlayerV2: React.FC = () => {
 
               {/* Speed */}
               <section>
-                <h4 className="text-[10px] font-black uppercase tracking-widest text-slate-500 mb-2">Vitesse</h4>
+                <h4 className="text-[10px] font-black uppercase tracking-widest text-[#95a7ba] mb-2">Vitesse</h4>
                 <div className="flex flex-wrap gap-1.5">
                   {speedOptions.map((speed) => (
                     <button
@@ -1094,7 +1094,7 @@ export const GlobalPlayerV2: React.FC = () => {
                       className={`px-3 py-1.5 rounded-lg border text-[11px] font-bold ${
                         playbackSpeed === speed
                           ? `${theme.accentBgLight} ${theme.accentBorderActive} ${theme.accentText}`
-                          : 'border-slate-800 text-slate-400'
+                          : 'border-[#30455c] text-[#aab7c5]'
                       }`}
                     >
                       {speed}x
@@ -1105,7 +1105,7 @@ export const GlobalPlayerV2: React.FC = () => {
 
               {/* Repeat */}
               <section>
-                <h4 className="text-[10px] font-black uppercase tracking-widest text-slate-500 mb-2">Répétition</h4>
+                <h4 className="text-[10px] font-black uppercase tracking-widest text-[#95a7ba] mb-2">Répétition</h4>
                 <div className="grid grid-cols-3 gap-2">
                   {([
                     { id: 'all' as const, label: 'Toutes' },
@@ -1119,7 +1119,7 @@ export const GlobalPlayerV2: React.FC = () => {
                       className={`rounded-xl border px-2 py-2.5 text-xs font-bold ${
                         repeatMode === mode.id
                           ? `${theme.accentBgLight} ${theme.accentBorderActive} ${theme.accentText}`
-                          : 'border-slate-800 text-slate-400'
+                          : 'border-[#30455c] text-[#aab7c5]'
                       }`}
                     >
                       {mode.label}
@@ -1131,7 +1131,7 @@ export const GlobalPlayerV2: React.FC = () => {
               {/* Sleep */}
               <section>
                 <div className="flex items-center justify-between mb-2">
-                  <h4 className="text-[10px] font-black uppercase tracking-widest text-slate-500">Minuteur</h4>
+                  <h4 className="text-[10px] font-black uppercase tracking-widest text-[#95a7ba]">Minuteur</h4>
                   {sleepTimer !== null && (
                     <span className={`text-[10px] font-mono font-bold ${theme.accentText} flex items-center gap-1`}>
                       <Clock className="w-3 h-3" /> {formatSleepTime(sleepTimer)}
@@ -1157,7 +1157,7 @@ export const GlobalPlayerV2: React.FC = () => {
                         className={`py-2 rounded-xl border text-[10px] font-bold ${
                           active
                             ? `${theme.accentBgLight} ${theme.accentBorderActive} ${theme.accentText}`
-                            : 'border-slate-800 text-slate-400'
+                            : 'border-[#30455c] text-[#aab7c5]'
                         }`}
                       >
                         {opt.label}
@@ -1169,7 +1169,7 @@ export const GlobalPlayerV2: React.FC = () => {
 
               {/* Toggles */}
               <section className="flex flex-col gap-2">
-                <h4 className="text-[10px] font-black uppercase tracking-widest text-slate-500 mb-1">Affichage</h4>
+                <h4 className="text-[10px] font-black uppercase tracking-widest text-[#95a7ba] mb-1">Affichage</h4>
                 {(
                   [
                     { key: 'showArabic' as const, label: 'Afficher le nom arabe', icon: Moon },
@@ -1185,14 +1185,14 @@ export const GlobalPlayerV2: React.FC = () => {
                       type="button"
                       onClick={() => updatePref(item.key, !on)}
                       className={`flex items-center justify-between gap-3 rounded-2xl border px-3.5 py-3 text-left ${
-                        on ? `${theme.accentBorder} ${theme.accentBgLight}` : 'border-slate-800 bg-slate-900/40'
+                        on ? `${theme.accentBorder} ${theme.accentBgLight}` : 'border-[#30455c] bg-[#111d2d]/40'
                       }`}
                     >
-                      <span className="flex items-center gap-2.5 text-sm text-slate-200">
-                        <Icon className={`w-4 h-4 ${on ? theme.accentText : 'text-slate-500'}`} />
+                      <span className="flex items-center gap-2.5 text-sm text-[#e6edf5]">
+                        <Icon className={`w-4 h-4 ${on ? theme.accentText : 'text-[#95a7ba]'}`} />
                         {item.label}
                       </span>
-                      <span className={`h-5 w-5 rounded-full border flex items-center justify-center ${on ? `${theme.accent} border-transparent text-slate-950` : 'border-slate-700 text-transparent'}`}>
+                      <span className={`h-5 w-5 rounded-full border flex items-center justify-center ${on ? `${theme.accent} border-transparent text-[#111d2d]` : 'border-[#46607b] text-transparent'}`}>
                         <Check className="w-3 h-3" />
                       </span>
                     </button>
@@ -1207,15 +1207,15 @@ export const GlobalPlayerV2: React.FC = () => {
       {/* ── Surah list drawer ── */}
       {showPlaylist && (
         <div className="fixed inset-0 z-[70] flex items-end sm:items-center justify-center" role="dialog" aria-modal="true">
-          <button type="button" className="absolute inset-0 bg-slate-950/70 backdrop-blur-sm" aria-label="Fermer" onClick={() => setShowPlaylist(false)} />
-          <div className="relative z-10 flex w-full max-w-lg max-h-[82dvh] flex-col overflow-hidden rounded-t-3xl sm:rounded-3xl border border-slate-800 bg-slate-950 shadow-2xl sm:mx-4 animate-[slide-up_0.28s_cubic-bezier(0.16,1,0.3,1)]">
+          <button type="button" className="absolute inset-0 bg-[#07111d]/70 backdrop-blur-sm" aria-label="Fermer" onClick={() => setShowPlaylist(false)} />
+          <div className="relative z-10 flex w-full max-w-lg max-h-[82dvh] flex-col overflow-hidden rounded-t-3xl sm:rounded-3xl border border-[#30455c] bg-[#07111d] shadow-2xl sm:mx-4 animate-[slide-up_0.28s_cubic-bezier(0.16,1,0.3,1)]">
             <div className="flex justify-center pt-3 pb-1 sm:hidden">
-              <span className="h-1 w-10 rounded-full bg-slate-700" />
+              <span className="h-1 w-10 rounded-full bg-[#46607b]" />
             </div>
-            <div className="flex items-center justify-between px-5 py-3 border-b border-slate-900">
+            <div className="flex items-center justify-between px-5 py-3 border-b border-[#111d2d]">
               <div>
-                <h3 className="font-bold text-slate-100">Sourates</h3>
-                <p className="text-[11px] text-slate-500">
+                <h3 className="font-bold text-[#f6f8fb]">Sourates</h3>
+                <p className="text-[11px] text-[#95a7ba]">
                   {currentTrack.reciter.name} · {filteredSurahs.length}
                   {selectedSurahIds.size > 0 ? ` · boucle ${selectedSurahIds.size}` : ''}
                 </p>
@@ -1225,29 +1225,29 @@ export const GlobalPlayerV2: React.FC = () => {
                   <button
                     type="button"
                     onClick={() => setSelectedSurahIds(new Set())}
-                    className="px-2.5 py-1.5 rounded-full border border-slate-800 text-[10px] font-semibold text-slate-400 hover:text-slate-200"
+                    className="px-2.5 py-1.5 rounded-full border border-[#30455c] text-[10px] font-semibold text-[#aab7c5] hover:text-[#f6f8fb]"
                   >
                     Tout lire
                   </button>
                 )}
-                <button type="button" onClick={() => setShowPlaylist(false)} className="h-9 w-9 rounded-full border border-slate-800 flex items-center justify-center text-slate-400">
+                <button type="button" onClick={() => setShowPlaylist(false)} className="h-9 w-9 rounded-full border border-[#30455c] flex items-center justify-center text-[#aab7c5]">
                   <X className="w-4 h-4" />
                 </button>
               </div>
             </div>
             <div className="px-4 py-3">
               <div className="relative">
-                <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500" />
+                <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-[#95a7ba]" />
                 <input
                   type="search"
                   value={drawerSearch}
                   onChange={(e) => setDrawerSearch(e.target.value)}
                   placeholder="Nom, numéro ou arabe…"
                   autoFocus
-                  className="w-full pl-10 pr-10 py-2.5 bg-slate-900/70 border border-slate-800 rounded-2xl text-sm text-slate-200 placeholder-slate-500 focus:outline-none"
+                  className="w-full pl-10 pr-10 py-2.5 bg-[#111d2d]/72 border border-[#30455c] rounded-2xl text-sm text-[#e6edf5] placeholder:text-[#8295aa] focus:outline-none"
                 />
                 {drawerSearch && (
-                  <button type="button" onClick={() => setDrawerSearch('')} className="absolute right-2.5 top-1/2 -translate-y-1/2 h-7 w-7 rounded-full bg-slate-800 flex items-center justify-center text-slate-400">
+                  <button type="button" onClick={() => setDrawerSearch('')} className="absolute right-2.5 top-1/2 -translate-y-1/2 h-7 w-7 rounded-full bg-[#162538] flex items-center justify-center text-[#aab7c5]">
                     <X className="w-3.5 h-3.5" />
                   </button>
                 )}
@@ -1261,7 +1261,7 @@ export const GlobalPlayerV2: React.FC = () => {
                   const inLoop = selectedSurahIds.has(surah.id);
                   return (
                     <li key={surah.id}>
-                      <div className={`flex items-center gap-2 rounded-2xl px-2 py-1.5 ${isCurrent ? theme.accentBgLight : 'hover:bg-slate-900/80'}`}>
+                      <div className={`flex items-center gap-2 rounded-2xl px-2 py-1.5 ${isCurrent ? theme.accentBgLight : 'hover:bg-[#111d2d]/80'}`}>
                         <button
                           ref={isCurrent ? currentSurahRowRef : undefined}
                           type="button"
@@ -1275,17 +1275,17 @@ export const GlobalPlayerV2: React.FC = () => {
                           }}
                           className="min-w-0 flex-1 flex items-center gap-3 rounded-2xl px-1 py-1.5 text-left"
                         >
-                          <span className={`h-9 w-9 rounded-xl flex items-center justify-center text-xs font-bold tabular-nums ${isCurrent ? `${theme.accentText} bg-slate-950/50` : 'bg-slate-900 text-slate-500'}`}>
+                          <span className={`h-9 w-9 rounded-xl flex items-center justify-center text-xs font-bold tabular-nums ${isCurrent ? `${theme.accentText} bg-[#07111d]/50` : 'bg-[#111d2d] text-[#95a7ba]'}`}>
                             {String(surah.id).padStart(2, '0')}
                           </span>
                           <span className="min-w-0 flex-1">
-                            <span className={`block text-sm font-semibold truncate ${isCurrent ? theme.accentText : 'text-slate-100'}`}>{surah.name}</span>
-                            <span className="block text-[11px] text-slate-500 truncate">{surah.englishTranslation}</span>
+                            <span className={`block text-sm font-semibold truncate ${isCurrent ? theme.accentText : 'text-[#f6f8fb]'}`}>{surah.name}</span>
+                            <span className="block text-[11px] text-[#95a7ba] truncate">{surah.englishTranslation}</span>
                           </span>
                           {prefs.showArabic && (
-                            <span className={`font-serif text-lg arabic-text ${isCurrent ? theme.accentText : 'text-slate-400'}`}>{surah.arabicName}</span>
+                            <span className={`font-serif text-lg arabic-text ${isCurrent ? theme.accentText : 'text-[#aab7c5]'}`}>{surah.arabicName}</span>
                           )}
-                          <span className={`h-8 w-8 rounded-full flex items-center justify-center ${isCurrent ? `${theme.accent} text-slate-950` : 'opacity-0'}`}>
+                          <span className={`h-8 w-8 rounded-full flex items-center justify-center ${isCurrent ? `${theme.accent} text-[#111d2d]` : 'opacity-0'}`}>
                             {isPlaying ? <Pause className="w-3.5 h-3.5 fill-current" /> : <Play className="w-3.5 h-3.5 fill-current ml-0.5" />}
                           </span>
                         </button>
@@ -1294,8 +1294,8 @@ export const GlobalPlayerV2: React.FC = () => {
                           onClick={() => toggleSurahInPlaylist(surah.id)}
                           className={`shrink-0 inline-flex items-center gap-1 h-8 px-2.5 rounded-full text-[11px] font-semibold transition-all ${
                             inLoop
-                              ? `${theme.accent} text-slate-950`
-                              : 'text-slate-500 ring-1 ring-inset ring-slate-700 hover:text-slate-200'
+                              ? `${theme.accent} text-[#111d2d]`
+                              : 'text-[#95a7ba] ring-1 ring-inset ring-[#46607b] hover:text-[#f6f8fb]'
                           }`}
                           aria-pressed={inLoop}
                           aria-label={inLoop ? `Retirer ${surah.name} de la boucle` : `Ajouter ${surah.name} à la boucle`}

@@ -388,13 +388,13 @@ export const EveryAyahReader: React.FC = () => {
   return (
     <div className="flex flex-col gap-5">
       {/* Mode Switcher Tabs */}
-      <div className="flex rounded-2xl bg-slate-950/80 p-1 border border-slate-800">
+      <div className="flex rounded-2xl bg-[#07111d]/80 p-1 border border-[#30455c]">
         <button
           onClick={() => setIsAyatAlKursiMode(false)}
           className={`flex-1 py-2.5 rounded-xl text-xs font-black uppercase tracking-wider transition-all ${
             !isAyatAlKursiMode
-              ? 'bg-emerald-500 text-slate-950 shadow-[0_0_12px_rgba(122, 145, 159,0.25)] font-extrabold'
-              : 'text-slate-400 hover:text-slate-200'
+              ? 'bg-[#f0d1bc] text-[#111d2d] shadow-[0_0_12px_rgba(206,166,135,0.22)] font-extrabold'
+              : 'text-[#aab7c5] hover:text-[#eef3f8]'
           }`}
         >
           Lecteur par Verset
@@ -403,8 +403,8 @@ export const EveryAyahReader: React.FC = () => {
           onClick={() => setIsAyatAlKursiMode(true)}
           className={`flex-1 py-2.5 rounded-xl text-xs font-black uppercase tracking-wider transition-all flex items-center justify-center gap-1.5 ${
             isAyatAlKursiMode
-              ? 'bg-emerald-500 text-slate-950 shadow-[0_0_12px_rgba(122, 145, 159,0.25)] font-extrabold'
-              : 'text-slate-400 hover:text-slate-200'
+              ? 'bg-[#f0d1bc] text-[#111d2d] shadow-[0_0_12px_rgba(206,166,135,0.22)] font-extrabold'
+              : 'text-[#aab7c5] hover:text-[#eef3f8]'
           }`}
         >
           <Sparkles className="w-3.5 h-3.5 fill-current" />
@@ -415,20 +415,20 @@ export const EveryAyahReader: React.FC = () => {
       {!isAyatAlKursiMode ? (
         <>
           {/* Surah picker */}
-          <div className="glass-panel rounded-3xl border border-slate-800/70 p-4">
+          <div className="glass-panel rounded-3xl border border-[#30455c]/60 p-4">
             <div className="relative">
-              <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
+              <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-[#95a7ba]" />
               <input
                 type="text"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 placeholder="Rechercher parmi les 114 sourates..."
-                className="w-full pl-12 pr-5 py-3.5 bg-slate-900/60 hover:bg-slate-900/80 focus:bg-slate-900 border border-slate-800 focus:border-emerald-500/50 rounded-2xl text-slate-200 placeholder-slate-500 text-sm focus:outline-none transition-all"
+                className="w-full pl-12 pr-5 py-3.5 bg-[#111d2d]/78 hover:bg-[#162538]/88 focus:bg-[#162538] border border-[#30455c] focus:border-[#cea687]/55 rounded-2xl text-[#e6edf5] placeholder:text-[#8295aa] text-sm focus:outline-none transition-all"
               />
               {searchQuery && (
                 <button
                   onClick={() => setSearchQuery('')}
-                  className="absolute right-4 top-1/2 -translate-y-1/2 text-xs text-slate-400 hover:text-slate-200 px-2 py-1 bg-slate-800 rounded-md"
+                  className="absolute right-4 top-1/2 -translate-y-1/2 text-xs text-[#aab7c5] hover:text-[#eef3f8] px-2 py-1 bg-[#162538] rounded-md"
                 >
                   Effacer
                 </button>
@@ -464,22 +464,22 @@ export const EveryAyahReader: React.FC = () => {
           </div>
 
           {/* Verse Reader */}
-          <section className="glass-panel rounded-3xl border border-slate-800/70 overflow-hidden">
-            <div className="border-b border-slate-800/80 bg-slate-950/60 px-4 py-3.5">
+          <section className="glass-panel rounded-3xl border border-[#30455c]/60 overflow-hidden">
+            <div className="border-b border-[#30455c]/80 bg-[#07111d]/60 px-4 py-3.5">
               <div className="flex items-start justify-between gap-3">
                 <div className="min-w-0">
                   <div className="flex items-center gap-2">
-                    <BookOpenText className="w-4.5 h-4.5 text-emerald-400" />
-                    <h4 className="text-sm font-black text-slate-100">Lecture texte par verset</h4>
+                    <BookOpenText className="w-4.5 h-4.5 text-[#f0d1bc]" />
+                    <h4 className="text-sm font-black text-[#f6f8fb]">Lecture texte par verset</h4>
                   </div>
-                  <p className="mt-1 text-xs leading-relaxed text-slate-400">
+                  <p className="mt-1 text-xs leading-relaxed text-[#b4c0ce]">
                     {selectedSurah
                       ? `Affichage de ${selectedSurah.name} avec timing exact EveryAyah.`
                       : 'Choisissez une sourate ci-dessus pour afficher son texte et sa phonétique.'}
                   </p>
                 </div>
                 {activeVerseIndex >= 0 && verses.length > 0 && (
-                  <span className="shrink-0 rounded-full border border-emerald-400/20 bg-emerald-400/10 px-2.5 py-1 text-[10px] font-black uppercase tracking-widest text-emerald-300">
+                  <span className="brand-chip shrink-0 rounded-full px-2.5 py-1 text-[10px] font-black uppercase tracking-widest">
                     Verset {activeVerseIndex + 1}/{verses.length}
                   </span>
                 )}
@@ -488,16 +488,16 @@ export const EveryAyahReader: React.FC = () => {
 
             {!selectedSurah ? (
               <div className="flex flex-col items-center justify-center gap-3 px-6 py-10 text-center">
-                <ScrollText className="w-10 h-10 text-slate-600" />
+                <ScrollText className="w-10 h-10 text-[#46607b]" />
                 <div>
-                  <h5 className="text-sm font-bold text-slate-200">Aucune sourate sélectionnée</h5>
-                  <p className="mt-1 text-xs text-slate-400 max-w-sm">
+                  <h5 className="text-sm font-bold text-[#e6edf5]">Aucune sourate sélectionnée</h5>
+                  <p className="mt-1 text-xs text-[#b4c0ce] max-w-sm">
                     Sélectionnez une sourate pour lire son texte, sa phonétique et l'écouter verset par verset.
                   </p>
                 </div>
               </div>
             ) : isLoadingVerses ? (
-              <div className="flex items-center justify-center gap-3 px-6 py-10 text-slate-400">
+              <div className="flex items-center justify-center gap-3 px-6 py-10 text-[#b4c0ce]">
                 <LoaderCircle className="w-5 h-5 animate-spin" />
                 <span className="text-sm">Chargement des versets...</span>
               </div>

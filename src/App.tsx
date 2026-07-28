@@ -303,8 +303,8 @@ const LoadingHome: React.FC<{ progress: number; reciterCount: number }> = ({ pro
       : 'Chargement des récitateurs';
 
   return (
-    <div className="min-h-[100dvh] w-full bg-slate-950 text-slate-100 flex items-center justify-center px-6 py-10 overflow-hidden">
-      <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_0%,rgba(100,116,139,0.1),transparent_45%),radial-gradient(circle_at_10%_90%,rgba(71,85,105,0.08),transparent_35%)] pointer-events-none" />
+    <div className="min-h-[100dvh] w-full bg-[#07111d] text-[#e6edf5] flex items-center justify-center px-6 py-10 overflow-hidden">
+      <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_0%,rgba(240,209,188,0.12),transparent_42%),radial-gradient(circle_at_10%_90%,rgba(121,144,161,0.12),transparent_35%)] pointer-events-none" />
       <main className="relative w-full max-w-sm flex flex-col items-center text-center gap-8">
         <div className="flex flex-col items-center gap-4">
           <img
@@ -313,42 +313,42 @@ const LoadingHome: React.FC<{ progress: number; reciterCount: number }> = ({ pro
             className="w-32 h-32 object-contain drop-shadow-[0_0_24px_rgba(0,0,0,0.45)]"
           />
           <div>
-            <h1 className="text-3xl font-black tracking-tight text-slate-100 m-0">QURANIFY</h1>
-            <p className="text-[11px] tracking-[0.22em] text-slate-400 font-bold uppercase mt-1">
+            <h1 className="text-3xl font-black tracking-tight text-[#f6f8fb] m-0">QURANIFY</h1>
+            <p className="text-[11px] tracking-[0.22em] text-[#b4c0ce] font-bold uppercase mt-1">
               Lecteur Coranique Premium
             </p>
           </div>
         </div>
 
         <div className="w-full flex flex-col gap-4">
-          <div className="flex items-center justify-between text-xs font-bold uppercase tracking-widest text-slate-400">
+          <div className="flex items-center justify-between text-xs font-bold uppercase tracking-widest text-[#b4c0ce]">
             <span>{statusText}</span>
-            <span className="text-slate-300">{Math.round(progress)}%</span>
+            <span className="text-[#e7d0c0]">{Math.round(progress)}%</span>
           </div>
-          <div className="h-3 w-full rounded-full bg-slate-900 border border-slate-800 overflow-hidden shadow-inner">
+          <div className="h-3 w-full rounded-full bg-[#111d2d] border border-[#30455c] overflow-hidden shadow-inner">
             <div
-              className="h-full rounded-full bg-gradient-to-r from-slate-500 via-slate-400 to-slate-300 transition-[width] duration-500 ease-out"
+              className="h-full rounded-full bg-gradient-to-r from-[#7990a1] via-[#b9c7d3] to-[#f0d1bc] transition-[width] duration-500 ease-out"
               style={{ width: `${progress}%` }}
             />
           </div>
           <div className="grid grid-cols-3 gap-2 text-left">
-            <div className="rounded-2xl border border-slate-800 bg-slate-900/70 p-3">
-              <p className="text-[10px] uppercase tracking-widest text-slate-500 font-bold">Récitants</p>
-              <p className="text-lg font-black text-slate-100 mt-1">{reciterCount || '...'}</p>
+            <div className="brand-card rounded-2xl p-3">
+              <p className="text-[10px] uppercase tracking-widest text-[#95a7ba] font-bold">Récitants</p>
+              <p className="text-lg font-black text-[#f6f8fb] mt-1">{reciterCount || '...'}</p>
             </div>
-            <div className="rounded-2xl border border-slate-800 bg-slate-900/70 p-3">
-              <p className="text-[10px] uppercase tracking-widest text-slate-500 font-bold">Sourates</p>
-              <p className="text-lg font-black text-slate-100 mt-1">114</p>
+            <div className="brand-card rounded-2xl p-3">
+              <p className="text-[10px] uppercase tracking-widest text-[#95a7ba] font-bold">Sourates</p>
+              <p className="text-lg font-black text-[#f6f8fb] mt-1">114</p>
             </div>
-            <div className="rounded-2xl border border-slate-800 bg-slate-900/70 p-3">
-              <p className="text-[10px] uppercase tracking-widest text-slate-500 font-bold">Départ</p>
-              <p className="text-lg font-black text-slate-100 mt-1">{countdown}s</p>
+            <div className="brand-card rounded-2xl p-3">
+              <p className="text-[10px] uppercase tracking-widest text-[#95a7ba] font-bold">Départ</p>
+              <p className="text-lg font-black text-[#f6f8fb] mt-1">{countdown}s</p>
             </div>
           </div>
         </div>
 
-        <div className="flex items-center gap-2 text-xs text-slate-400">
-          <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+        <div className="flex items-center gap-2 text-xs text-[#b4c0ce]">
+          <span className="w-2 h-2 rounded-full bg-[#f0d1bc] animate-pulse" />
           Connexion à l’API coranique
         </div>
       </main>
@@ -364,15 +364,15 @@ interface ProductPriorityCardProps {
 }
 
 const ProductPriorityCard: React.FC<ProductPriorityCardProps> = ({ title, summary, detail, icon: Icon }) => (
-  <div className="rounded-2xl border border-slate-800/80 bg-slate-900/55 p-4">
+  <div className="brand-card rounded-2xl p-4">
     <div className="flex items-start gap-3">
-      <span className="mt-0.5 flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-amber-400/10 text-amber-300">
+      <span className="brand-chip mt-0.5 flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl">
         <Icon className="h-4.5 w-4.5" />
       </span>
       <div>
-        <h3 className="text-sm font-black text-slate-100">{title}</h3>
-        <p className="mt-1 text-xs leading-relaxed text-slate-300">{summary}</p>
-        <p className="mt-2 text-[11px] leading-relaxed text-slate-500">{detail}</p>
+        <h3 className="text-sm font-black text-[#f6f8fb]">{title}</h3>
+        <p className="mt-1 text-xs leading-relaxed text-[#d0d9e3]">{summary}</p>
+        <p className="mt-2 text-[11px] leading-relaxed text-[#95a7ba]">{detail}</p>
       </div>
     </div>
   </div>
@@ -394,12 +394,12 @@ const HomeFeaturedReciter: React.FC<HomeFeaturedReciterProps> = ({ reciter, isSe
       onClick={onSelect}
       className={`shrink-0 w-[6.5rem] flex flex-col items-center gap-2.5 rounded-2xl p-2.5 text-center transition-all tap-feedback ${
         isSelected
-          ? 'bg-emerald-500/15 ring-1 ring-emerald-400/40'
-          : 'hover:bg-slate-900/70'
+          ? 'bg-[#f0d1bc]/10 ring-1 ring-[#f0d1bc]/35'
+          : 'hover:bg-[#162538]/70'
       }`}
     >
-      <span className={`relative h-16 w-16 overflow-hidden rounded-full border-2 bg-slate-950 ${
-        isSelected ? 'border-emerald-400 shadow-[0_0_16px_rgba(122, 145, 159,0.35)]' : 'border-slate-700'
+      <span className={`relative h-16 w-16 overflow-hidden rounded-full border-2 bg-[#111d2d] ${
+        isSelected ? 'border-[#f0d1bc] shadow-[0_0_18px_rgba(206,166,135,0.32)]' : 'border-[#46607b]'
       }`}>
         <img
           src={imageUrl}
@@ -416,7 +416,7 @@ const HomeFeaturedReciter: React.FC<HomeFeaturedReciterProps> = ({ reciter, isSe
         />
       </span>
       <span className={`w-full text-[11px] font-semibold leading-tight line-clamp-2 ${
-        isSelected ? 'text-emerald-300' : 'text-slate-300'
+        isSelected ? 'text-[#f1d4c1]' : 'text-[#d0d9e3]'
       }`}>
         {reciter.name}
       </span>
@@ -749,21 +749,21 @@ const AppContent: React.FC = () => {
         {activeTab === 'home' && (
           <div className="flex flex-col gap-5 md:gap-8 pb-16 sm:pb-20">
             {/* Hero — compact on mobile, spacious on desktop */}
-            <section className="relative isolate overflow-hidden rounded-[1.5rem] md:rounded-[2.25rem] ring-1 ring-sky-900/40">
+            <section className="relative isolate overflow-hidden rounded-[1.5rem] md:rounded-[2.25rem] ring-1 ring-[#30455c] brand-card">
               <div
-                className="absolute inset-0 bg-[radial-gradient(ellipse_at_50%_-10%,rgba(37,99,160,0.35),transparent_52%),radial-gradient(ellipse_at_80%_80%,rgba(12,48,90,0.35),transparent_45%),linear-gradient(165deg,#0c2748_0%,#081a33_42%,#04101f_100%)]"
+                className="absolute inset-0 bg-[radial-gradient(ellipse_at_50%_-10%,rgba(240,209,188,0.28),transparent_48%),radial-gradient(ellipse_at_80%_80%,rgba(121,144,161,0.22),transparent_45%),linear-gradient(165deg,#162538_0%,#101b2a_42%,#07111d_100%)]"
                 aria-hidden="true"
               />
               <div
-                className="hero-glow-pulse absolute left-1/2 top-[12%] h-40 w-40 md:h-64 md:w-64 -translate-x-1/2 rounded-full bg-[radial-gradient(circle,rgba(56,120,190,0.32),transparent_68%)] blur-3xl pointer-events-none"
+                className="hero-glow-pulse absolute left-1/2 top-[12%] h-40 w-40 md:h-64 md:w-64 -translate-x-1/2 rounded-full bg-[radial-gradient(circle,rgba(240,209,188,0.26),transparent_68%)] blur-3xl pointer-events-none"
                 aria-hidden="true"
               />
               <div
-                className="absolute -left-10 bottom-0 h-28 w-28 md:h-40 md:w-40 rounded-full bg-[radial-gradient(circle,rgba(20,70,130,0.35),transparent_70%)] blur-3xl pointer-events-none"
+                className="absolute -left-10 bottom-0 h-28 w-28 md:h-40 md:w-40 rounded-full bg-[radial-gradient(circle,rgba(121,144,161,0.26),transparent_70%)] blur-3xl pointer-events-none"
                 aria-hidden="true"
               />
               <div
-                className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-sky-300/35 to-transparent"
+                className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-[#f0d1bc]/45 to-transparent"
                 aria-hidden="true"
               />
 
@@ -781,7 +781,7 @@ const AppContent: React.FC = () => {
 
                     <div className="min-w-0 flex-1 text-left md:order-1 md:max-w-md">
                       <p
-                        className="hero-fade-up hero-fade-up-delay-1 font-serif text-base sm:text-xl md:text-2xl text-sky-100/85 arabic-text leading-none select-none"
+                        className="hero-fade-up hero-fade-up-delay-1 font-serif text-base sm:text-xl md:text-2xl text-[#f1d4c1]/90 arabic-text leading-none select-none"
                         dir="rtl"
                       >
                         القرآن الكريم
@@ -791,7 +791,7 @@ const AppContent: React.FC = () => {
                         Quranify
                       </h2>
 
-                      <p className="hero-fade-up hero-fade-up-delay-3 mt-1.5 md:mt-3 text-[12px] sm:text-[13px] md:text-[15px] leading-snug md:leading-relaxed text-sky-100/55 max-w-sm">
+                      <p className="hero-fade-up hero-fade-up-delay-3 mt-1.5 md:mt-3 text-[12px] sm:text-[13px] md:text-[15px] leading-snug md:leading-relaxed text-[#d0d9e3]/70 max-w-sm">
                         Écoutez le Coran avec les plus belles voix, où que vous soyez.
                       </p>
 
@@ -799,7 +799,7 @@ const AppContent: React.FC = () => {
                         <button
                           type="button"
                           onClick={() => handleNavigate('listen')}
-                          className="group inline-flex w-auto items-center justify-center gap-2.5 rounded-full bg-slate-100 px-7 py-3.5 text-[14px] font-bold text-slate-950 shadow-[0_10px_30px_rgba(0,20,50,0.45)] hover:bg-white transition-colors tap-feedback"
+                          className="brand-button-primary group inline-flex w-auto items-center justify-center gap-2.5 rounded-full px-7 py-3.5 text-[14px] font-bold transition-colors tap-feedback"
                         >
                           <Headphones className="h-4 w-4" />
                           Écouter maintenant
@@ -810,18 +810,18 @@ const AppContent: React.FC = () => {
                           <button
                             type="button"
                             onClick={handleResumeListening}
-                            className="inline-flex w-auto max-w-full items-center gap-3 rounded-full border border-sky-300/15 bg-sky-950/35 px-3 py-2.5 pr-5 text-left hover:bg-sky-900/40 hover:border-sky-300/25 transition-colors tap-feedback"
+                            className="brand-button-secondary inline-flex w-auto max-w-full items-center gap-3 rounded-full px-3 py-2.5 pr-5 text-left transition-colors tap-feedback"
                           >
-                            <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-slate-100 text-slate-950">
+                            <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[#f0d1bc] text-[#111d2d]">
                               <Play className="h-3.5 w-3.5 fill-current ml-0.5" />
                             </span>
                             <span className="min-w-0">
-                              <span className="block text-[10px] font-bold uppercase tracking-[0.16em] text-sky-200/50">
+                              <span className="block text-[10px] font-bold uppercase tracking-[0.16em] text-[#b4c0ce]">
                                 Continuer
                               </span>
-                              <span className="block text-[13px] font-semibold text-slate-100 truncate">
+                              <span className="block text-[13px] font-semibold text-[#f6f8fb] truncate">
                                 {currentTrack.surah.name}
-                                <span className="font-normal text-sky-100/45"> · {currentTrack.reciter.name}</span>
+                                <span className="font-normal text-[#d0d9e3]/55"> · {currentTrack.reciter.name}</span>
                               </span>
                             </span>
                           </button>
@@ -834,7 +834,7 @@ const AppContent: React.FC = () => {
                     <button
                       type="button"
                       onClick={() => handleNavigate('listen')}
-                      className="group inline-flex w-full items-center justify-center gap-2 rounded-full bg-slate-100 px-5 py-2.5 text-[13px] font-bold text-slate-950 shadow-[0_8px_22px_rgba(0,20,50,0.4)] hover:bg-white transition-colors tap-feedback"
+                      className="brand-button-primary group inline-flex w-full items-center justify-center gap-2 rounded-full px-5 py-2.5 text-[13px] font-bold transition-colors tap-feedback"
                     >
                       <Headphones className="h-4 w-4" />
                       Écouter maintenant
@@ -845,18 +845,18 @@ const AppContent: React.FC = () => {
                       <button
                         type="button"
                         onClick={handleResumeListening}
-                        className="inline-flex w-full max-w-full items-center gap-2.5 rounded-full border border-sky-300/15 bg-sky-950/35 px-2.5 py-2 pr-4 text-left hover:bg-sky-900/40 hover:border-sky-300/25 transition-colors tap-feedback"
+                        className="brand-button-secondary inline-flex w-full max-w-full items-center gap-2.5 rounded-full px-2.5 py-2 pr-4 text-left transition-colors tap-feedback"
                       >
-                        <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-slate-100 text-slate-950">
+                        <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[#f0d1bc] text-[#111d2d]">
                           <Play className="h-3 w-3 fill-current ml-0.5" />
                         </span>
                         <span className="min-w-0">
-                          <span className="block text-[9px] font-bold uppercase tracking-[0.14em] text-sky-200/50">
+                          <span className="block text-[9px] font-bold uppercase tracking-[0.14em] text-[#b4c0ce]">
                             Continuer
                           </span>
-                          <span className="block text-[12px] font-semibold text-slate-100 truncate">
+                          <span className="block text-[12px] font-semibold text-[#f6f8fb] truncate">
                             {currentTrack.surah.name}
-                            <span className="font-normal text-sky-100/45"> · {currentTrack.reciter.name}</span>
+                            <span className="font-normal text-[#d0d9e3]/55"> · {currentTrack.reciter.name}</span>
                           </span>
                         </span>
                       </button>
@@ -866,16 +866,16 @@ const AppContent: React.FC = () => {
               </div>
             </section>
 
-            <div className="flex flex-wrap items-center justify-center gap-x-4 gap-y-2 px-1 text-[11px] text-slate-500">
+            <div className="flex flex-wrap items-center justify-center gap-x-4 gap-y-2 px-1 text-[11px] text-[#95a7ba]">
               <span className="inline-flex items-center gap-1.5">
-                <span className="h-1 w-1 rounded-full bg-slate-600" />
+                <span className="h-1 w-1 rounded-full bg-[#b98d6e]" />
                 App Store &amp; Google Play — bientôt
               </span>
               <a
                 href={GOMUSLIMLIFE_URL}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="inline-flex items-center gap-1.5 text-slate-400 hover:text-slate-200 transition-colors"
+                className="inline-flex items-center gap-1.5 text-[#b4c0ce] hover:text-[#f1d4c1] transition-colors"
               >
                 GoMuslimLife
                 <ExternalLink className="h-3 w-3 opacity-60" />
@@ -922,14 +922,14 @@ const AppContent: React.FC = () => {
                     key={action.id}
                     type="button"
                     onClick={action.onClick}
-                    className="group flex items-center gap-3 rounded-2xl border border-sky-900/40 bg-[#0a1628]/70 px-3.5 py-3 text-left hover:border-sky-700/50 hover:bg-[#0c1d36]/85 transition-colors tap-feedback"
+                    className="group flex items-center gap-3 rounded-2xl brand-card-muted px-3.5 py-3 text-left hover:border-[#cea687]/30 hover:bg-[#162538]/85 transition-colors tap-feedback"
                   >
-                    <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-sky-500/10 text-sky-200 ring-1 ring-sky-400/20 group-hover:bg-sky-500/15">
+                    <span className="brand-chip-cool flex h-10 w-10 shrink-0 items-center justify-center rounded-xl group-hover:bg-[#f0d1bc]/12 group-hover:text-[#f1d4c1]">
                       <Icon className="h-4.5 w-4.5 h-[18px] w-[18px]" />
                     </span>
                     <span className="min-w-0">
-                      <span className="block text-[13px] font-bold text-slate-100">{action.label}</span>
-                      <span className="block text-[11px] text-slate-500 truncate">{action.hint}</span>
+                      <span className="block text-[13px] font-bold text-[#f6f8fb]">{action.label}</span>
+                      <span className="block text-[11px] text-[#95a7ba] truncate">{action.hint}</span>
                     </span>
                   </button>
                 );
@@ -948,9 +948,9 @@ const AppContent: React.FC = () => {
                 return (
                   <span
                     key={item.label}
-                    className="inline-flex shrink-0 items-center gap-1.5 rounded-full border border-white/[0.08] bg-white/[0.03] px-3 py-1.5 text-[11px] font-semibold text-slate-300"
+                    className="inline-flex shrink-0 items-center gap-1.5 rounded-full border border-[#46607b]/30 bg-[#162538]/60 px-3 py-1.5 text-[11px] font-semibold text-[#d7e4ef]"
                   >
-                    <Icon className="h-3.5 w-3.5 text-sky-300/80" />
+                    <Icon className="h-3.5 w-3.5 text-[#f0d1bc]" />
                     {item.label}
                   </span>
                 );
@@ -969,13 +969,13 @@ const AppContent: React.FC = () => {
               <section className="flex flex-col gap-3">
                 <div className="flex items-end justify-between gap-3 px-0.5">
                   <div>
-                    <h3 className="text-sm font-bold text-slate-100">Vos favoris</h3>
-                    <p className="text-xs text-slate-500 mt-0.5">Reprenez là où vous les aimez.</p>
+                    <h3 className="text-sm font-bold text-[#f6f8fb]">Vos favoris</h3>
+                    <p className="text-xs text-[#95a7ba] mt-0.5">Reprenez là où vous les aimez.</p>
                   </div>
                   <button
                     type="button"
                     onClick={() => handleNavigate('favorites')}
-                    className="text-[11px] font-semibold text-slate-300 hover:text-slate-100 inline-flex items-center gap-1"
+                    className="text-[11px] font-semibold text-[#d0d9e3] hover:text-[#f1d4c1] inline-flex items-center gap-1"
                   >
                     Voir
                     <ArrowRight className="h-3.5 w-3.5" />
@@ -997,8 +997,8 @@ const AppContent: React.FC = () => {
             <section className="flex flex-col gap-3">
               <div className="flex items-end justify-between gap-3 px-0.5">
                 <div>
-                  <h3 className="text-sm font-bold text-slate-100">Voix recommandées</h3>
-                  <p className="text-xs text-slate-500 mt-0.5">Un appui pour ouvrir leurs sourates.</p>
+                  <h3 className="text-sm font-bold text-[#f6f8fb]">Voix recommandées</h3>
+                  <p className="text-xs text-[#95a7ba] mt-0.5">Un appui pour ouvrir leurs sourates.</p>
                 </div>
                 <button
                   type="button"
@@ -1006,7 +1006,7 @@ const AppContent: React.FC = () => {
                     setActiveTab('listen');
                     setListenStep('reciters');
                   }}
-                  className="text-[11px] font-semibold text-slate-300 hover:text-slate-100 inline-flex items-center gap-1"
+                  className="text-[11px] font-semibold text-[#d0d9e3] hover:text-[#f1d4c1] inline-flex items-center gap-1"
                 >
                   Tous
                   <ArrowRight className="h-3.5 w-3.5" />
@@ -1042,11 +1042,11 @@ const AppContent: React.FC = () => {
         {activeTab === 'listen' && (
           <div className="flex flex-col gap-5">
             {error && (
-              <div className="glass-panel p-4 rounded-2xl border-red-500/20 bg-red-500/5 flex gap-3 items-start">
-                <AlertTriangle className="w-5 h-5 text-red-400 shrink-0 mt-0.5" />
+              <div className="glass-panel p-4 rounded-2xl border-[#f08c8c]/25 bg-[#f08c8c]/8 flex gap-3 items-start">
+                <AlertTriangle className="w-5 h-5 text-[#f2a3a3] shrink-0 mt-0.5" />
                 <div>
-                  <h4 className="font-semibold text-slate-200 text-sm">Connexion interrompue</h4>
-                  <p className="text-xs text-slate-400 mt-1">{error}</p>
+                  <h4 className="font-semibold text-[#f6f8fb] text-sm">Connexion interrompue</h4>
+                  <p className="text-xs text-[#c8d1db] mt-1">{error}</p>
                 </div>
               </div>
             )}
@@ -1054,8 +1054,8 @@ const AppContent: React.FC = () => {
             {listenStep === 'reciters' && (
               <div className="flex flex-col gap-5">
                 <section className="flex flex-col gap-1">
-                  <h2 className="text-lg font-black text-slate-100">Choisis un récitateur</h2>
-                  <p className="text-xs text-slate-400">
+                  <h2 className="text-lg font-black text-[#f6f8fb]">Choisis un récitateur</h2>
+                  <p className="text-xs text-[#b4c0ce]">
                     Ensuite, choisis une sourate pour lancer l&apos;écoute.
                   </p>
                 </section>
@@ -1069,19 +1069,19 @@ const AppContent: React.FC = () => {
                 )}
 
                 <div className="relative">
-                  <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
+                  <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-[#95a7ba]" />
                   <input
                     type="text"
                     value={reciterSearch}
                     onChange={(e) => setReciterSearch(e.target.value)}
                     placeholder="Rechercher un récitateur..."
-                    className="w-full pl-12 pr-5 py-3.5 bg-slate-900/60 hover:bg-slate-900/80 focus:bg-slate-900 border border-slate-800 focus:border-emerald-500/50 rounded-2xl text-slate-200 placeholder-slate-500 text-sm focus:outline-none transition-all"
+                    className="w-full pl-12 pr-5 py-3.5 bg-[#111d2d]/78 hover:bg-[#162538]/88 focus:bg-[#162538] border border-[#30455c] focus:border-[#cea687]/55 rounded-2xl text-[#e6edf5] placeholder:text-[#8295aa] text-sm focus:outline-none transition-all"
                   />
                   {reciterSearch && (
                     <button
                       type="button"
                       onClick={() => setReciterSearch('')}
-                      className="absolute right-4 top-1/2 -translate-y-1/2 text-xs text-slate-400 hover:text-slate-200 px-2 py-1 bg-slate-800 rounded-md"
+                      className="absolute right-4 top-1/2 -translate-y-1/2 text-xs text-[#b4c0ce] hover:text-[#f6f8fb] px-2 py-1 bg-[#1b2d43] rounded-md"
                     >
                       Effacer
                     </button>
@@ -1089,16 +1089,16 @@ const AppContent: React.FC = () => {
                 </div>
 
                 {reciterSearch.trim() && (
-                  <div className="flex items-center justify-between gap-3 rounded-2xl border border-slate-800/80 bg-slate-900/45 px-4 py-3">
+                  <div className="flex items-center justify-between gap-3 rounded-2xl brand-card-muted px-4 py-3">
                     <div className="min-w-0">
-                      <p className="text-xs font-bold text-slate-200">
+                      <p className="text-xs font-bold text-[#e6edf5]">
                         {isSearchPending ? 'Recherche...' : `${filteredReciters.length} résultat${filteredReciters.length > 1 ? 's' : ''}`}
                       </p>
-                      <p className="mt-0.5 text-[11px] text-slate-500 truncate">
+                      <p className="mt-0.5 text-[11px] text-[#95a7ba] truncate">
                         Accents, aliases et orthographes proches.
                       </p>
                     </div>
-                    <span className="shrink-0 rounded-full border border-emerald-400/20 bg-emerald-400/10 px-2.5 py-1 text-[10px] font-black uppercase tracking-widest text-emerald-300">
+                    <span className="brand-chip shrink-0 rounded-full px-2.5 py-1 text-[10px] font-black uppercase tracking-widest">
                       Smart
                     </span>
                   </div>
@@ -1107,14 +1107,14 @@ const AppContent: React.FC = () => {
                 {isLoadingReciters ? (
                   <RecitersLoadingSkeleton />
                 ) : filteredReciters.length === 0 ? (
-                  <div className="flex flex-col items-center justify-center p-12 text-center glass-panel rounded-3xl gap-2">
-                    <p className="text-slate-400">Aucun récitateur trouvé</p>
+                    <div className="flex flex-col items-center justify-center p-12 text-center glass-panel rounded-3xl gap-2">
+                    <p className="text-[#b4c0ce]">Aucun récitateur trouvé</p>
                   </div>
                 ) : (
                   <div className="flex flex-col gap-5">
                     {listenFavoritedReciters.length > 0 && (
                       <section className="flex flex-col gap-3">
-                        <h3 className="text-sm font-bold text-slate-300 flex items-center gap-2">
+                        <h3 className="text-sm font-bold text-[#d7e4ef] flex items-center gap-2">
                           <Heart className="w-4 h-4 text-red-400 fill-current" />
                           Favoris
                         </h3>
@@ -1136,7 +1136,7 @@ const AppContent: React.FC = () => {
 
                     <section className="flex flex-col gap-3">
                       {!deferredReciterSearch.trim() && (
-                        <h3 className="text-sm font-bold text-slate-300">
+                        <h3 className="text-sm font-bold text-[#d7e4ef]">
                           {listenFavoritedReciters.length > 0 ? 'Tous les récitateurs' : 'Récitateurs'}
                         </h3>
                       )}
@@ -1161,11 +1161,11 @@ const AppContent: React.FC = () => {
 
             {listenStep === 'surahs' && !activeReciter && (
               <div className="flex flex-col items-center justify-center p-12 text-center glass-panel rounded-3xl gap-4">
-                <p className="text-slate-400 text-sm">Choisissez un récitateur pour continuer.</p>
+                <p className="text-[#b4c0ce] text-sm">Choisissez un récitateur pour continuer.</p>
                 <button
                   type="button"
                   onClick={handleChangeReciter}
-                  className="px-5 py-2.5 rounded-xl bg-emerald-500 text-slate-950 font-semibold text-xs tap-feedback"
+                  className="brand-button-primary px-5 py-2.5 rounded-xl font-semibold text-xs tap-feedback"
                 >
                   Voir les récitateurs
                 </button>
@@ -1178,9 +1178,9 @@ const AppContent: React.FC = () => {
                   ref={surahSectionRef}
                   className="sticky top-0 z-20 scroll-mt-6 md:top-24"
                 >
-                  <div className="rounded-2xl border border-emerald-500/25 bg-slate-950/95 backdrop-blur-md p-4 flex flex-col gap-3 shadow-lg shadow-black/20">
+                  <div className="rounded-2xl brand-card backdrop-blur-md p-4 flex flex-col gap-3 shadow-lg shadow-black/20">
                     <div className="flex items-center gap-3">
-                      <div className="w-12 h-12 rounded-xl overflow-hidden border border-slate-700/70 bg-slate-900 shrink-0">
+                      <div className="w-12 h-12 rounded-xl overflow-hidden border border-[#46607b]/60 bg-[#111d2d] shrink-0">
                         <img
                           src={getReciterImage(activeReciter)}
                           alt={activeReciter.name}
@@ -1195,18 +1195,18 @@ const AppContent: React.FC = () => {
                         />
                       </div>
                       <div className="min-w-0 flex-1">
-                        <span className="text-[10px] uppercase font-bold tracking-wider text-emerald-400">
+                        <span className="text-[10px] uppercase font-bold tracking-wider text-[#f0d1bc]">
                           Étape 2 · Sourates
                         </span>
-                        <h2 className="font-semibold text-slate-100 truncate">{activeReciter.name}</h2>
+                        <h2 className="font-semibold text-[#f6f8fb] truncate">{activeReciter.name}</h2>
                         {activeMoshaf && (
-                          <p className="text-xs text-slate-400 truncate">{activeMoshaf.name}</p>
+                          <p className="text-xs text-[#b4c0ce] truncate">{activeMoshaf.name}</p>
                         )}
                       </div>
                       <button
                         type="button"
                         onClick={handleChangeReciter}
-                        className="shrink-0 rounded-xl border border-slate-700 bg-slate-900 px-3 py-2 text-[11px] font-bold text-slate-200 hover:border-emerald-500/40 hover:text-emerald-300 transition-colors tap-feedback"
+                        className="brand-button-secondary shrink-0 rounded-xl px-3 py-2 text-[11px] font-bold transition-colors tap-feedback"
                       >
                         Changer
                       </button>
@@ -1214,8 +1214,8 @@ const AppContent: React.FC = () => {
 
                     {activeReciter.moshaf.length > 1 && (
                       <div className="flex flex-col gap-1.5">
-                        <span className="text-[10px] uppercase font-bold tracking-widest text-slate-500 flex items-center gap-1.5">
-                          <Disc className="w-3 h-3 text-emerald-400" />
+                        <span className="text-[10px] uppercase font-bold tracking-widest text-[#95a7ba] flex items-center gap-1.5">
+                          <Disc className="w-3 h-3 text-[#f0d1bc]" />
                           Riwaya
                         </span>
                         <div className="flex flex-wrap gap-1.5">
@@ -1228,8 +1228,8 @@ const AppContent: React.FC = () => {
                                 onClick={() => setActiveMoshaf(m)}
                                 className={`text-[10px] font-medium px-2.5 py-1 rounded-lg border transition-all tap-feedback ${
                                   isMoshafSelected
-                                    ? 'bg-emerald-500/15 border-emerald-500/35 text-emerald-300'
-                                    : 'bg-slate-900/60 border-slate-800 text-slate-400 hover:bg-slate-800 hover:text-slate-300'
+                                    ? 'bg-[#f0d1bc]/12 border-[#cea687]/35 text-[#f1d4c1]'
+                                    : 'bg-[#111d2d]/68 border-[#30455c] text-[#b4c0ce] hover:bg-[#162538] hover:text-[#e6edf5]'
                                 }`}
                               >
                                 {m.name}
@@ -1243,7 +1243,7 @@ const AppContent: React.FC = () => {
                 </section>
 
                 <div>
-                  <h3 className="text-sm font-bold text-slate-300 mb-3">Choisis une sourate</h3>
+                  <h3 className="text-sm font-bold text-[#d7e4ef] mb-3">Choisis une sourate</h3>
                   <Suspense fallback={<div className="shimmer-loader h-40 rounded-2xl border border-slate-900" />}>
                     <SurahList mode="listen" onChooseReciter={handleChangeReciter} />
                   </Suspense>
@@ -1255,15 +1255,15 @@ const AppContent: React.FC = () => {
 
         {activeTab === 'ayah' && (
           <div className="flex flex-col gap-5">
-            <section className="glass-panel rounded-3xl border border-slate-800/70 p-5">
+            <section className="glass-panel rounded-3xl border border-[#30455c]/60 p-5">
               <div className="flex items-start justify-between gap-3">
                 <div>
-                  <span className="inline-flex items-center gap-2 rounded-full border border-emerald-400/20 bg-emerald-400/10 px-3 py-1 text-[10px] font-black uppercase tracking-widest text-emerald-300">
+                  <span className="brand-chip inline-flex items-center gap-2 rounded-full px-3 py-1 text-[10px] font-black uppercase tracking-widest">
                     <BookOpenText className="h-3.5 w-3.5" />
                     EveryAyah
                   </span>
-                  <h2 className="mt-3 text-lg font-black text-slate-100">Lecture verset par verset</h2>
-                  <p className="mt-1 text-xs leading-relaxed text-slate-400">
+                  <h2 className="mt-3 text-lg font-black text-[#f6f8fb]">Lecture verset par verset</h2>
+                  <p className="mt-1 text-xs leading-relaxed text-[#b4c0ce]">
                     Cette section est dédiée au texte, à la phonétique et à la lecture ayah par ayah avec timing exact.
                   </p>
                 </div>
@@ -1279,23 +1279,23 @@ const AppContent: React.FC = () => {
         {/* 2.2 Tab Favorites View */}
         {activeTab === 'favorites' && (
           <div className="flex flex-col gap-5 pb-16 sm:pb-20">
-            <h2 className="text-lg font-bold text-slate-200 flex items-center gap-2">
+            <h2 className="text-lg font-bold text-[#f6f8fb] flex items-center gap-2">
               <Heart className="w-5 h-5 text-red-500 fill-current" />
               Vos Récitateurs Favoris
             </h2>
 
             {favoritedReciters.length === 0 ? (
               <div className="flex flex-col items-center justify-center p-12 text-center glass-panel rounded-3xl gap-4">
-                <Heart className="w-12 h-12 text-slate-700" />
+                <Heart className="w-12 h-12 text-[#46607b]" />
                 <div>
-                  <h3 className="font-semibold text-slate-350">Favoris Vides</h3>
-                  <p className="text-xs text-slate-400 max-w-xs mt-1">
+                  <h3 className="font-semibold text-[#e6edf5]">Favoris Vides</h3>
+                  <p className="text-xs text-[#b4c0ce] max-w-xs mt-1">
                     Appuyez sur l'icône de cœur sur la carte d'un récitateur dans l'espace Écouter pour l'ajouter ici.
                   </p>
                 </div>
                 <button
                   onClick={() => setActiveTab('listen')}
-                  className="px-5 py-2.5 rounded-xl bg-emerald-500 text-slate-950 font-semibold text-xs shadow-lg shadow-emerald-500/10 hover:bg-emerald-400 transition-colors tap-feedback"
+                  className="brand-button-primary px-5 py-2.5 rounded-xl font-semibold text-xs transition-colors tap-feedback"
                 >
                   Aller vers Écouter
                 </button>
@@ -1320,14 +1320,14 @@ const AppContent: React.FC = () => {
         {/* 2.3 Tab More View */}
         {activeTab === 'more' && (
           <div className="flex flex-col gap-5">
-            <section className="glass-panel rounded-3xl border border-slate-800/70 p-5">
+            <section className="glass-panel rounded-3xl border border-[#30455c]/60 p-5">
               <div className="flex items-start justify-between gap-3">
                 <div>
-                  <span className="inline-flex items-center gap-2 rounded-full border border-slate-700 bg-slate-900/70 px-3 py-1 text-[10px] font-black uppercase tracking-widest text-slate-300">
+                  <span className="brand-chip-cool inline-flex items-center gap-2 rounded-full px-3 py-1 text-[10px] font-black uppercase tracking-widest">
                     Plus
                   </span>
-                  <h2 className="mt-3 text-lg font-black text-slate-100">Fonctions avancées et informations</h2>
-                  <p className="mt-1 text-xs leading-relaxed text-slate-400">
+                  <h2 className="mt-3 text-lg font-black text-[#f6f8fb]">Fonctions avancées et informations</h2>
+                  <p className="mt-1 text-xs leading-relaxed text-[#b4c0ce]">
                     Les vues secondaires quittent la navbar principale mais restent accessibles ici avec plus de contexte.
                   </p>
                 </div>
@@ -1338,8 +1338,8 @@ const AppContent: React.FC = () => {
                   onClick={() => setMorePanel('account')}
                   className={`rounded-2xl border px-3 py-3 text-xs font-bold transition-all ${
                     morePanel === 'account'
-                      ? 'border-emerald-500/40 bg-emerald-500/10 text-emerald-300'
-                      : 'border-slate-800 bg-slate-900/60 text-slate-400 hover:text-slate-200'
+                      ? 'border-[#cea687]/35 bg-[#f0d1bc]/12 text-[#f1d4c1]'
+                      : 'border-[#30455c] bg-[#111d2d]/72 text-[#b4c0ce] hover:text-[#f6f8fb]'
                   }`}
                 >
                   Compte
@@ -1348,8 +1348,8 @@ const AppContent: React.FC = () => {
                   onClick={() => setMorePanel('priorities')}
                   className={`rounded-2xl border px-3 py-3 text-xs font-bold transition-all ${
                     morePanel === 'priorities'
-                      ? 'border-emerald-500/40 bg-emerald-500/10 text-emerald-300'
-                      : 'border-slate-800 bg-slate-900/60 text-slate-400 hover:text-slate-200'
+                      ? 'border-[#cea687]/35 bg-[#f0d1bc]/12 text-[#f1d4c1]'
+                      : 'border-[#30455c] bg-[#111d2d]/72 text-[#b4c0ce] hover:text-[#f6f8fb]'
                   }`}
                 >
                   Priorités
@@ -1358,8 +1358,8 @@ const AppContent: React.FC = () => {
                   onClick={() => setMorePanel('compare')}
                   className={`rounded-2xl border px-3 py-3 text-xs font-bold transition-all ${
                     morePanel === 'compare'
-                      ? 'border-emerald-500/40 bg-emerald-500/10 text-emerald-300'
-                      : 'border-slate-800 bg-slate-900/60 text-slate-400 hover:text-slate-200'
+                      ? 'border-[#cea687]/35 bg-[#f0d1bc]/12 text-[#f1d4c1]'
+                      : 'border-[#30455c] bg-[#111d2d]/72 text-[#b4c0ce] hover:text-[#f6f8fb]'
                   }`}
                 >
                   Comparer
@@ -1368,8 +1368,8 @@ const AppContent: React.FC = () => {
                   onClick={() => setMorePanel('about')}
                   className={`rounded-2xl border px-3 py-3 text-xs font-bold transition-all ${
                     morePanel === 'about'
-                      ? 'border-emerald-500/40 bg-emerald-500/10 text-emerald-300'
-                      : 'border-slate-800 bg-slate-900/60 text-slate-400 hover:text-slate-200'
+                      ? 'border-[#cea687]/35 bg-[#f0d1bc]/12 text-[#f1d4c1]'
+                      : 'border-[#30455c] bg-[#111d2d]/72 text-[#b4c0ce] hover:text-[#f6f8fb]'
                   }`}
                 >
                   À propos

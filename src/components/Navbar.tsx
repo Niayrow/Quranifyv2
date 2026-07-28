@@ -48,8 +48,8 @@ export const Navbar: React.FC<NavbarProps> = ({
           !isFirst && !isLast ? 'md:rounded-full' : ''
         } ${
           isActive
-            ? 'md:bg-slate-900 md:text-white md:ring-1 md:ring-white/10'
-            : 'text-slate-400 hover:bg-slate-800/50 hover:text-slate-200'
+            ? 'md:bg-[#162538] md:text-white md:ring-1 md:ring-[#f0d1bc]/20'
+            : 'text-[#9fb1c3] hover:bg-[#162538]/70 hover:text-[#eef3f8]'
         }`}
         aria-label={label}
         aria-current={isActive ? 'page' : undefined}
@@ -57,7 +57,7 @@ export const Navbar: React.FC<NavbarProps> = ({
         {/* Mobile: full-height navy selection column */}
         {isActive && (
           <span
-            className={`pointer-events-none absolute inset-y-0 md:hidden bg-[#0c2748] ${
+            className={`pointer-events-none absolute inset-y-0 md:hidden bg-[#162538] ${
               dockWithPlayer ? '-top-px' : ''
             } ${
               isFirst
@@ -73,7 +73,7 @@ export const Navbar: React.FC<NavbarProps> = ({
         {/* Desktop accent */}
         {isActive && (
           <span
-            className="pointer-events-none absolute left-1/2 top-0 hidden md:block h-1 w-8 -translate-x-1/2 rounded-full bg-sky-300/70"
+            className="pointer-events-none absolute left-1/2 top-0 hidden md:block h-1 w-8 -translate-x-1/2 rounded-full bg-[#f0d1bc]/80"
             aria-hidden
           />
         )}
@@ -83,17 +83,17 @@ export const Navbar: React.FC<NavbarProps> = ({
             strokeWidth={isActive ? 2.5 : 2}
             className={`w-5 h-5 md:w-[20px] md:h-[20px] transition-all duration-300 ${
               isActive
-                ? `scale-110 text-sky-200 md:text-white ${
+                ? `scale-110 text-[#f1d4c1] md:text-white ${
                     options?.rotateActive ? 'rotate-90' : ''
                   }`
-                : `text-slate-400 group-hover:scale-110 group-hover:text-slate-200 ${
+                : `text-[#9fb1c3] group-hover:scale-110 group-hover:text-[#eef3f8] ${
                     options?.rotateActive ? 'group-hover:rotate-45' : ''
                   }`
             }`}
           />
           <span
             className={`text-[10px] md:text-xs font-bold tracking-wide transition-colors ${
-              isActive ? 'text-white' : 'text-slate-400 group-hover:text-slate-200'
+              isActive ? 'text-white' : 'text-[#9fb1c3] group-hover:text-[#eef3f8]'
             }`}
           >
             {label}
@@ -107,8 +107,8 @@ export const Navbar: React.FC<NavbarProps> = ({
     <nav
       className={`fixed z-50 left-1/2 -translate-x-1/2 w-[95%] max-w-md md:max-w-4xl md:w-auto md:top-6 md:bottom-auto md:h-auto glass-panel-opaque border px-0 py-0 md:px-2.5 md:py-2 backdrop-blur-2xl transition-all duration-300 overflow-hidden md:overflow-visible ${
         dockWithPlayer
-          ? 'mobile-dock-chrome mobile-dock-nav bottom-[calc(0.5rem+env(safe-area-inset-bottom,0px))] h-[4.35rem] md:h-auto rounded-t-none rounded-b-3xl border-t-0 md:rounded-full md:border md:border-slate-700/50 md:shadow-2xl md:shadow-black/40'
-          : 'bottom-6 h-[4.35rem] md:h-auto rounded-3xl md:rounded-full border-slate-700/50 shadow-2xl shadow-black/40'
+          ? 'mobile-dock-chrome mobile-dock-nav bottom-[calc(0.5rem+env(safe-area-inset-bottom,0px))] h-[4.35rem] md:h-auto rounded-t-none rounded-b-3xl border-t-0 md:rounded-full md:border md:border-[#46607b]/40 md:shadow-2xl md:shadow-black/40'
+          : 'bottom-6 h-[4.35rem] md:h-auto rounded-3xl md:rounded-full border-[#46607b]/40 shadow-2xl shadow-black/40'
       }`}
     >
       <div className="flex h-full items-stretch md:items-center justify-between gap-0 md:gap-3">
@@ -117,25 +117,25 @@ export const Navbar: React.FC<NavbarProps> = ({
           type="button"
           onClick={() => setActiveTab('home')}
           aria-label="Quranify — Accueil"
-          className="group hidden md:flex shrink-0 items-center gap-2.5 rounded-full pl-1 pr-3.5 py-1 hover:bg-slate-800/50 transition-colors tap-feedback"
+          className="group hidden md:flex shrink-0 items-center gap-2.5 rounded-full pl-1 pr-3.5 py-1 hover:bg-[#162538]/70 transition-colors tap-feedback"
         >
           <img
             src={LOGO_SRC}
             alt=""
-            className="h-12 w-12 object-contain drop-shadow-[0_2px_10px_rgba(122,145,159,0.45)] transition-transform duration-300 group-hover:scale-105"
+            className="h-12 w-12 object-contain drop-shadow-[0_2px_12px_rgba(206,166,135,0.35)] transition-transform duration-300 group-hover:scale-105"
             draggable={false}
           />
-          <span className="text-[15px] font-bold tracking-tight text-slate-100 pr-0.5">
+          <span className="text-[15px] font-bold tracking-tight text-[#f6f8fb] pr-0.5">
             Quranify
           </span>
         </button>
 
-        <div className="w-px h-10 bg-slate-700/50 hidden md:block shrink-0" />
+        <div className="w-px h-10 bg-[#46607b]/40 hidden md:block shrink-0" />
 
         <div className="flex items-stretch md:items-center justify-between w-full md:w-auto md:gap-1.5 min-w-0 h-full md:h-auto">
           {mainTabs.map((tab) => renderTab(tab.id, tab.label, tab.icon))}
 
-          <div className="w-px h-8 bg-slate-700/50 hidden md:block mx-1 self-center" />
+          <div className="w-px h-8 bg-[#46607b]/40 hidden md:block mx-1 self-center" />
 
           {renderTab('more', 'Options', Settings, { rotateActive: true })}
         </div>
