@@ -5,7 +5,7 @@ import { ReciterCard } from './components/ReciterCard';
 import { Navbar } from './components/Navbar';
 import { 
   Search, Heart, AlertTriangle, Headphones, Play, ArrowRight,
-  Bookmark, Download, Disc, ExternalLink, ArrowLeftRight, Cloud, WifiOff
+  Bookmark, Download, Disc, ExternalLink, Cloud, WifiOff
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import type { Reciter } from './types';
@@ -15,6 +15,7 @@ import { ReciterCategoryGrid, ReciterCategoryModal } from './components/ReciterC
 import { CloudSync } from './components/CloudSync';
 import { AuthPromptModal } from './components/AuthPromptModal';
 import { useAuth } from './context/AuthContext';
+import { getAudioUrl } from './utils/audioUrl';
 
 const SurahList = lazy(() => import('./components/SurahList').then((module) => ({ default: module.SurahList })));
 const GlobalPlayerV2 = lazy(() => import('./components/GlobalPlayerV2').then((module) => ({ default: module.GlobalPlayerV2 })));
@@ -24,7 +25,7 @@ const ReciterCompare = lazy(() => import('./components/ReciterCompare').then((mo
 const AccountPanel = lazy(() => import('./components/AccountPanel').then((module) => ({ default: module.AccountPanel })));
 const TAB_IDS = ['home', 'listen', 'favorites', 'more'] as const;
 type TabId = typeof TAB_IDS[number];
-type MorePanel = 'account' | 'priorities' | 'compare' | 'about';
+type MorePanel = 'account' | 'downloads' | 'priorities' | 'compare' | 'about';
 type ListenStep = 'reciters' | 'surahs';
 
 const PRODUCT_PRIORITIES: Array<{
@@ -428,6 +429,8 @@ const AppContent: React.FC = () => {
     currentTrack,
     playbackStatus,
     play,
+    cachedUrls,
+    getAvailableSurahs,
   } = useAudio();
   const { user, loading: authLoading } = useAuth();
 
@@ -654,6 +657,63 @@ const AppContent: React.FC = () => {
     return filteredReciters.filter((r) => !favoriteIds.has(r.id));
   }, [filteredReciters, favoritedReciters, deferredReciterSearch]);
 
+  const downloadedEntries = useMemo(() => {
+    if (cachedUrls.size === 0 || reciters.length === 0) return [];
+
+    const entries: Array<{
+      key: string;
+      reciterId: number;
+      reciterName: string;
+      surahId: number;
+      surahName: string;
+    }> = [];
+
+    for (const reciter of reciters) {
+      for (const moshaf of reciter.moshaf) {
+        const availableSurahs = getAvailableSurahs(reciter, moshaf);
+        for (const surah of availableSurahs) {
+          const url = getAudioUrl(moshaf, surah);
+          if (!cachedUrls.has(url)) continue;
+          entries.push({
+            key: `${reciter.id}-${moshaf.id}-${surah.id}`,
+            reciterId: reciter.id,
+            reciterName: reciter.name,
+            surahId: surah.id,
+            surahName: surah.name,
+          });
+        }
+      }
+    }
+
+    return entries.sort((a, b) => {
+      if (a.reciterName !== b.reciterName) {
+        return a.reciterName.localeCompare(b.reciterName, 'fr');
+      }
+      return a.surahId - b.surahId;
+    });
+  }, [cachedUrls, getAvailableSurahs, reciters]);
+
+  const downloadedGroups = useMemo(() => {
+    const groups = new Map<number, { reciterName: string; surahs: Array<{ id: number; name: string }> }>();
+    for (const entry of downloadedEntries) {
+      const existing = groups.get(entry.reciterId);
+      if (existing) {
+        existing.surahs.push({ id: entry.surahId, name: entry.surahName });
+        continue;
+      }
+      groups.set(entry.reciterId, {
+        reciterName: entry.reciterName,
+        surahs: [{ id: entry.surahId, name: entry.surahName }],
+      });
+    }
+
+    return Array.from(groups.entries()).map(([reciterId, group]) => ({
+      reciterId,
+      reciterName: group.reciterName,
+      surahs: group.surahs,
+    }));
+  }, [downloadedEntries]);
+
   const handleNavigate = (tab: TabId, panel?: MorePanel) => {
     setActiveTab(tab);
     if (panel) setMorePanel(panel);
@@ -738,227 +798,266 @@ const AppContent: React.FC = () => {
         <div key={activeTab} className="animate-page-enter flex flex-col gap-5">
         
         {activeTab === 'home' && (
-          <div className="flex flex-col gap-5 md:gap-8 pb-16 sm:pb-20">
-            {/* Hero — compact on mobile, spacious on desktop */}
-            <section className="relative isolate overflow-hidden rounded-[1.5rem] md:rounded-[2.25rem] ring-1 ring-[#30455c] brand-card">
+          <div className="flex flex-col gap-4 md:gap-7 pb-16 sm:pb-20">
+            <section className="relative isolate overflow-hidden rounded-[1.75rem] md:rounded-[2.4rem] ring-1 ring-[#30455c]/90 brand-card">
               <div
-                className="absolute inset-0 bg-[radial-gradient(ellipse_at_50%_-10%,rgba(240,209,188,0.28),transparent_48%),radial-gradient(ellipse_at_80%_80%,rgba(121,144,161,0.22),transparent_45%),linear-gradient(165deg,#162538_0%,#101b2a_42%,#07111d_100%)]"
-                aria-hidden="true"
-              />
-              <div
-                className="hero-glow-pulse absolute left-1/2 top-[12%] h-40 w-40 md:h-64 md:w-64 -translate-x-1/2 rounded-full bg-[radial-gradient(circle,rgba(240,209,188,0.26),transparent_68%)] blur-3xl pointer-events-none"
-                aria-hidden="true"
-              />
-              <div
-                className="absolute -left-10 bottom-0 h-28 w-28 md:h-40 md:w-40 rounded-full bg-[radial-gradient(circle,rgba(121,144,161,0.26),transparent_70%)] blur-3xl pointer-events-none"
+                className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,rgba(240,209,188,0.24),transparent_42%),radial-gradient(circle_at_85%_18%,rgba(121,144,161,0.24),transparent_28%),linear-gradient(160deg,#162538_0%,#0f1a29_46%,#08111c_100%)]"
                 aria-hidden="true"
               />
               <div
                 className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-[#f0d1bc]/45 to-transparent"
                 aria-hidden="true"
               />
+              <div
+                className="hero-glow-pulse pointer-events-none absolute -right-10 top-10 h-36 w-36 rounded-full bg-[radial-gradient(circle,rgba(240,209,188,0.22),transparent_70%)] blur-3xl"
+                aria-hidden="true"
+              />
 
-              <div className="relative z-10 px-4 py-5 sm:px-6 sm:py-6 md:px-12 md:py-12">
-                <div className="flex flex-col gap-4 md:flex-row md:items-center md:gap-10">
-                  <div className="flex items-start gap-3.5 md:contents">
-                    <div className="hero-fade-up shrink-0 md:order-2 md:flex-1 md:flex md:justify-center md:mb-0">
-                      <img
-                        src="/icons/sansfond.png"
-                        alt=""
-                        className="hero-logo-float h-[4.25rem] w-[4.25rem] sm:h-24 sm:w-24 md:h-44 md:w-44 object-contain bg-transparent drop-shadow-[0_8px_28px_rgba(30,80,140,0.45)]"
-                        draggable={false}
-                      />
-                    </div>
-
-                    <div className="min-w-0 flex-1 text-left md:order-1 md:max-w-md">
-                      <p
-                        className="hero-fade-up hero-fade-up-delay-1 font-serif text-base sm:text-xl md:text-2xl text-[#f1d4c1]/90 arabic-text leading-none select-none"
-                        dir="rtl"
-                      >
-                        القرآن الكريم
-                      </p>
-
-                      <h2 className="hero-fade-up hero-fade-up-delay-2 mt-1.5 md:mt-3 text-[1.65rem] sm:text-3xl md:text-5xl font-black tracking-tight text-white leading-[1.05]">
-                        Quranify
-                      </h2>
-
-                      <p className="hero-fade-up hero-fade-up-delay-3 mt-1.5 md:mt-3 text-[12px] sm:text-[13px] md:text-[15px] leading-snug md:leading-relaxed text-[#d0d9e3]/70 max-w-sm">
-                        Écoutez le Coran avec les plus belles voix, où que vous soyez.
-                      </p>
-
-                      <div className="hero-fade-up hero-fade-up-delay-4 mt-7 hidden md:flex flex-col gap-3 items-start">
-                        <button
-                          type="button"
-                          onClick={() => handleNavigate('listen')}
-                          className="brand-button-primary group inline-flex w-auto items-center justify-center gap-2.5 rounded-full px-7 py-3.5 text-[14px] font-bold transition-colors tap-feedback"
-                        >
-                          <Headphones className="h-4 w-4" />
-                          Écouter maintenant
-                          <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5" />
-                        </button>
-
-                        {currentTrack && (
-                          <button
-                            type="button"
-                            onClick={handleResumeListening}
-                            className="brand-button-secondary inline-flex w-auto max-w-full items-center gap-3 rounded-full px-3 py-2.5 pr-5 text-left transition-colors tap-feedback"
-                          >
-                            <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[#f0d1bc] text-[#111d2d]">
-                              <Play className="h-3.5 w-3.5 fill-current ml-0.5" />
-                            </span>
-                            <span className="min-w-0">
-                              <span className="block text-[10px] font-bold uppercase tracking-[0.16em] text-[#b4c0ce]">
-                                Continuer
-                              </span>
-                              <span className="block text-[13px] font-semibold text-[#f6f8fb] truncate">
-                                {currentTrack.surah.name}
-                                <span className="font-normal text-[#d0d9e3]/55"> · {currentTrack.reciter.name}</span>
-                              </span>
-                            </span>
-                          </button>
-                        )}
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="hero-fade-up hero-fade-up-delay-4 flex flex-col gap-2 w-full md:hidden">
-                    <button
-                      type="button"
-                      onClick={() => handleNavigate('listen')}
-                      className="brand-button-primary group inline-flex w-full items-center justify-center gap-2 rounded-full px-5 py-2.5 text-[13px] font-bold transition-colors tap-feedback"
+              <div className="relative z-10 flex flex-col gap-5 px-4 py-5 sm:px-6 sm:py-6 md:px-10 md:py-10">
+                <div className="flex items-start justify-between gap-4">
+                  <div className="min-w-0 max-w-[16rem] sm:max-w-sm">
+                    <p
+                      className="font-serif text-sm sm:text-lg text-[#f1d4c1]/90 arabic-text leading-none select-none"
+                      dir="rtl"
                     >
-                      <Headphones className="h-4 w-4" />
-                      Écouter maintenant
-                      <ArrowRight className="h-3.5 w-3.5 transition-transform group-hover:translate-x-0.5" />
-                    </button>
-
-                    {currentTrack && (
-                      <button
-                        type="button"
-                        onClick={handleResumeListening}
-                        className="brand-button-secondary inline-flex w-full max-w-full items-center gap-2.5 rounded-full px-2.5 py-2 pr-4 text-left transition-colors tap-feedback"
-                      >
-                        <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[#f0d1bc] text-[#111d2d]">
-                          <Play className="h-3 w-3 fill-current ml-0.5" />
-                        </span>
-                        <span className="min-w-0">
-                          <span className="block text-[9px] font-bold uppercase tracking-[0.14em] text-[#b4c0ce]">
-                            Continuer
-                          </span>
-                          <span className="block text-[12px] font-semibold text-[#f6f8fb] truncate">
-                            {currentTrack.surah.name}
-                            <span className="font-normal text-[#d0d9e3]/55"> · {currentTrack.reciter.name}</span>
-                          </span>
-                        </span>
-                      </button>
-                    )}
+                      القرآن الكريم
+                    </p>
+                    <h2 className="mt-2 text-[1.75rem] sm:text-[2.2rem] md:text-[3.4rem] font-black tracking-tight text-white leading-[1.02]">
+                      Une écoute
+                      <span className="block text-[#f1d4c1]">paisible et claire.</span>
+                    </h2>
+                    <p className="mt-3 text-[13px] sm:text-[14px] md:text-[15px] leading-relaxed text-[#d0d9e3]/78">
+                      Reprenez instantanément votre récitation, explorez de belles voix et gardez vos repères sur mobile.
+                    </p>
                   </div>
+
+                  <div className="shrink-0 pt-1">
+                    <img
+                      src="/icons/sansfond.png"
+                      alt=""
+                      className="hero-logo-float h-16 w-16 sm:h-20 sm:w-20 md:h-32 md:w-32 object-contain drop-shadow-[0_10px_28px_rgba(30,80,140,0.45)]"
+                      draggable={false}
+                    />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-2">
+                  <button
+                    type="button"
+                    onClick={currentTrack ? handleResumeListening : () => handleNavigate('listen')}
+                    className="group flex items-center justify-between rounded-[1.35rem] bg-[#f0d1bc] px-4 py-3.5 text-left text-[#132031] shadow-[0_14px_30px_rgba(240,209,188,0.18)] transition-transform hover:-translate-y-0.5 tap-feedback"
+                  >
+                    <span className="min-w-0">
+                      <span className="block text-[10px] font-black uppercase tracking-[0.16em] text-[#5d463a]">
+                        {currentTrack ? 'Continuer' : 'Commencer'}
+                      </span>
+                      <span className="mt-1 block text-[14px] font-black text-[#132031]">
+                        {currentTrack ? currentTrack.surah.name : 'Explorer les récitateurs'}
+                      </span>
+                      <span className="mt-0.5 block text-[11px] text-[#30455c] truncate">
+                        {currentTrack ? currentTrack.reciter.name : 'Choisissez une voix et lancez l’écoute'}
+                      </span>
+                    </span>
+                    <span className="ml-3 flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[#132031] text-[#f7ebdf]">
+                      <Play className="ml-0.5 h-4 w-4 fill-current" />
+                    </span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => handleNavigate('listen')}
+                    className="group rounded-[1.35rem] border border-[#46607b]/35 bg-[#132031]/72 px-4 py-3.5 text-left transition-colors hover:bg-[#162538]/88 tap-feedback"
+                  >
+                    <span className="inline-flex h-9 w-9 items-center justify-center rounded-full bg-[#20334a] text-[#f1d4c1]">
+                      <Headphones className="h-4 w-4" />
+                    </span>
+                    <span className="mt-3 block text-[14px] font-black text-[#f6f8fb]">
+                      Explorer les voix
+                    </span>
+                    <span className="mt-1 block text-[11px] leading-relaxed text-[#9fb1c3]">
+                      Récitateurs, sourates et découverte en quelques gestes.
+                    </span>
+                  </button>
+                </div>
+
+                <div className="grid grid-cols-3 gap-2 text-left">
+                  {[
+                    { label: 'Hors-ligne', value: 'Audio prêt', icon: WifiOff },
+                    { label: 'Multi-appareils', value: 'Sync fluide', icon: Cloud },
+                    { label: 'Expérience', value: 'Mobile first', icon: Disc },
+                  ].map((item) => {
+                    const Icon = item.icon;
+                    return (
+                      <div
+                        key={item.label}
+                        className="rounded-2xl border border-[#46607b]/28 bg-[#132031]/58 px-3 py-3"
+                      >
+                        <Icon className="h-4 w-4 text-[#f0d1bc]" />
+                        <p className="mt-3 text-[10px] font-black uppercase tracking-[0.14em] text-[#8ea1b3]">
+                          {item.label}
+                        </p>
+                        <p className="mt-1 text-[12px] font-semibold text-[#f6f8fb] leading-snug">
+                          {item.value}
+                        </p>
+                      </div>
+                    );
+                  })}
                 </div>
               </div>
             </section>
 
-            <div className="flex flex-wrap items-center justify-center gap-x-4 gap-y-2 px-1 text-[11px] text-[#95a7ba]">
-              <span className="inline-flex items-center gap-1.5">
-                <span className="h-1 w-1 rounded-full bg-[#b98d6e]" />
-                App Store &amp; Google Play — bientôt
-              </span>
-              <a
-                href={GOMUSLIMLIFE_URL}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="inline-flex items-center gap-1.5 text-[#b4c0ce] hover:text-[#f1d4c1] transition-colors"
-              >
-                GoMuslimLife
-                <ExternalLink className="h-3 w-3 opacity-60" />
-              </a>
-            </div>
+            <section className="rounded-[1.6rem] border border-[#30455c]/60 bg-[linear-gradient(180deg,rgba(19,32,49,0.94),rgba(13,23,36,0.9))] px-4 py-4 shadow-[0_18px_40px_rgba(0,0,0,0.22)]">
+              <div className="flex items-start justify-between gap-3">
+                <div>
+                  <p className="text-[10px] font-black uppercase tracking-[0.18em] text-[#8ea1b3]">
+                    Reprise rapide
+                  </p>
+                  <h3 className="mt-1 text-base font-black text-[#f6f8fb]">
+                    {currentTrack ? 'Continuer votre dernière écoute' : 'Prêt pour une nouvelle écoute'}
+                  </h3>
+                  <p className="mt-1 text-xs leading-relaxed text-[#9fb1c3]">
+                    {currentTrack
+                      ? `${currentTrack.surah.name} avec ${currentTrack.reciter.name}.`
+                      : 'Choisissez un réciteur et commencez depuis une interface pensée pour le mobile.'}
+                  </p>
+                </div>
+                <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-[#20334a] text-[#f0d1bc]">
+                  {currentTrack ? <Play className="ml-0.5 h-4 w-4 fill-current" /> : <Headphones className="h-4 w-4" />}
+                </span>
+              </div>
 
-            {/* Accès rapide */}
-            <section className="grid grid-cols-2 gap-2.5">
-              {[
-                {
-                  id: 'listen',
-                  label: 'Écouter',
-                  hint: 'Récitateurs & sourates',
-                  icon: Headphones,
-                  onClick: () => handleNavigate('listen'),
-                },
-                {
-                  id: 'favorites',
-                  label: 'Favoris',
-                  hint: favoritedReciters.length
-                    ? `${favoritedReciters.length} voix`
-                    : 'Vos voix aimées',
-                  icon: Heart,
-                  onClick: () => handleNavigate('favorites'),
-                },
-                {
-                  id: 'compare',
-                  label: 'Comparer',
-                  hint: 'Deux voix, une sourate',
-                  icon: ArrowLeftRight,
-                  onClick: () => handleNavigate('more', 'compare'),
-                },
-              ].map((action) => {
-                const Icon = action.icon;
-                return (
-                  <button
-                    key={action.id}
-                    type="button"
-                    onClick={action.onClick}
-                    className="group flex items-center gap-3 rounded-2xl brand-card-muted px-3.5 py-3 text-left hover:border-[#cea687]/30 hover:bg-[#162538]/85 transition-colors tap-feedback"
-                  >
-                    <span className="brand-chip-cool flex h-10 w-10 shrink-0 items-center justify-center rounded-xl group-hover:bg-[#f0d1bc]/12 group-hover:text-[#f1d4c1]">
-                      <Icon className="h-4.5 w-4.5 h-[18px] w-[18px]" />
-                    </span>
-                    <span className="min-w-0">
-                      <span className="block text-[13px] font-bold text-[#f6f8fb]">{action.label}</span>
-                      <span className="block text-[11px] text-[#95a7ba] truncate">{action.hint}</span>
-                    </span>
-                  </button>
-                );
-              })}
+              <div className="mt-4 flex gap-2">
+                <button
+                  type="button"
+                  onClick={currentTrack ? handleResumeListening : () => handleNavigate('listen')}
+                  className="brand-button-primary inline-flex flex-1 items-center justify-center gap-2 rounded-full px-4 py-3 text-[13px] font-bold tap-feedback"
+                >
+                  {currentTrack ? 'Reprendre' : 'Commencer'}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handleNavigate('listen')}
+                  className="brand-button-secondary inline-flex items-center justify-center gap-2 rounded-full px-4 py-3 text-[13px] font-bold tap-feedback"
+                >
+                  Explorer
+                </button>
+              </div>
             </section>
 
-            {/* Atouts */}
-            <section className="flex flex-wrap gap-2">
-              {[
-                { icon: WifiOff, label: 'Hors-ligne' },
-                { icon: Cloud, label: 'Multi-appareils' },
-                { icon: Disc, label: 'Lecteur pro' },
-              ].map((item) => {
-                const Icon = item.icon;
-                return (
-                  <span
-                    key={item.label}
-                    className="inline-flex items-center gap-1.5 rounded-full border border-[#46607b]/30 bg-[#162538]/60 px-3 py-1.5 text-[11px] font-semibold text-[#d7e4ef]"
-                  >
-                    <Icon className="h-3.5 w-3.5 text-[#f0d1bc]" />
-                    {item.label}
-                  </span>
-                );
-              })}
+            <section className="flex flex-col gap-3">
+              <div className="px-0.5">
+                <h3 className="text-sm font-black text-[#f6f8fb]">Accès rapides</h3>
+                <p className="mt-1 text-xs text-[#95a7ba]">L’essentiel, sans surcharge.</p>
+              </div>
+
+              <div className="grid grid-cols-2 gap-2.5">
+                {[
+                  {
+                    id: 'listen',
+                    label: 'Explorer',
+                    hint: 'Récitateurs et sourates',
+                    icon: Headphones,
+                    onClick: () => handleNavigate('listen'),
+                  },
+                  {
+                    id: 'favorites',
+                    label: 'Favoris',
+                    hint: favoritedReciters.length ? `${favoritedReciters.length} voix` : 'Vos sélections',
+                    icon: Heart,
+                    onClick: () => handleNavigate('favorites'),
+                  },
+                  {
+                    id: 'downloads',
+                    label: 'Téléchargées',
+                    hint: downloadedEntries.length ? `${downloadedEntries.length} sourate(s)` : 'Voir le hors-ligne',
+                    icon: Download,
+                    onClick: () => handleNavigate('more', 'downloads'),
+                  },
+                  {
+                    id: 'account',
+                    label: 'Compte',
+                    hint: 'Préférences et sync',
+                    icon: Cloud,
+                    onClick: () => handleNavigate('more', 'account'),
+                  },
+                ].map((action) => {
+                  const Icon = action.icon;
+                  return (
+                    <button
+                      key={action.id}
+                      type="button"
+                      onClick={action.onClick}
+                      className="group rounded-[1.35rem] border border-[#30455c]/60 bg-[#132031]/70 px-3.5 py-3.5 text-left transition-colors hover:bg-[#162538]/88 tap-feedback"
+                    >
+                      <span className="flex h-10 w-10 items-center justify-center rounded-2xl bg-[#20334a] text-[#f1d4c1]">
+                        <Icon className="h-4.5 w-4.5" />
+                      </span>
+                      <span className="mt-3 block text-[13px] font-black text-[#f6f8fb]">{action.label}</span>
+                      <span className="mt-1 block text-[11px] leading-relaxed text-[#95a7ba]">{action.hint}</span>
+                    </button>
+                  );
+                })}
+              </div>
             </section>
 
             {!isLoadingReciters && (
-              <ReciterCategoryGrid
-                reciters={reciters}
-                activeCategoryId={categoryModalId}
-                onOpenCategory={setCategoryModalId}
-              />
+              <section className="flex flex-col gap-3">
+                <div className="px-0.5">
+                  <h3 className="text-sm font-black text-[#f6f8fb]">Explorer par ambiance</h3>
+                  <p className="mt-1 text-xs text-[#95a7ba]">Une entrée simple pour trouver la voix qui vous convient.</p>
+                </div>
+                <ReciterCategoryGrid
+                  reciters={reciters}
+                  activeCategoryId={categoryModalId}
+                  onOpenCategory={setCategoryModalId}
+                />
+              </section>
+            )}
+
+            {featuredReciters.length > 0 && (
+              <section className="flex flex-col gap-3">
+                <div className="flex items-end justify-between gap-3 px-0.5">
+                  <div>
+                    <h3 className="text-sm font-black text-[#f6f8fb]">Voix recommandées</h3>
+                    <p className="mt-1 text-xs text-[#95a7ba]">Une sélection simple à lancer en un appui.</p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setActiveTab('listen');
+                      setListenStep('reciters');
+                    }}
+                    className="inline-flex items-center gap-1 text-[11px] font-semibold text-[#d0d9e3] hover:text-[#f1d4c1]"
+                  >
+                    Tous
+                    <ArrowRight className="h-3.5 w-3.5" />
+                  </button>
+                </div>
+
+                <div className="-mx-1 flex gap-1 overflow-x-auto px-1 pb-1 scrollbar-thin scrollbar-thumb-slate-800 scrollbar-track-transparent">
+                  {featuredReciters.map((reciter) => (
+                    <HomeFeaturedReciter
+                      key={reciter.id}
+                      reciter={reciter}
+                      isSelected={activeReciter?.id === reciter.id}
+                      onSelect={() => handleSelectReciter(reciter)}
+                    />
+                  ))}
+                </div>
+              </section>
             )}
 
             {favoritedReciters.length > 0 && (
               <section className="flex flex-col gap-3">
                 <div className="flex items-end justify-between gap-3 px-0.5">
                   <div>
-                    <h3 className="text-sm font-bold text-[#f6f8fb]">Vos favoris</h3>
-                    <p className="text-xs text-[#95a7ba] mt-0.5">Reprenez là où vous les aimez.</p>
+                    <h3 className="text-sm font-black text-[#f6f8fb]">Vos favoris</h3>
+                    <p className="mt-1 text-xs text-[#95a7ba]">Retrouvez vos voix préférées sans détour.</p>
                   </div>
                   <button
                     type="button"
                     onClick={() => handleNavigate('favorites')}
-                    className="text-[11px] font-semibold text-[#d0d9e3] hover:text-[#f1d4c1] inline-flex items-center gap-1"
+                    className="inline-flex items-center gap-1 text-[11px] font-semibold text-[#d0d9e3] hover:text-[#f1d4c1]"
                   >
                     Voir
                     <ArrowRight className="h-3.5 w-3.5" />
@@ -977,47 +1076,21 @@ const AppContent: React.FC = () => {
               </section>
             )}
 
-            <section className="flex flex-col gap-3">
-              <div className="flex items-end justify-between gap-3 px-0.5">
-                <div>
-                  <h3 className="text-sm font-bold text-[#f6f8fb]">Voix recommandées</h3>
-                  <p className="text-xs text-[#95a7ba] mt-0.5">Un appui pour ouvrir leurs sourates.</p>
-                </div>
-                <button
-                  type="button"
-                  onClick={() => {
-                    setActiveTab('listen');
-                    setListenStep('reciters');
-                  }}
-                  className="text-[11px] font-semibold text-[#d0d9e3] hover:text-[#f1d4c1] inline-flex items-center gap-1"
-                >
-                  Tous
-                  <ArrowRight className="h-3.5 w-3.5" />
-                </button>
-              </div>
-
-              {isLoadingReciters ? (
-                <div className="flex gap-2 overflow-hidden px-0.5">
-                  {Array.from({ length: 5 }).map((_, i) => (
-                    <div key={i} className="shrink-0 w-[6.5rem] flex flex-col items-center gap-2.5 p-2.5">
-                      <div className="h-16 w-16 rounded-full bg-slate-800/80 animate-pulse" />
-                      <div className="h-3 w-14 rounded bg-slate-800/80 animate-pulse" />
-                    </div>
-                  ))}
-                </div>
-              ) : featuredReciters.length > 0 ? (
-                <div className="-mx-1 flex gap-1 overflow-x-auto px-1 pb-1 scrollbar-thin scrollbar-thumb-slate-800 scrollbar-track-transparent">
-                  {featuredReciters.map((reciter) => (
-                    <HomeFeaturedReciter
-                      key={reciter.id}
-                      reciter={reciter}
-                      isSelected={activeReciter?.id === reciter.id}
-                      onSelect={() => handleSelectReciter(reciter)}
-                    />
-                  ))}
-                </div>
-              ) : null}
-            </section>
+            <div className="flex flex-wrap items-center justify-between gap-2 rounded-2xl border border-[#30455c]/50 bg-[#101b2a]/78 px-4 py-3 text-[11px] text-[#95a7ba]">
+              <span className="inline-flex items-center gap-1.5">
+                <span className="h-1.5 w-1.5 rounded-full bg-[#b98d6e]" />
+                App Store &amp; Google Play bientôt
+              </span>
+              <a
+                href={GOMUSLIMLIFE_URL}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-1.5 text-[#b4c0ce] hover:text-[#f1d4c1] transition-colors"
+              >
+                GoMuslimLife
+                <ExternalLink className="h-3 w-3 opacity-60" />
+              </a>
+            </div>
           </div>
         )}
 
@@ -1305,6 +1378,16 @@ const AppContent: React.FC = () => {
                   Compte
                 </button>
                 <button
+                  onClick={() => setMorePanel('downloads')}
+                  className={`rounded-2xl border px-3 py-3 text-xs font-bold transition-all ${
+                    morePanel === 'downloads'
+                      ? 'border-[#cea687]/35 bg-[#f0d1bc]/12 text-[#f1d4c1]'
+                      : 'border-[#30455c] bg-[#111d2d]/72 text-[#b4c0ce] hover:text-[#f6f8fb]'
+                  }`}
+                >
+                  Téléchargées
+                </button>
+                <button
                   onClick={() => setMorePanel('priorities')}
                   className={`rounded-2xl border px-3 py-3 text-xs font-bold transition-all ${
                     morePanel === 'priorities'
@@ -1341,6 +1424,75 @@ const AppContent: React.FC = () => {
               <Suspense fallback={<div className="shimmer-loader h-40 rounded-2xl border border-slate-900" />}>
                 <AccountPanel />
               </Suspense>
+            )}
+
+            {morePanel === 'downloads' && (
+              <section className="flex flex-col gap-4 rounded-3xl border border-[#30455c]/50 bg-[#111d2d]/65 p-4 sm:p-5">
+                <div className="flex items-start justify-between gap-3">
+                  <div>
+                    <p className="text-[10px] font-black uppercase tracking-[0.16em] text-[#8ea1b3]">
+                      Hors-ligne
+                    </p>
+                    <h3 className="mt-1 text-lg font-black text-[#f6f8fb]">Sourates téléchargées</h3>
+                    <p className="mt-1 text-xs leading-relaxed text-[#95a7ba]">
+                      Retrouvez vos téléchargements et le récitateur associé.
+                    </p>
+                  </div>
+                  <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-[#20334a] text-[#f0d1bc]">
+                    <Download className="h-4.5 w-4.5" />
+                  </span>
+                </div>
+
+                {downloadedGroups.length === 0 ? (
+                  <div className="rounded-2xl border border-[#30455c]/50 bg-[#0f1928]/80 px-4 py-5 text-center">
+                    <p className="text-sm font-semibold text-[#f6f8fb]">Aucune sourate téléchargée</p>
+                    <p className="mt-1 text-xs text-[#95a7ba]">
+                      Téléchargez une sourate depuis l’écran d’écoute pour la retrouver ici.
+                    </p>
+                  </div>
+                ) : (
+                  <div className="flex flex-col gap-3">
+                    {downloadedGroups.map((group) => (
+                      <div
+                        key={group.reciterId}
+                        className="rounded-2xl border border-[#30455c]/45 bg-[#0f1928]/80 px-4 py-3.5"
+                      >
+                        <div className="flex items-center justify-between gap-3">
+                          <div className="min-w-0">
+                            <h4 className="truncate text-sm font-black text-[#f6f8fb]">{group.reciterName}</h4>
+                            <p className="mt-0.5 text-[11px] text-[#95a7ba]">
+                              {group.surahs.length} sourate(s) hors-ligne
+                            </p>
+                          </div>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              const selected = reciters.find((reciter) => reciter.id === group.reciterId);
+                              if (!selected) return;
+                              handleSelectReciter(selected);
+                            }}
+                            className="inline-flex shrink-0 items-center gap-1 rounded-full border border-[#46607b]/35 bg-[#132031]/75 px-3 py-1.5 text-[11px] font-semibold text-[#d7e4ef] hover:text-[#f1d4c1]"
+                          >
+                            Ouvrir
+                            <ArrowRight className="h-3.5 w-3.5" />
+                          </button>
+                        </div>
+
+                        <div className="mt-3 flex flex-wrap gap-2">
+                          {group.surahs.map((surah) => (
+                            <span
+                              key={`${group.reciterId}-${surah.id}`}
+                              className="inline-flex items-center rounded-full border border-[#46607b]/30 bg-[#132031]/70 px-3 py-1.5 text-[11px] font-semibold text-[#d7e4ef]"
+                            >
+                              {surah.id}. {surah.name}
+                            </span>
+                          ))}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </section>
             )}
 
             {morePanel === 'priorities' && (
