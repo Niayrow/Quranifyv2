@@ -100,11 +100,11 @@ export const ListenReciterHeader: React.FC<ListenReciterHeaderProps> = ({
         style={fusionEnabled ? mergeStyle : undefined}
       >
         <div
-          className={`listen-surah-header-inner reciter-fusion-card brand-card backdrop-blur-md flex flex-col gap-3 px-4 py-3 rounded-none md:rounded-2xl md:shadow-lg md:shadow-black/20 md:gap-5 md:p-6 max-[390px]:gap-2 max-[390px]:px-3 max-[390px]:py-2 ${
+          className={`listen-surah-header-inner reciter-fusion-card brand-card backdrop-blur-md flex flex-col gap-3 px-4 py-3 rounded-none md:rounded-2xl md:shadow-lg md:shadow-black/20 md:gap-0 md:flex-row md:items-center md:justify-between md:p-5 max-[390px]:gap-2 max-[390px]:px-3 max-[390px]:py-2 ${
             controlsDisabled ? 'pointer-events-none' : ''
           }`}
         >
-          <div className="flex items-center gap-3.5 pt-0 md:gap-5 max-[390px]:gap-2">
+          <div className="flex items-center gap-3.5 pt-0 md:gap-5 md:min-w-0 md:flex-1 max-[390px]:gap-2">
             <div className="reciter-fusion-avatar relative h-[5.5rem] w-[5.5rem] shrink-0 overflow-hidden rounded-full border-2 border-[#cea687]/40 bg-[#111d2d] shadow-[0_0_28px_rgba(206,166,135,0.18)] sm:h-24 sm:w-24 max-[390px]:h-14 max-[390px]:w-14 max-[390px]:border">
               <img
                 src={getReciterImage(activeReciter)}
@@ -146,11 +146,11 @@ export const ListenReciterHeader: React.FC<ListenReciterHeaderProps> = ({
             </div>
           </div>
 
-          <div className="flex items-center gap-2 reciter-fusion-actions md:gap-3 max-[390px]:gap-1.5">
+          <div className="flex items-center gap-2 reciter-fusion-actions md:gap-3 md:shrink-0 md:pl-6 max-[390px]:gap-1.5">
             <button
               type="button"
               onClick={onPlay}
-              className="brand-button-primary inline-flex flex-1 md:flex-none md:min-w-[11rem] items-center justify-center gap-2 rounded-full px-5 py-3 text-sm font-bold tap-feedback md:px-7 md:py-3.5 max-[390px]:gap-1 max-[390px]:px-3 max-[390px]:py-2 max-[390px]:text-xs"
+              className="brand-button-primary inline-flex flex-1 md:flex-none md:min-w-[10rem] items-center justify-center gap-2 rounded-full px-5 py-3 text-sm font-bold tap-feedback md:px-7 md:py-3 max-[390px]:gap-1 max-[390px]:px-3 max-[390px]:py-2 max-[390px]:text-xs"
               tabIndex={controlsDisabled ? -1 : 0}
             >
               <Play className="h-4 w-4 fill-current max-[390px]:h-3.5 max-[390px]:w-3.5" />
@@ -161,7 +161,7 @@ export const ListenReciterHeader: React.FC<ListenReciterHeaderProps> = ({
               onClick={onToggleFavorite}
               aria-label={isFavorite ? 'Retirer des favoris' : 'Ajouter aux favoris'}
               aria-pressed={isFavorite}
-              className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-full border transition-colors tap-feedback md:h-12 md:w-12 max-[390px]:h-9 max-[390px]:w-9 ${
+              className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-full border transition-colors tap-feedback md:h-11 md:w-11 max-[390px]:h-9 max-[390px]:w-9 ${
                 isFavorite
                   ? 'border-[#cea687]/45 bg-[#f0d1bc]/16 text-[#f0d1bc]'
                   : 'border-[#46607b] bg-[#162538]/70 text-[#aab7c5] hover:text-[#f6f8fb]'
@@ -175,7 +175,7 @@ export const ListenReciterHeader: React.FC<ListenReciterHeaderProps> = ({
               onClick={onChangeReciter}
               aria-label="Changer de récitateur"
               title="Changer de récitateur"
-              className="brand-button-secondary shrink-0 rounded-full px-4 py-3 text-[12px] font-bold transition-colors tap-feedback md:px-5 md:py-3.5 md:text-[13px] max-[390px]:flex max-[390px]:h-9 max-[390px]:w-9 max-[390px]:items-center max-[390px]:justify-center max-[390px]:px-0 max-[390px]:py-0"
+              className="brand-button-secondary shrink-0 rounded-full px-4 py-3 text-[12px] font-bold transition-colors tap-feedback md:px-5 md:py-3 md:text-[13px] max-[390px]:flex max-[390px]:h-9 max-[390px]:w-9 max-[390px]:items-center max-[390px]:justify-center max-[390px]:px-0 max-[390px]:py-0"
               tabIndex={controlsDisabled ? -1 : 0}
             >
               <span className="max-[390px]:hidden">Changer</span>

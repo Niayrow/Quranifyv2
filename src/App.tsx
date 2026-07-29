@@ -19,6 +19,11 @@ import { useAuth } from './context/AuthContext';
 import { getAudioUrl } from './utils/audioUrl';
 import { useReciterNavFusion } from './hooks/useReciterNavFusion';
 import { pushRecentReciterId, readRecentReciterIds } from './utils/recentReciters';
+import {
+  loadNavDesktopStyle,
+  saveNavDesktopStyle,
+  type NavDesktopStyle,
+} from './utils/navDesktopStyle';
 
 const SurahList = lazy(() => import('./components/SurahList').then((module) => ({ default: module.SurahList })));
 const GlobalPlayerV2 = lazy(() => import('./components/GlobalPlayerV2').then((module) => ({ default: module.GlobalPlayerV2 })));
@@ -629,6 +634,12 @@ const AppContent: React.FC = () => {
   const [reciterFusionSpacerPx, setReciterFusionSpacerPx] = useState(0);
   const [exploreFusionProgress, setExploreFusionProgress] = useState(0);
   const [recentReciterIds, setRecentReciterIds] = useState<number[]>(() => readRecentReciterIds());
+  const [navDesktopStyle, setNavDesktopStyle] = useState<NavDesktopStyle>(() => loadNavDesktopStyle());
+
+  const handleNavDesktopStyleChange = useCallback((style: NavDesktopStyle) => {
+    setNavDesktopStyle(style);
+    saveNavDesktopStyle(style);
+  }, []);
 
   const handleReciterFusionProgress = useCallback((progress: number) => {
     setReciterFusionProgress(progress);
@@ -1021,7 +1032,11 @@ const AppContent: React.FC = () => {
   }
 
   return (
-    <div className={`flex-1 flex flex-col px-4 max-w-lg mx-auto w-full mobile-shell-padding mobile-app-shell max-md:px-0 md:pt-28 md:w-[min(72rem,calc(100%-4rem))] md:max-w-6xl md:px-0 ${
+    <div
+      data-nav-desktop={navDesktopStyle}
+      className={`flex-1 flex flex-col px-4 max-w-lg mx-auto w-full mobile-shell-padding mobile-app-shell max-md:px-0 md:w-[min(72rem,calc(100%-4rem))] md:max-w-6xl md:px-0 ${
+      navDesktopStyle === 'classic' ? 'md:pt-[4.5rem]' : 'md:pt-28'
+    } ${
       currentTrack ? 'md:pb-44' : 'md:pb-12'
     }`}>
       <CloudSync favorites={favorites} setFavorites={setFavorites} />
@@ -1706,6 +1721,57 @@ const AppContent: React.FC = () => {
               </div>
             </section>
 
+            {/* Desktop navbar style — md+ only */}
+            <section className="hidden md:flex flex-col gap-3 rounded-3xl border border-[#30455c]/50 bg-[#111d2d]/65 p-4 sm:p-5">
+              <div>
+                <p className="text-[10px] font-black uppercase tracking-[0.16em] text-[#8ea1b3]">
+                  Affichage
+                </p>
+                <h3 className="mt-1 text-base font-black text-[#f6f8fb]">Navbar desktop</h3>
+                <p className="mt-1 text-xs leading-relaxed text-[#95a7ba]">
+                  Choisissez le dock flottant (actuel) ou la barre classique pleine largeur.
+                </p>
+              </div>
+              <div className="grid grid-cols-2 gap-2">
+                <button
+                  type="button"
+                  onClick={() => handleNavDesktopStyleChange('dock')}
+                  className={`rounded-2xl border px-3 py-3 text-left transition-all ${
+                    navDesktopStyle === 'dock'
+                      ? 'border-[#cea687]/35 bg-[#f0d1bc]/12'
+                      : 'border-[#30455c] bg-[#0f1928]/80 hover:border-[#46607b]/60'
+                  }`}
+                >
+                  <span
+                    className={`block text-xs font-bold ${
+                      navDesktopStyle === 'dock' ? 'text-[#f1d4c1]' : 'text-[#f6f8fb]'
+                    }`}
+                  >
+                    Dock
+                  </span>
+                  <span className="mt-0.5 block text-[11px] text-[#95a7ba]">Flottant arrondi (V1)</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handleNavDesktopStyleChange('classic')}
+                  className={`rounded-2xl border px-3 py-3 text-left transition-all ${
+                    navDesktopStyle === 'classic'
+                      ? 'border-[#cea687]/35 bg-[#f0d1bc]/12'
+                      : 'border-[#30455c] bg-[#0f1928]/80 hover:border-[#46607b]/60'
+                  }`}
+                >
+                  <span
+                    className={`block text-xs font-bold ${
+                      navDesktopStyle === 'classic' ? 'text-[#f1d4c1]' : 'text-[#f6f8fb]'
+                    }`}
+                  >
+                    Classique
+                  </span>
+                  <span className="mt-0.5 block text-[11px] text-[#95a7ba]">Pleine largeur (V2)</span>
+                </button>
+              </div>
+            </section>
+
             {morePanel === 'account' && (
               <Suspense fallback={<div className="shimmer-loader h-40 rounded-2xl border border-slate-900" />}>
                 <AccountPanel />
@@ -1830,6 +1896,7 @@ const AppContent: React.FC = () => {
         activeTab={activeTab}
         setActiveTab={handleSetActiveTab}
         dockWithPlayer={Boolean(currentTrack)}
+        desktopStyle={navDesktopStyle}
         reciterFusion={
           reciterFusionEnabled && activeReciter
             ? {

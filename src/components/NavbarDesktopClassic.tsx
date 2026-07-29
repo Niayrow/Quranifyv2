@@ -1,0 +1,197 @@
+import React from 'react';
+import { Heart, Home, Headphones, Play, Settings } from 'lucide-react';
+import type { ExploreNavFusionProps, ReciterNavFusionProps } from './Navbar';
+import { getGeneratedReciterAvatar, getReciterImage } from '../utils/images';
+
+type NavTabId = 'home' | 'listen' | 'moments' | 'favorites' | 'more';
+
+interface NavbarDesktopClassicProps {
+  activeTab: NavTabId;
+  setActiveTab: (tab: NavTabId) => void;
+  reciterFusion?: ReciterNavFusionProps | null;
+  exploreFusion?: ExploreNavFusionProps | null;
+}
+
+const LOGO_SRC = '/icons/sansfond.png';
+
+const MAIN_TABS: Array<{ id: NavTabId; label: string; icon: typeof Home }> = [
+  { id: 'home', label: 'Accueil', icon: Home },
+  { id: 'listen', label: 'Écouter', icon: Headphones },
+  { id: 'moments', label: 'Moments', icon: Play },
+  { id: 'favorites', label: 'Favoris', icon: Heart },
+];
+
+export const NavbarDesktopClassic: React.FC<NavbarDesktopClassicProps> = ({
+  activeTab,
+  setActiveTab,
+  reciterFusion = null,
+  exploreFusion = null,
+}) => {
+  const fusionProgress = reciterFusion?.progress ?? exploreFusion?.progress ?? 0;
+  const isFusing =
+    (Boolean(reciterFusion) || Boolean(exploreFusion)) && fusionProgress > 0.01;
+  const fusionStyle =
+    reciterFusion || exploreFusion
+      ? ({ ['--fusion-p' as string]: String(fusionProgress) } as React.CSSProperties)
+      : undefined;
+
+  const renderTab = (
+    id: NavTabId,
+    label: string,
+    Icon: typeof Home,
+    options?: { rotateActive?: boolean },
+  ) => {
+    const isActive = activeTab === id;
+    return (
+      <button
+        key={id}
+        type="button"
+        onClick={() => setActiveTab(id)}
+        className={`nav-desktop-classic-tab group relative inline-flex items-center gap-2 rounded-xl px-3.5 py-2 transition-all duration-300 ${
+          isActive
+            ? 'bg-[#1b2d43] text-[#f0d1bc] ring-1 ring-[#cea687]/40 shadow-[inset_0_1px_0_rgba(240,209,188,0.12)]'
+            : 'text-[#9fb1c3] hover:bg-[#162538]/70 hover:text-[#eef3f8]'
+        }`}
+        aria-label={label}
+        aria-current={isActive ? 'page' : undefined}
+      >
+        <Icon
+          strokeWidth={isActive ? 2.4 : 2}
+          className={`h-[18px] w-[18px] transition-colors duration-300 ${
+            isActive
+              ? `text-[#f0d1bc] ${options?.rotateActive ? 'rotate-90' : ''}`
+              : `text-[#8fa3b0] group-hover:text-[#eef3f8] ${
+                  options?.rotateActive ? 'group-hover:rotate-45' : ''
+                }`
+          }`}
+        />
+        <span
+          className={`text-[13px] font-semibold tracking-wide transition-colors duration-300 ${
+            isActive ? 'text-[#f0d1bc]' : 'text-[#9fb1c3] group-hover:text-[#eef3f8]'
+          }`}
+        >
+          {label}
+        </span>
+      </button>
+    );
+  };
+
+  return (
+    <div
+      className={`nav-desktop-classic-root fixed inset-x-0 top-0 z-50 hidden md:block ${
+        isFusing ? 'is-fusing' : ''
+      }`}
+      style={fusionStyle}
+    >
+      <nav
+        className="nav-desktop-classic glass-panel-opaque backdrop-blur-2xl border-b border-[#cea687]/18"
+        aria-label="Navigation principale"
+      >
+        <div className="nav-desktop-classic-inner mx-auto grid h-[4.15rem] max-w-6xl grid-cols-[1fr_auto_1fr] items-center gap-3 px-6 lg:px-8">
+          <div className="flex min-w-0 items-center justify-start">
+            <button
+              type="button"
+              onClick={() => setActiveTab('home')}
+              aria-label="Sawra — Accueil"
+              className="group/nav-brand flex shrink-0 items-center gap-2.5 rounded-2xl px-1.5 py-1 transition-all duration-300 hover:bg-[#162538]/55 tap-feedback"
+            >
+              <span className="relative flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-[0.8rem] bg-[radial-gradient(circle_at_50%_35%,rgba(240,209,188,0.14),rgba(17,29,45,0.92)_68%)] ring-1 ring-[#cea687]/25 shadow-[0_6px_22px_rgba(206,166,135,0.14),inset_0_1px_0_rgba(255,255,255,0.06)]">
+                <img
+                  src={LOGO_SRC}
+                  alt=""
+                  className="h-[2.9rem] w-[2.9rem] object-contain scale-[1.18] drop-shadow-[0_2px_16px_rgba(206,166,135,0.42)] transition-transform duration-300 group-hover/nav-brand:scale-[1.22]"
+                  draggable={false}
+                />
+              </span>
+              <span className="flex flex-col items-start justify-center leading-none">
+                <span className="text-[1.02rem] font-black tracking-[-0.03em] text-[#f6f8fb]">Sawra</span>
+                <span className="mt-1 text-[9px] font-bold uppercase tracking-[0.22em] text-[#cea687]/80">
+                  Coran
+                </span>
+              </span>
+            </button>
+          </div>
+
+          <div className="flex items-center justify-center gap-1">
+            {MAIN_TABS.map((tab) => renderTab(tab.id, tab.label, tab.icon))}
+          </div>
+
+          <div className="flex items-center justify-end">
+            {renderTab('more', 'Options', Settings, { rotateActive: true })}
+          </div>
+        </div>
+      </nav>
+
+      {reciterFusion && (
+        <div
+          className="nav-desktop-classic-fusion-dock nav-reciter-fusion-avatar-scope flex items-center gap-3 px-6 lg:px-8"
+          aria-hidden={fusionProgress < 0.05}
+          style={{ pointerEvents: fusionProgress >= 0.85 ? 'auto' : 'none' }}
+        >
+          <div className="mx-auto flex w-full max-w-6xl items-center gap-3">
+            <div className="nav-reciter-fusion-avatar w-9 h-9 rounded-lg overflow-hidden border border-[#46607b]/55 bg-[#111d2d] shrink-0">
+              <img
+                src={getReciterImage(reciterFusion.reciter)}
+                alt={reciterFusion.reciter.name}
+                width="36"
+                height="36"
+                className="h-full w-full object-cover"
+                onError={(e) => {
+                  const img = e.currentTarget;
+                  const fallback = getGeneratedReciterAvatar(reciterFusion.reciter);
+                  if (img.src !== fallback) img.src = fallback;
+                }}
+              />
+            </div>
+            <div className="nav-reciter-fusion-meta min-w-0 flex-1">
+              <p className="text-[10px] uppercase font-bold tracking-wider text-[#f0d1bc]/90">
+                Récitateur
+              </p>
+              <p className="truncate text-sm font-semibold text-[#f6f8fb]">{reciterFusion.reciter.name}</p>
+              {reciterFusion.activeMoshaf && (
+                <p className="truncate text-[11px] text-[#b4c0ce]">{reciterFusion.activeMoshaf.name}</p>
+              )}
+            </div>
+            <button
+              type="button"
+              onClick={reciterFusion.onChangeReciter}
+              className="brand-button-secondary shrink-0 rounded-xl px-3 py-2 text-[11px] font-bold transition-colors tap-feedback"
+              tabIndex={fusionProgress >= 0.85 ? 0 : -1}
+            >
+              Changer
+            </button>
+          </div>
+        </div>
+      )}
+
+      {exploreFusion && !reciterFusion && (
+        <div
+          className="nav-desktop-classic-fusion-dock nav-explore-fusion-dock flex items-center gap-3 px-6 lg:px-8"
+          aria-hidden={fusionProgress < 0.05}
+          style={{ pointerEvents: fusionProgress >= 0.85 ? 'auto' : 'none' }}
+        >
+          <div className="mx-auto flex w-full max-w-6xl items-center gap-3">
+            <div className="nav-reciter-fusion-avatar flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-[#cea687]/35 bg-[#f0d1bc]/12 text-[#f0d1bc]">
+              <Headphones className="h-4 w-4" />
+            </div>
+            <div className="nav-reciter-fusion-meta min-w-0 flex-1">
+              <p className="text-[10px] uppercase font-bold tracking-wider text-[#f0d1bc]/90">
+                Explorer
+              </p>
+              <p className="truncate text-sm font-semibold text-[#f6f8fb]">Les voix</p>
+              <p className="truncate text-[11px] text-[#b4c0ce]">Récitateurs &amp; sourates</p>
+            </div>
+            <button
+              type="button"
+              onClick={exploreFusion.onExplore}
+              className="brand-button-primary shrink-0 rounded-xl px-3.5 py-2 text-[11px] font-bold transition-colors tap-feedback"
+              tabIndex={fusionProgress >= 0.85 ? 0 : -1}
+            >
+              Ouvrir
+            </button>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+};

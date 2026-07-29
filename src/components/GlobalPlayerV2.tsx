@@ -65,18 +65,18 @@ const MarqueeText: React.FC<{ text: string; className?: string }> = ({ text, cla
 const DENSITY_META: Record<PlayerBarDensity, { label: string; barClass: string; padClass: string }> = {
   compact: {
     label: 'Compacte',
-    barClass: 'md:min-h-[5.5rem]',
-    padClass: 'md:py-3 md:px-5',
+    barClass: 'md:min-h-[4.75rem]',
+    padClass: 'md:py-2 md:px-5',
   },
   comfortable: {
     label: 'Confort',
-    barClass: 'md:min-h-[6.75rem]',
-    padClass: 'md:py-4 md:px-6',
+    barClass: 'md:min-h-[5.5rem]',
+    padClass: 'md:py-2.5 md:px-6',
   },
   expanded: {
     label: 'Large',
-    barClass: 'md:min-h-[7.75rem]',
-    padClass: 'md:py-4 md:px-7',
+    barClass: 'md:min-h-[6.25rem]',
+    padClass: 'md:py-3 md:px-6',
   },
 };
 
@@ -115,6 +115,7 @@ export const GlobalPlayerV2: React.FC = () => {
   const [isMuted, setIsMuted] = useState(false);
   const [prevVolume, setPrevVolume] = useState(volume);
   const [showPlaylist, setShowPlaylist] = useState(false);
+  const [playlistClosing, setPlaylistClosing] = useState(false);
   const [showPersonalize, setShowPersonalize] = useState(false);
   const [showVolumePopover, setShowVolumePopover] = useState(false);
   const [docked, setDocked] = useState(false);
@@ -206,8 +207,15 @@ export const GlobalPlayerV2: React.FC = () => {
     const previous = document.body.style.overflow;
     document.body.style.overflow = 'hidden';
     const onKey = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') {
-        setShowPlaylist(false);
+      if (e.key !== 'Escape') return;
+      if (showPlaylist) {
+        setPlaylistClosing(true);
+        window.setTimeout(() => {
+          setShowPlaylist(false);
+          setPlaylistClosing(false);
+          setDrawerSearch('');
+        }, 240);
+      } else {
         setShowPersonalize(false);
       }
     };
@@ -221,7 +229,7 @@ export const GlobalPlayerV2: React.FC = () => {
   useEffect(() => {
     if (!showPlaylist) return;
     const id = window.requestAnimationFrame(() => {
-      currentSurahRowRef.current?.scrollIntoView({ block: 'center', behavior: 'smooth' });
+      currentSurahRowRef.current?.scrollIntoView({ block: 'nearest', behavior: 'auto' });
     });
     return () => window.cancelAnimationFrame(id);
   }, [showPlaylist]);
@@ -295,11 +303,23 @@ export const GlobalPlayerV2: React.FC = () => {
   const openPlaylist = () => {
     setShowPersonalize(false);
     setShowVolumePopover(false);
+    setPlaylistClosing(false);
     setShowPlaylist(true);
+  };
+
+  const closePlaylist = () => {
+    if (playlistClosing) return;
+    setPlaylistClosing(true);
+    window.setTimeout(() => {
+      setShowPlaylist(false);
+      setPlaylistClosing(false);
+      setDrawerSearch('');
+    }, 240);
   };
 
   const openPersonalize = () => {
     setShowPlaylist(false);
+    setPlaylistClosing(false);
     setShowVolumePopover(false);
     setShowPersonalize(true);
   };
@@ -531,11 +551,11 @@ export const GlobalPlayerV2: React.FC = () => {
 
         {/* Center controls — desktop */}
         <div
-          className={`hidden md:flex flex-col items-center gap-3.5 lg:gap-4 col-span-1 px-2 lg:px-4 ${
+          className={`hidden md:flex flex-col items-center gap-2 col-span-1 px-2 lg:px-4 ${
             remoteSession ? 'opacity-40' : ''
           }`}
         >
-          <div className="flex items-center gap-4 lg:gap-6">
+          <div className="flex items-center gap-3 lg:gap-4">
             <button
               type="button"
               disabled={Boolean(remoteSession)}
@@ -543,7 +563,7 @@ export const GlobalPlayerV2: React.FC = () => {
                 if (remoteSession) return;
                 jumpBy(-prefs.seekStep);
               }}
-              className="hidden lg:flex text-[#95a7ba] hover:text-[#f6f8fb] p-2.5 rounded-xl hover:bg-[#111d2d]/60 disabled:pointer-events-none items-center justify-center"
+              className="hidden lg:flex text-[#95a7ba] hover:text-[#f6f8fb] p-2 rounded-xl hover:bg-[#111d2d]/60 disabled:pointer-events-none items-center justify-center"
               title={`−${prefs.seekStep}s`}
             >
               <RotateCcw className="w-4 h-4" />
@@ -555,7 +575,7 @@ export const GlobalPlayerV2: React.FC = () => {
                 if (remoteSession) return;
                 playPrevTrack();
               }}
-              className="text-[#c8d1db] hover:text-[#f6f8fb] p-2.5 rounded-xl hover:bg-[#111d2d]/60 disabled:pointer-events-none"
+              className="text-[#c8d1db] hover:text-[#f6f8fb] p-2 rounded-xl hover:bg-[#111d2d]/60 disabled:pointer-events-none"
             >
               <SkipBack className="w-5 h-5 fill-current" />
             </button>
@@ -566,16 +586,16 @@ export const GlobalPlayerV2: React.FC = () => {
                 if (remoteSession) return;
                 togglePlay();
               }}
-              className={`w-14 h-14 rounded-full flex items-center justify-center tap-feedback disabled:pointer-events-none ${
+              className={`w-12 h-12 rounded-full flex items-center justify-center tap-feedback disabled:pointer-events-none ${
                 remoteSession
                   ? 'bg-[#30455c] text-[#95a7ba] shadow-none'
                   : `${theme.accent} text-[#111d2d] shadow-lg ${theme.accentShadow}`
               }`}
             >
               {playbackStatus === 'playing' ? (
-                <Pause className="w-6 h-6 fill-current" />
+                <Pause className="w-5 h-5 fill-current" />
               ) : (
-                <Play className="w-6 h-6 fill-current ml-0.5" />
+                <Play className="w-5 h-5 fill-current ml-0.5" />
               )}
             </button>
             <button
@@ -585,7 +605,7 @@ export const GlobalPlayerV2: React.FC = () => {
                 if (remoteSession) return;
                 playNextTrack();
               }}
-              className="text-[#c8d1db] hover:text-[#f6f8fb] p-2.5 rounded-xl hover:bg-[#111d2d]/60 disabled:pointer-events-none"
+              className="text-[#c8d1db] hover:text-[#f6f8fb] p-2 rounded-xl hover:bg-[#111d2d]/60 disabled:pointer-events-none"
             >
               <SkipForward className="w-5 h-5 fill-current" />
             </button>
@@ -596,7 +616,7 @@ export const GlobalPlayerV2: React.FC = () => {
                 if (remoteSession) return;
                 jumpBy(prefs.seekStep);
               }}
-              className="hidden lg:flex text-[#95a7ba] hover:text-[#f6f8fb] p-2.5 rounded-xl hover:bg-[#111d2d]/60 disabled:pointer-events-none items-center justify-center"
+              className="hidden lg:flex text-[#95a7ba] hover:text-[#f6f8fb] p-2 rounded-xl hover:bg-[#111d2d]/60 disabled:pointer-events-none items-center justify-center"
               title={`+${prefs.seekStep}s`}
             >
               <RotateCw className="w-4 h-4" />
@@ -1181,64 +1201,169 @@ export const GlobalPlayerV2: React.FC = () => {
         </div>
       )}
 
-      {/* ── Surah list drawer ── */}
+      {/* ── Surah list sheet — rises from the player bar ── */}
       {showPlaylist && (
-        <div className="fixed inset-0 z-[70] flex items-end sm:items-center justify-center" role="dialog" aria-modal="true">
-          <button type="button" className="absolute inset-0 bg-[#07111d]/70 backdrop-blur-sm" aria-label="Fermer" onClick={() => setShowPlaylist(false)} />
-          <div className="relative z-10 flex w-full max-w-lg max-h-[82dvh] flex-col overflow-hidden rounded-t-3xl sm:rounded-3xl border border-[#30455c] bg-[#07111d] shadow-2xl sm:mx-4 animate-[slide-up_0.28s_cubic-bezier(0.16,1,0.3,1)]">
-            <div className="flex justify-center pt-3 pb-1 sm:hidden">
-              <span className="h-1 w-10 rounded-full bg-[#46607b]" />
-            </div>
-            <div className="flex items-center justify-between px-5 py-3 border-b border-[#111d2d]">
-              <div>
-                <h3 className="font-bold text-[#f6f8fb]">Sourates</h3>
-                <p className="text-[11px] text-[#95a7ba]">
-                  {currentTrack.reciter.name} · {filteredSurahs.length}
-                  {selectedSurahIds.size > 0 ? ` · boucle ${selectedSurahIds.size}` : ''}
-                </p>
+        <div
+          className="fixed inset-0 z-[70] flex items-end justify-center md:pb-6"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="player-playlist-title"
+        >
+          <button
+            type="button"
+            className={`player-sheet-backdrop absolute inset-0 bg-[#07111d]/78 backdrop-blur-md ${playlistClosing ? 'is-closing' : ''}`}
+            aria-label="Fermer"
+            onClick={closePlaylist}
+          />
+          <div
+            className={`player-sheet-panel relative z-10 flex w-full max-w-xl max-h-[min(82dvh,42rem)] flex-col overflow-hidden rounded-t-[1.85rem] md:rounded-[1.85rem] border border-transparent bg-[#0a1420] md:mx-4 ${playlistClosing ? 'is-closing' : ''}`}
+          >
+            {/* Atmosphere header */}
+            <div className="relative isolate shrink-0 overflow-hidden border-b border-[#30455c]/40">
+              <div
+                className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_20%_0%,rgba(240,209,188,0.16),transparent_52%),linear-gradient(180deg,rgba(22,37,56,0.55)_0%,rgba(10,20,32,0.98)_100%)]"
+                aria-hidden
+              />
+              {coverUrl ? (
+                <img
+                  src={coverUrl}
+                  alt=""
+                  aria-hidden
+                  className="pointer-events-none absolute -right-6 -top-8 h-40 w-40 rounded-full object-cover opacity-[0.22] blur-[1px] saturate-[0.85] md:h-48 md:w-48"
+                  onError={(e) => {
+                    const img = e.currentTarget;
+                    if (coverFallback && img.src !== coverFallback) img.src = coverFallback;
+                  }}
+                />
+              ) : null}
+
+              <div className="relative z-10 px-5 pt-3 pb-4">
+                <div className="mb-3 flex justify-center md:hidden">
+                  <span className="h-1 w-10 rounded-full bg-[#cea687]/35" />
+                </div>
+
+                <div className="flex items-start justify-between gap-3">
+                  <div className="min-w-0">
+                    <span className="brand-chip inline-flex items-center rounded-full px-2.5 py-0.5 text-[9px] font-black uppercase tracking-[0.18em]">
+                      Playlist
+                    </span>
+                    <h3
+                      id="player-playlist-title"
+                      className="mt-2 text-[1.35rem] font-black tracking-tight text-[#f6f8fb] md:text-[1.5rem]"
+                    >
+                      Sourates
+                    </h3>
+                    <p className="mt-1 truncate text-[12px] font-medium text-[#aab7c5]">
+                      {currentTrack.reciter.name}
+                      <span className="text-[#5f7388]"> · </span>
+                      {filteredSurahs.length} titres
+                    </p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={closePlaylist}
+                    className="h-10 w-10 shrink-0 rounded-full border border-[#46607b]/55 bg-[#111d2d]/65 flex items-center justify-center text-[#aab7c5] hover:text-[#f6f8fb] hover:border-[#cea687]/35"
+                    aria-label="Fermer la liste"
+                  >
+                    <X className="w-4 h-4" />
+                  </button>
+                </div>
+
+                {/* Now playing strip */}
+                <button
+                  type="button"
+                  onClick={() => togglePlay()}
+                  className="mt-4 flex w-full items-center gap-3 rounded-2xl border border-[#cea687]/22 bg-[#07111d]/55 px-3 py-2.5 text-left tap-feedback hover:bg-[#07111d]/75"
+                >
+                  <div className="relative h-11 w-11 shrink-0 overflow-hidden rounded-xl border border-[#cea687]/28 bg-[#111d2d]">
+                    {coverUrl ? (
+                      <img
+                        src={coverUrl}
+                        alt=""
+                        className="h-full w-full object-cover"
+                        onError={(e) => {
+                          const img = e.currentTarget;
+                          if (coverFallback && img.src !== coverFallback) img.src = coverFallback;
+                        }}
+                      />
+                    ) : (
+                      <div className="flex h-full w-full items-center justify-center">
+                        <Disc className="h-4 w-4 text-[#cea687]" />
+                      </div>
+                    )}
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <p className="text-[10px] font-bold uppercase tracking-[0.14em] text-[#cea687]/90">
+                      En cours
+                    </p>
+                    <p className="mt-0.5 truncate text-sm font-bold text-[#f6f8fb]">
+                      {String(currentTrack.surah.id).padStart(3, '0')}. {currentTrack.surah.name}
+                    </p>
+                  </div>
+                  <span className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-full ${theme.accent} text-[#111d2d] shadow-md ${theme.accentShadow}`}>
+                    {playbackStatus === 'playing' ? (
+                      <Pause className="h-4 w-4 fill-current" />
+                    ) : (
+                      <Play className="h-4 w-4 fill-current ml-0.5" />
+                    )}
+                  </span>
+                </button>
               </div>
+            </div>
+
+            {/* Search + tools */}
+            <div className="shrink-0 px-4 pt-3 pb-2">
               <div className="flex items-center gap-2">
+                <div className="relative min-w-0 flex-1">
+                  <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-[#95a7ba]" />
+                  <input
+                    type="search"
+                    value={drawerSearch}
+                    onChange={(e) => setDrawerSearch(e.target.value)}
+                    placeholder="Nom, numéro ou arabe…"
+                    autoFocus
+                    className="w-full pl-10 pr-10 py-2.5 bg-[#111d2d]/88 border border-[#30455c]/65 rounded-2xl text-sm text-[#e6edf5] placeholder:text-[#8295aa] focus:outline-none focus:border-[#cea687]/40"
+                  />
+                  {drawerSearch && (
+                    <button
+                      type="button"
+                      onClick={() => setDrawerSearch('')}
+                      className="absolute right-2.5 top-1/2 -translate-y-1/2 h-7 w-7 rounded-full bg-[#162538] flex items-center justify-center text-[#aab7c5]"
+                    >
+                      <X className="w-3.5 h-3.5" />
+                    </button>
+                  )}
+                </div>
                 {selectedSurahIds.size > 0 && (
                   <button
                     type="button"
                     onClick={() => setSelectedSurahIds(new Set())}
-                    className="px-2.5 py-1.5 rounded-full border border-[#30455c] text-[10px] font-semibold text-[#aab7c5] hover:text-[#f6f8fb]"
+                    className="shrink-0 rounded-2xl border border-[#cea687]/28 bg-[#f0d1bc]/10 px-3 py-2.5 text-[11px] font-bold text-[#f1d4c1]"
                   >
-                    Tout lire
-                  </button>
-                )}
-                <button type="button" onClick={() => setShowPlaylist(false)} className="h-9 w-9 rounded-full border border-[#30455c] flex items-center justify-center text-[#aab7c5]">
-                  <X className="w-4 h-4" />
-                </button>
-              </div>
-            </div>
-            <div className="px-4 py-3">
-              <div className="relative">
-                <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-[#95a7ba]" />
-                <input
-                  type="search"
-                  value={drawerSearch}
-                  onChange={(e) => setDrawerSearch(e.target.value)}
-                  placeholder="Nom, numéro ou arabe…"
-                  autoFocus
-                  className="w-full pl-10 pr-10 py-2.5 bg-[#111d2d]/72 border border-[#30455c] rounded-2xl text-sm text-[#e6edf5] placeholder:text-[#8295aa] focus:outline-none"
-                />
-                {drawerSearch && (
-                  <button type="button" onClick={() => setDrawerSearch('')} className="absolute right-2.5 top-1/2 -translate-y-1/2 h-7 w-7 rounded-full bg-[#162538] flex items-center justify-center text-[#aab7c5]">
-                    <X className="w-3.5 h-3.5" />
+                    Boucle {selectedSurahIds.size}
                   </button>
                 )}
               </div>
             </div>
-            <div className="flex-1 overflow-y-auto px-2 pb-[calc(1rem+env(safe-area-inset-bottom,0px))]">
-              <ul>
+
+            {/* List */}
+            <div className="flex-1 overflow-y-auto px-3 pb-[calc(1.15rem+env(safe-area-inset-bottom,0px))] scrollbar-thin scrollbar-thumb-slate-800 scrollbar-track-transparent">
+              <ul className="flex flex-col gap-1.5">
                 {filteredSurahs.map((surah) => {
                   const isCurrent = currentTrack.surah.id === surah.id;
                   const isPlaying = isCurrent && playbackStatus === 'playing';
                   const inLoop = selectedSurahIds.has(surah.id);
                   return (
                     <li key={surah.id}>
-                      <div className={`flex items-center gap-2 rounded-2xl px-2 py-1.5 ${isCurrent ? theme.accentBgLight : 'hover:bg-[#111d2d]/80'}`}>
+                      <div
+                        className={`group flex items-center gap-1 rounded-2xl border px-2 py-1.5 transition-all ${
+                          isCurrent
+                            ? 'border-[#cea687]/30 bg-[#f0d1bc]/[0.08]'
+                            : inLoop
+                              ? 'border-[#cea687]/18 bg-[#f0d1bc]/[0.04]'
+                              : 'border-transparent hover:border-[#30455c]/50 hover:bg-[#111d2d]/80'
+                        }`}
+                      >
                         <button
                           ref={isCurrent ? currentSurahRowRef : undefined}
                           type="button"
@@ -1246,45 +1371,83 @@ export const GlobalPlayerV2: React.FC = () => {
                             if (isCurrent) togglePlay();
                             else {
                               playTrack(currentTrack.reciter, currentTrack.moshaf, surah);
-                              setShowPlaylist(false);
-                              setDrawerSearch('');
+                              closePlaylist();
                             }
                           }}
-                          className="min-w-0 flex-1 flex items-center gap-3 rounded-2xl px-1 py-1.5 text-left"
+                          className="min-w-0 flex-1 flex items-center gap-3 rounded-xl px-1 py-1.5 text-left"
                         >
-                          <span className={`h-9 w-9 rounded-xl flex items-center justify-center text-xs font-bold tabular-nums ${isCurrent ? `${theme.accentText} bg-[#07111d]/50` : 'bg-[#111d2d] text-[#95a7ba]'}`}>
-                            {String(surah.id).padStart(2, '0')}
+                          <span className="relative flex h-10 w-10 shrink-0 items-center justify-center">
+                            <span
+                              className={`absolute inset-0 rotate-45 rounded-[0.65rem] border ${
+                                isCurrent
+                                  ? 'border-[#cea687]/45 bg-[#07111d]/90'
+                                  : 'border-[#46607b]/70 bg-[#07111d] group-hover:border-[#95a7ba]'
+                              }`}
+                              aria-hidden
+                            />
+                            <span
+                              className={`relative z-10 text-[11px] font-bold tabular-nums ${
+                                isCurrent ? 'text-[#f1d4c1]' : 'text-[#aab7c5]'
+                              }`}
+                            >
+                              {isPlaying ? (
+                                <span className="flex gap-0.5 items-end justify-center h-3.5 w-3.5">
+                                  <span className="w-0.5 bg-[#f0d1bc] animate-[shimmer_0.6s_infinite_alternate] h-full rounded-full" />
+                                  <span className="w-0.5 bg-white/80 animate-[shimmer_0.6s_infinite_alternate] h-2/3 rounded-full" style={{ animationDelay: '0.2s' }} />
+                                  <span className="w-0.5 bg-[#7990a1] animate-[shimmer_0.6s_infinite_alternate] h-full rounded-full" style={{ animationDelay: '0.4s' }} />
+                                </span>
+                              ) : (
+                                surah.id
+                              )}
+                            </span>
                           </span>
+
                           <span className="min-w-0 flex-1">
-                            <span className={`block text-sm font-semibold truncate ${isCurrent ? theme.accentText : 'text-[#f6f8fb]'}`}>{surah.name}</span>
-                            <span className="block text-[11px] text-[#95a7ba] truncate">{surah.englishTranslation}</span>
+                            <span className={`block text-[13px] font-bold truncate leading-tight ${isCurrent ? 'text-[#f8fbff]' : 'text-[#f1f5f9]'}`}>
+                              {surah.name}
+                            </span>
+                            <span className="mt-0.5 block truncate text-[11px] font-medium text-[#95a7ba]">
+                              {surah.englishTranslation}
+                            </span>
                           </span>
+
                           {prefs.showArabic && (
-                            <span className={`font-serif text-lg arabic-text ${isCurrent ? theme.accentText : 'text-[#aab7c5]'}`}>{surah.arabicName}</span>
+                            <span
+                              className={`font-serif text-xl tracking-wide arabic-text shrink-0 hidden min-[400px]:inline ${
+                                isCurrent ? 'text-[#f1d4c1]' : 'text-[#c8d4e0]'
+                              }`}
+                            >
+                              {surah.arabicName}
+                            </span>
                           )}
-                          <span className={`h-8 w-8 rounded-full flex items-center justify-center ${isCurrent ? `${theme.accent} text-[#111d2d]` : 'opacity-0'}`}>
-                            {isPlaying ? <Pause className="w-3.5 h-3.5 fill-current" /> : <Play className="w-3.5 h-3.5 fill-current ml-0.5" />}
-                          </span>
                         </button>
+
                         <button
                           type="button"
                           onClick={() => toggleSurahInPlaylist(surah.id)}
-                          className={`shrink-0 inline-flex items-center gap-1 h-8 px-2.5 rounded-full text-[11px] font-semibold transition-all ${
+                          className={`mr-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-full transition-all ${
                             inLoop
                               ? `${theme.accent} text-[#111d2d]`
-                              : 'text-[#95a7ba] ring-1 ring-inset ring-[#46607b] hover:text-[#f6f8fb]'
+                              : 'text-[#8295aa] hover:bg-[#162538] hover:text-[#f6f8fb]'
                           }`}
                           aria-pressed={inLoop}
+                          title={inLoop ? 'Retirer de la boucle' : 'Ajouter à la boucle'}
                           aria-label={inLoop ? `Retirer ${surah.name} de la boucle` : `Ajouter ${surah.name} à la boucle`}
                         >
                           <Repeat className="w-3.5 h-3.5" />
-                          <span>{inLoop ? 'En boucle' : 'Boucle'}</span>
                         </button>
                       </div>
                     </li>
                   );
                 })}
               </ul>
+
+              {filteredSurahs.length === 0 && (
+                <div className="flex flex-col items-center justify-center gap-2 px-6 py-14 text-center">
+                  <Search className="h-5 w-5 text-[#5f7388]" />
+                  <p className="text-sm text-[#aab7c5]">Aucune sourate pour « {drawerSearch} »</p>
+                </div>
+              )}
             </div>
           </div>
         </div>
