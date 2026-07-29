@@ -946,7 +946,7 @@ const AppContent: React.FC = () => {
         onConnect={openAuthFromPrompt}
       />
       {/* Brand lives in the floating Navbar; keep an accessible page title */}
-      <h1 className="sr-only">Sawra — Lecteur Coranique Premium</h1>
+      <h1 className="sr-only">Sawra — Écouter le Coran en ligne, gratuit et sans publicité</h1>
 
       {/* 2. Main Tab Views */}
       <main
