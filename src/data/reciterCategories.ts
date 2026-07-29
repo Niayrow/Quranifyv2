@@ -2,7 +2,7 @@
 import { Landmark, MoonStar, Building2, Sparkles } from 'lucide-react';
 import { CURATED_RECITER_ID_SET } from './curatedReciters';
 
-export type ReciterCategoryId = 'makkah' | 'madinah' | 'riyadh' | 'quranify';
+export type ReciterCategoryId = 'makkah' | 'madinah' | 'riyadh' | 'sawra';
 
 export interface ReciterCategory {
   id: ReciterCategoryId;
@@ -98,8 +98,8 @@ export const RECITER_CATEGORIES: ReciterCategory[] = [
     ]),
   },
   {
-    id: 'quranify',
-    title: 'Choix Quranify',
+    id: 'sawra',
+    title: 'Choix Sawra',
     subtitle: 'Sélection éditoriale',
     arabicLabel: 'مختار',
     image: '/img/choix.jpg',

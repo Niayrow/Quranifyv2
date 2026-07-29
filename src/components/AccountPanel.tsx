@@ -63,7 +63,7 @@ export const AccountPanel: React.FC = () => {
                   Connecté
                 </p>
                 <h3 className="mt-1 text-lg font-black text-white truncate">
-                  {profile?.display_name || 'Compte Quranify'}
+                  {profile?.display_name || 'Compte Sawra'}
                 </h3>
                 <p className="mt-0.5 text-sm text-[#b4c0ce] truncate">{user.email}</p>
               </div>

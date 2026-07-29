@@ -1,6 +1,6 @@
 /**
  * Curated catalogue (~30 récitateurs) — mp3quran IDs.
- * Quranify picks are always included.
+ * Sawra picks are always included.
  * Mujawwad variants stay as moshafs on the same reciter (not separate entries).
  */
 export const CURATED_RECITER_IDS = [
@@ -40,7 +40,7 @@ export const CURATED_RECITER_IDS = [
   272, // Okasha Kameny
   84, // Fawaz Alkabi
 
-  // Choix Quranify (compléments)
+  // Choix Sawra (compléments)
   107, // Mohamed El-Louhaïdan
   245, // Mansour Al-Salemi
   254, // Badr Al-Turki

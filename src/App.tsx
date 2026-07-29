@@ -335,11 +335,11 @@ const LoadingHome: React.FC<{ progress: number; reciterCount: number }> = ({ pro
         <div className="flex flex-col items-center gap-4">
           <img
             src="/icons/sansfond.png"
-            alt="Quranify"
+            alt="Sawra"
             className="w-32 h-32 object-contain drop-shadow-[0_0_24px_rgba(0,0,0,0.45)]"
           />
           <div>
-            <h1 className="text-3xl font-black tracking-tight text-[#f6f8fb] m-0">QURANIFY</h1>
+            <h1 className="text-3xl font-black tracking-tight text-[#f6f8fb] m-0">SAWRA</h1>
             <p className="text-[11px] tracking-[0.22em] text-[#b4c0ce] font-bold uppercase mt-1">
               Lecteur Coranique Premium
             </p>
@@ -608,7 +608,7 @@ const AppContent: React.FC = () => {
       if (tab) {
         setActiveTab(mapLegacyTab(tab));
       }
-      if (url.protocol === 'quranify:' || url.pathname.includes('/surah')) {
+      if (url.protocol === 'sawra:' || url.protocol === 'quranify:' || url.pathname.includes('/surah')) {
         setActiveTab('listen');
       }
     } catch {
@@ -624,6 +624,7 @@ const AppContent: React.FC = () => {
         rawUrl.includes('tab=surahs') ||
         rawUrl.includes('tab=reciters') ||
         rawUrl.includes('tab=listen') ||
+        rawUrl.includes('sawra://surah') ||
         rawUrl.includes('quranify://surah')
       ) {
         setActiveTab('listen');
@@ -729,7 +730,7 @@ const AppContent: React.FC = () => {
   const dismissAuthPrompt = () => {
     setShowAuthPrompt(false);
     try {
-      sessionStorage.setItem('quranify_auth_prompt_dismissed', '1');
+      sessionStorage.setItem('sawra_auth_prompt_dismissed', '1');
     } catch {
       // ignore
     }
@@ -745,7 +746,10 @@ const AppContent: React.FC = () => {
   useEffect(() => {
     if (authLoading || user || showLoadingHome || authPromptShownRef.current) return;
     try {
-      if (sessionStorage.getItem('quranify_auth_prompt_dismissed') === '1') return;
+      if (
+        sessionStorage.getItem('sawra_auth_prompt_dismissed') === '1' ||
+        sessionStorage.getItem('quranify_auth_prompt_dismissed') === '1'
+      ) return;
     } catch {
       // ignore
     }
@@ -942,7 +946,7 @@ const AppContent: React.FC = () => {
         onConnect={openAuthFromPrompt}
       />
       {/* Brand lives in the floating Navbar; keep an accessible page title */}
-      <h1 className="sr-only">Quranify — Lecteur Coranique Premium</h1>
+      <h1 className="sr-only">Sawra — Lecteur Coranique Premium</h1>
 
       {/* 2. Main Tab Views */}
       <main
@@ -980,18 +984,18 @@ const AppContent: React.FC = () => {
               <div className="relative z-10 flex flex-col gap-5 px-4 py-5 sm:px-6 sm:py-6 md:px-10 md:py-10">
                 <div className="flex items-start justify-between gap-4">
                   <div className="min-w-0 max-w-[16rem] sm:max-w-sm">
-                    <p
-                      className="font-serif text-sm sm:text-lg text-[#f1d4c1]/90 arabic-text leading-none select-none"
-                      dir="rtl"
-                    >
-                      القرآن الكريم
+                    <p className="inline-flex items-center rounded-full border border-[#f0d1bc]/20 bg-[#f0d1bc]/8 px-3 py-1 text-[10px] font-black uppercase tracking-[0.22em] text-[#f1d4c1]/90 select-none">
+                      Sawra Audio
                     </p>
                     <h2 className="mt-2 text-[1.75rem] sm:text-[2.2rem] md:text-[3.4rem] font-black tracking-tight text-white leading-[1.02]">
-                      Une écoute
-                      <span className="block text-[#f1d4c1]">paisible et claire.</span>
+                      Le Coran,
+                      <span className="block text-[#f1d4c1]">simplement.</span>
                     </h2>
                     <p className="mt-3 text-[13px] sm:text-[14px] md:text-[15px] leading-relaxed text-[#d0d9e3]/78">
-                      Reprenez instantanément votre récitation, explorez de belles voix et gardez vos repères sur mobile.
+                      Reprenez votre lecture, trouvez une belle voix et restez concentré sur l'essentiel.
+                    </p>
+                    <p className="mt-3 inline-flex items-center rounded-full border border-[#f0d1bc]/18 bg-[#111d2d]/70 px-3 py-1.5 text-[11px] font-bold text-[#f1d4c1] shadow-[inset_0_1px_0_rgba(255,255,255,0.03)]">
+                      100% gratuit. Sans pub.
                     </p>
                   </div>
 

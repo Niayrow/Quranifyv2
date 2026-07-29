@@ -81,7 +81,7 @@ export const AboutPanel: React.FC = () => {
     {
       icon: Cloud,
       title: 'Compte GoMuslimLife',
-      body: 'Un seul compte pour Quranify et GoMuslimLife.com : favoris, reprise d’écoute et préférences synchronisés.',
+      body: 'Un seul compte pour Sawra et GoMuslimLife.com : favoris, reprise d’écoute et préférences synchronisés.',
     },
     {
       icon: Smartphone,
@@ -110,7 +110,7 @@ export const AboutPanel: React.FC = () => {
             <div>
               <div className="flex items-center gap-2">
                 <Compass className="w-4 h-4 text-[#f0d1bc]" />
-                <h2 className="text-xl font-bold text-[#f6f8fb]">À propos de Quranify</h2>
+                <h2 className="text-xl font-bold text-[#f6f8fb]">À propos de Sawra</h2>
               </div>
               <p className="mt-1 text-sm leading-relaxed text-[#b4c0ce]">
                 Lecteur coranique simple et rapide — web &amp; bientôt en app.
@@ -227,7 +227,7 @@ export const AboutPanel: React.FC = () => {
       </div>
 
       <div className="flex items-center justify-between text-[11px] text-[#95a7ba] gap-3 flex-wrap px-1">
-        <span>Quranify © {new Date().getFullYear()} · v{APP_VERSION}</span>
+        <span>Sawra © {new Date().getFullYear()} · v{APP_VERSION}</span>
         <a
           href="https://sofianeweb.fr"
           target="_blank"

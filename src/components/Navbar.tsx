@@ -120,7 +120,7 @@ export const Navbar: React.FC<NavbarProps> = ({
             <button
               type="button"
               onClick={() => setActiveTab('home')}
-              aria-label="Quranify — Accueil"
+              aria-label="Sawra — Accueil"
               className="group flex shrink-0 items-center gap-2.5 rounded-xl pl-0.5 pr-3 py-1 hover:bg-[#162538]/70 transition-colors tap-feedback"
             >
               <img
@@ -130,7 +130,7 @@ export const Navbar: React.FC<NavbarProps> = ({
                 draggable={false}
               />
               <span className="text-[15px] font-bold tracking-tight text-[#f6f8fb]">
-                Quranify
+                Sawra
               </span>
             </button>
             <span className="h-6 w-px shrink-0 bg-[#46607b]/45" aria-hidden />

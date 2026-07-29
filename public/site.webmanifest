@@ -1,6 +1,6 @@
 {
-  "name": "Quranify - Lecteur Coranique Premium",
-  "short_name": "Quranify",
+  "name": "Sawra - Lecteur Coranique Premium",
+  "short_name": "Sawra",
   "description": "Lecteur coranique mobile-first pour écouter les grands récitateurs du Coran en streaming, gérer vos favoris et reprendre l'écoute facilement.",
   "id": "/",
   "start_url": "/?source=pwa",
@@ -14,13 +14,8 @@
   "theme_color": "#020617",
   "categories": ["music", "education", "lifestyle"],
   "icons": [
-    { "src": "/icons/favicon-16x16.png",          "sizes": "16x16",   "type": "image/png" },
-    { "src": "/icons/favicon-32x32.png",          "sizes": "32x32",   "type": "image/png" },
-    { "src": "/icons/apple-touch-icon.png",       "sizes": "180x180", "type": "image/png" },
-    { "src": "/icons/android-chrome-192x192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
-    { "src": "/icons/android-chrome-512x512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
-    { "src": "/icons/maskable-192x192.png",       "sizes": "192x192", "type": "image/png", "purpose": "maskable" },
-    { "src": "/icons/maskable-512x512.png",       "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+    { "src": "/appicon.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "/appicon.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
   ],
   "shortcuts": [
     {
@@ -28,21 +23,21 @@
       "short_name": "Récitateurs",
       "description": "Ouvrir la recherche de récitateurs",
       "url": "/?tab=reciters",
-      "icons": [{ "src": "/icons/android-chrome-192x192.png", "sizes": "192x192", "type": "image/png" }]
+      "icons": [{ "src": "/appicon.png", "sizes": "512x512", "type": "image/png" }]
     },
     {
       "name": "Comparer A/B",
       "short_name": "Comparer",
       "description": "Comparer deux récitateurs sur la même sourate",
       "url": "/?tab=compare",
-      "icons": [{ "src": "/icons/android-chrome-192x192.png", "sizes": "192x192", "type": "image/png" }]
+      "icons": [{ "src": "/appicon.png", "sizes": "512x512", "type": "image/png" }]
     },
     {
       "name": "Favoris",
       "short_name": "Favoris",
       "description": "Retrouver vos récitateurs favoris",
       "url": "/?tab=favorites",
-      "icons": [{ "src": "/icons/android-chrome-192x192.png", "sizes": "192x192", "type": "image/png" }]
+      "icons": [{ "src": "/appicon.png", "sizes": "512x512", "type": "image/png" }]
     }
   ],
   "screenshots": [
@@ -65,7 +60,7 @@
       "sizes": "1200x630",
       "type": "image/png",
       "form_factor": "wide",
-      "label": "Quranify, lecteur coranique premium"
+      "label": "Sawra, lecteur coranique premium"
     }
   ]
 }

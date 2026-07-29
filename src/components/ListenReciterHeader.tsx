@@ -20,11 +20,11 @@ interface ListenReciterHeaderProps {
 
 function getReciterBadge(reciterId: number, moshafName?: string): string {
   const location = RECITER_CATEGORIES.find(
-    (c) => c.id !== 'quranify' && c.reciterIds.includes(reciterId),
+    (c) => c.id !== 'sawra' && c.reciterIds.includes(reciterId),
   );
   if (location) return location.title;
   const editorial = RECITER_CATEGORIES.find(
-    (c) => c.id === 'quranify' && c.reciterIds.includes(reciterId),
+    (c) => c.id === 'sawra' && c.reciterIds.includes(reciterId),
   );
   if (editorial) return editorial.title;
   return moshafName || 'Récitation';

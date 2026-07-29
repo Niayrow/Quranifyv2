@@ -43,7 +43,7 @@ export const AuthPromptModal: React.FC<AuthPromptModalProps> = ({
               </span>
               <div className="min-w-0">
                 <p className="text-[10px] font-black uppercase tracking-widest text-[#f0d1bc]">
-                  Compte Quranify
+                  Compte Sawra
                 </p>
                 <h2 id="auth-prompt-title" className="text-lg font-black text-[#f6f8fb] leading-tight">
                   Gardez vos favoris et votre lecture
