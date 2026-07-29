@@ -116,24 +116,31 @@ export const Navbar: React.FC<NavbarProps> = ({
 
         {/* Desktop row — brand | centered tabs | options */}
         <div className="relative hidden md:grid md:grid-cols-[1fr_auto_1fr] md:items-center md:gap-3">
-          <div className="flex items-center justify-start gap-3 min-w-0">
+          <div className="flex items-center justify-start gap-2.5 min-w-0">
             <button
               type="button"
               onClick={() => setActiveTab('home')}
               aria-label="Sawra — Accueil"
-              className="group flex shrink-0 items-center gap-2.5 rounded-xl pl-0.5 pr-3 py-1 hover:bg-[#162538]/70 transition-colors tap-feedback"
+              className="group/nav-brand flex shrink-0 items-center gap-2 rounded-2xl px-2 py-1.5 transition-all duration-300 hover:bg-[#162538]/60 tap-feedback"
             >
-              <img
-                src={LOGO_SRC}
-                alt=""
-                className="h-9 w-9 object-contain drop-shadow-[0_2px_12px_rgba(206,166,135,0.35)] transition-transform duration-300 group-hover:scale-105"
-                draggable={false}
-              />
-              <span className="text-[15px] font-bold tracking-tight text-[#f6f8fb]">
-                Sawra
+              <span className="relative flex h-11 w-11 shrink-0 items-center justify-center overflow-hidden rounded-[0.85rem] bg-[radial-gradient(circle_at_50%_35%,rgba(240,209,188,0.14),rgba(17,29,45,0.92)_68%)] ring-1 ring-[#cea687]/25 shadow-[0_6px_22px_rgba(206,166,135,0.14),inset_0_1px_0_rgba(255,255,255,0.06)]">
+                <img
+                  src={LOGO_SRC}
+                  alt=""
+                  className="h-[3.25rem] w-[3.25rem] object-contain scale-[1.18] drop-shadow-[0_2px_16px_rgba(206,166,135,0.42)] transition-transform duration-300 group-hover/nav-brand:scale-[1.22]"
+                  draggable={false}
+                />
+              </span>
+              <span className="flex flex-col items-start justify-center leading-none">
+                <span className="text-[1.05rem] font-black tracking-[-0.03em] text-[#f6f8fb]">
+                  Sawra
+                </span>
+                <span className="mt-1 text-[9px] font-bold uppercase tracking-[0.22em] text-[#cea687]/80">
+                  Coran
+                </span>
               </span>
             </button>
-            <span className="h-6 w-px shrink-0 bg-[#46607b]/45" aria-hidden />
+            <span className="h-7 w-px shrink-0 bg-[#46607b]/40" aria-hidden />
           </div>
 
           <div className="flex items-center justify-center gap-1">
@@ -141,7 +148,7 @@ export const Navbar: React.FC<NavbarProps> = ({
           </div>
 
           <div className="flex items-center justify-end gap-3 min-w-0">
-            <span className="h-6 w-px shrink-0 bg-[#46607b]/45" aria-hidden />
+            <span className="h-7 w-px shrink-0 bg-[#46607b]/40" aria-hidden />
             {renderTab('more', 'Options', Settings, { rotateActive: true })}
           </div>
         </div>
