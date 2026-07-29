@@ -5,7 +5,7 @@ import { ReciterCard } from './components/ReciterCard';
 import { Navbar } from './components/Navbar';
 import { 
   Search, Heart, AlertTriangle, Headphones, Play, ArrowRight,
-  Bookmark, Download, Disc, ExternalLink, Cloud, WifiOff, ChevronDown
+  Bookmark, Download, Disc, ExternalLink, Cloud, WifiOff, ChevronDown, History
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import type { Reciter } from './types';
@@ -18,6 +18,7 @@ import { AuthPromptModal } from './components/AuthPromptModal';
 import { useAuth } from './context/AuthContext';
 import { getAudioUrl } from './utils/audioUrl';
 import { useReciterNavFusion } from './hooks/useReciterNavFusion';
+import { pushRecentReciterId, readRecentReciterIds } from './utils/recentReciters';
 
 const SurahList = lazy(() => import('./components/SurahList').then((module) => ({ default: module.SurahList })));
 const GlobalPlayerV2 = lazy(() => import('./components/GlobalPlayerV2').then((module) => ({ default: module.GlobalPlayerV2 })));
@@ -625,10 +626,16 @@ const AppContent: React.FC = () => {
   const didRestoreListenStep = useRef(false);
   const authPromptShownRef = useRef(false);
   const [reciterFusionProgress, setReciterFusionProgress] = useState(0);
+  const [reciterFusionSpacerPx, setReciterFusionSpacerPx] = useState(0);
   const [exploreFusionProgress, setExploreFusionProgress] = useState(0);
+  const [recentReciterIds, setRecentReciterIds] = useState<number[]>(() => readRecentReciterIds());
 
   const handleReciterFusionProgress = useCallback((progress: number) => {
     setReciterFusionProgress(progress);
+  }, []);
+
+  const handleReciterFusionSpacer = useCallback((spacerPx: number) => {
+    setReciterFusionSpacerPx(spacerPx);
   }, []);
 
   const handleExploreFusionProgress = useCallback((progress: number) => {
@@ -759,6 +766,13 @@ const AppContent: React.FC = () => {
     }
   });
 
+  // Track recently listened reciters for the listen catalog
+  useEffect(() => {
+    const id = currentTrack?.reciter.id;
+    if (!id) return;
+    setRecentReciterIds(pushRecentReciterId(id));
+  }, [currentTrack?.reciter.id]);
+
   const toggleFavorite = (id: number, e: React.MouseEvent) => {
     e.stopPropagation();
     if (!user && !authLoading) {
@@ -861,11 +875,20 @@ const AppContent: React.FC = () => {
     return favoritedReciters;
   }, [favoritedReciters, deferredReciterSearch]);
 
+  const recentReciters = useMemo(() => {
+    if (deferredReciterSearch.trim() || !reciters.length || recentReciterIds.length === 0) return [];
+    const byId = new Map(reciters.map((r) => [r.id, r]));
+    return recentReciterIds
+      .map((id) => byId.get(id))
+      .filter((r): r is Reciter => Boolean(r));
+  }, [reciters, recentReciterIds, deferredReciterSearch]);
+
   const catalogReciters = useMemo(() => {
     if (deferredReciterSearch.trim()) return filteredReciters;
     const favoriteIds = new Set(favoritedReciters.map((r) => r.id));
-    return filteredReciters.filter((r) => !favoriteIds.has(r.id));
-  }, [filteredReciters, favoritedReciters, deferredReciterSearch]);
+    const recentIds = new Set(recentReciters.map((r) => r.id));
+    return filteredReciters.filter((r) => !favoriteIds.has(r.id) && !recentIds.has(r.id));
+  }, [filteredReciters, favoritedReciters, recentReciters, deferredReciterSearch]);
 
   const downloadedEntries = useMemo(() => {
     if (cachedUrls.size === 0 || reciters.length === 0) return [];
@@ -1390,14 +1413,41 @@ const AppContent: React.FC = () => {
                   </div>
                 ) : (
                   <div className="flex flex-col gap-5">
-                    {listenFavoritedReciters.length > 0 && (
+                    {recentReciters.length > 0 && (
+                      <section className="flex flex-col gap-3">
+                        <h3 className="text-sm font-bold text-[#d7e4ef] flex items-center gap-2">
+                          <History className="w-4 h-4 text-[#f0d1bc]" />
+                          Vos derniers récitateurs écoutés
+                        </h3>
+                        <div className="grid grid-cols-1 gap-3">
+                          {recentReciters.map((reciter) => (
+                            <ReciterCard
+                              key={`recent-${reciter.id}`}
+                              reciter={reciter}
+                              isSelected={activeReciter?.id === reciter.id}
+                              onSelect={() => handleSelectReciter(reciter)}
+                              isFavorite={favorites.includes(reciter.id)}
+                              onToggleFavorite={(e) => toggleFavorite(reciter.id, e)}
+                              searchQuery={reciterSearch}
+                            />
+                          ))}
+                        </div>
+                      </section>
+                    )}
+
+                    {(() => {
+                      const favoritedOnly = listenFavoritedReciters.filter(
+                        (r) => !recentReciters.some((recent) => recent.id === r.id),
+                      );
+                      if (favoritedOnly.length === 0) return null;
+                      return (
                       <section className="flex flex-col gap-3">
                         <h3 className="text-sm font-bold text-[#d7e4ef] flex items-center gap-2">
                           <Heart className="w-4 h-4 text-red-400 fill-current" />
                           Favoris
                         </h3>
                         <div className="grid grid-cols-1 gap-3">
-                          {listenFavoritedReciters.map((reciter) => (
+                          {favoritedOnly.map((reciter) => (
                             <ReciterCard
                               key={reciter.id}
                               reciter={reciter}
@@ -1410,12 +1460,15 @@ const AppContent: React.FC = () => {
                           ))}
                         </div>
                       </section>
-                    )}
+                      );
+                    })()}
 
                     <section className="flex flex-col gap-3">
                       {!deferredReciterSearch.trim() && (
                         <h3 className="text-sm font-bold text-[#d7e4ef]">
-                          {listenFavoritedReciters.length > 0 ? 'Tous les récitateurs' : 'Récitateurs'}
+                          {recentReciters.length > 0 || listenFavoritedReciters.length > 0
+                            ? 'Tous les récitateurs'
+                            : 'Récitateurs'}
                         </h3>
                       )}
                       <div className="grid grid-cols-1 gap-3">
@@ -1451,13 +1504,14 @@ const AppContent: React.FC = () => {
             )}
 
             {listenStep === 'surahs' && activeReciter && (
-              <div className="listen-surahs-panel flex flex-col gap-5 max-md:gap-0">
+              <div className="listen-surahs-panel flex flex-col gap-5 max-md:gap-0 md:gap-6">
                 <ListenReciterHeader
                   activeReciter={activeReciter}
                   activeMoshaf={activeMoshaf}
                   fusionEnabled={reciterFusionEnabled}
                   isFavorite={favorites.includes(activeReciter.id)}
                   onFusionProgressChange={handleReciterFusionProgress}
+                  onFusionSpacerChange={handleReciterFusionSpacer}
                   onChangeReciter={handleChangeReciter}
                   onSelectMoshaf={setActiveMoshaf}
                   onToggleFavorite={(e) => toggleFavorite(activeReciter.id, e)}
@@ -1470,6 +1524,14 @@ const AppContent: React.FC = () => {
                     <SurahList onChooseReciter={handleChangeReciter} />
                   </Suspense>
                 </div>
+
+                {reciterFusionEnabled && reciterFusionSpacerPx > 0 && (
+                  <div
+                    className="hidden md:block shrink-0 pointer-events-none"
+                    style={{ height: reciterFusionSpacerPx }}
+                    aria-hidden
+                  />
+                )}
               </div>
             )}
           </div>

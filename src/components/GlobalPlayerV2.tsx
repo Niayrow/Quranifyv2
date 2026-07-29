@@ -66,17 +66,17 @@ const DENSITY_META: Record<PlayerBarDensity, { label: string; barClass: string; 
   compact: {
     label: 'Compacte',
     barClass: 'md:min-h-[5.5rem]',
-    padClass: 'md:p-3 md:px-5',
+    padClass: 'md:py-3 md:px-5',
   },
   comfortable: {
     label: 'Confort',
     barClass: 'md:min-h-[6.75rem]',
-    padClass: 'md:p-4 md:px-6',
+    padClass: 'md:py-4 md:px-6',
   },
   expanded: {
     label: 'Large',
     barClass: 'md:min-h-[7.75rem]',
-    padClass: 'md:p-4 md:px-7',
+    padClass: 'md:py-4 md:px-7',
   },
 };
 
@@ -122,9 +122,6 @@ export const GlobalPlayerV2: React.FC = () => {
   const currentSurahRowRef = useRef<HTMLButtonElement | null>(null);
   const volumeWrapRef = useRef<HTMLDivElement | null>(null);
   const swipeStartYRef = useRef<number | null>(null);
-  const progressTrackRef = useRef<HTMLDivElement | null>(null);
-  const [progressArmed, setProgressArmed] = useState(false);
-  const [isScrubbing, setIsScrubbing] = useState(false);
   const [liveRemotePos, setLiveRemotePos] = useState(0);
   const remoteClockAnchorRef = useRef<{ pos: number; at: number; key: string } | null>(null);
 
@@ -135,17 +132,9 @@ export const GlobalPlayerV2: React.FC = () => {
   const progressPercent = duration > 0 ? (currentTime / duration) * 100 : 0;
   const speedOptions = [0.75, 0.9, 1, 1.25, 1.5, 1.75, 2];
 
-  const seekFromClientX = (clientX: number) => {
-    const track = progressTrackRef.current;
-    if (!track || duration <= 0) return;
-    const rect = track.getBoundingClientRect();
-    const ratio = Math.min(1, Math.max(0, (clientX - rect.left) / rect.width));
-    seekTo(ratio * duration);
-  };
-
   const onMiniBarTouchStart = (e: React.TouchEvent) => {
     const target = e.target as HTMLElement | null;
-    if (target?.closest('[role="slider"], input, [data-player-transport]')) {
+    if (target?.closest('input, [data-player-transport]')) {
       swipeStartYRef.current = null;
       return;
     }
@@ -335,7 +324,7 @@ export const GlobalPlayerV2: React.FC = () => {
       <div
         className={`fixed z-[50] transition-all duration-500 ease-[cubic-bezier(0.25,1,0.5,1)]
           max-md:left-0 max-md:right-0 max-md:w-full max-md:max-w-none
-          max-md:bottom-[calc(4.35rem-1px+env(safe-area-inset-bottom,0px))]
+          max-md:bottom-[calc(4.35rem+env(safe-area-inset-bottom,0px))]
           md:z-[51] rounded-none
           mobile-dock-chrome mobile-dock-player glass-panel-opaque
           border-0 max-md:border-t max-md:border-[#cea687]/18
@@ -392,7 +381,7 @@ export const GlobalPlayerV2: React.FC = () => {
 
         <div className="relative flex flex-col md:block">
         <div
-          className={`relative flex items-center gap-2 md:gap-0 md:grid md:grid-cols-[minmax(0,1.25fr)_minmax(0,1.5fr)_minmax(0,1.15fr)] md:items-center px-2 pt-2 pb-1.5 ${density.padClass} ${
+          className={`relative flex items-center gap-2 md:gap-4 lg:gap-6 md:grid md:grid-cols-[minmax(0,1fr)_minmax(260px,1.15fr)_minmax(0,1fr)] lg:grid-cols-[minmax(0,1fr)_minmax(260px,1.15fr)_minmax(0,1.35fr)] md:items-center px-2 pt-2 pb-1.5 ${density.padClass} ${
             remoteSession ? 'pt-2 md:pt-2.5' : ''
           }`}
         >
@@ -418,14 +407,15 @@ export const GlobalPlayerV2: React.FC = () => {
                 <img
                   src={coverUrl}
                   alt=""
-                  className="hidden md:block h-full w-full object-cover"
+                  className="h-full w-full object-cover"
                   onError={(e) => {
                     const img = e.currentTarget;
                     if (coverFallback && img.src !== coverFallback) img.src = coverFallback;
                   }}
                 />
-              ) : null}
-              <Disc className={`w-5 h-5 md:w-7 md:h-7 ${coverUrl ? 'md:hidden' : ''} ${theme.glowDisc} ${playbackStatus === 'playing' ? 'animate-[spin_10s_linear_infinite]' : ''}`} />
+              ) : (
+                <Disc className={`w-5 h-5 md:w-7 md:h-7 ${theme.glowDisc} ${playbackStatus === 'playing' ? 'animate-[spin_10s_linear_infinite]' : ''}`} />
+              )}
             </div>
             <span
               className="absolute -bottom-0.5 -right-0.5 flex h-4 w-4 items-center justify-center rounded-full border border-[#cea687]/35 bg-[#111d2d] text-[#f1d4c1]/90 shadow-md md:hidden"
@@ -447,7 +437,7 @@ export const GlobalPlayerV2: React.FC = () => {
               className="block text-sm font-semibold text-[#f6f8fb] leading-tight"
             />
             <p className="mt-0.5 flex items-center gap-1.5 min-w-0 text-[11px] leading-tight">
-              <MarqueeText text={currentTrack.reciter.name} className="flex-1 text-[#aab7c5]" />
+              <MarqueeText text={currentTrack.reciter.name} className="min-w-0 text-[#aab7c5]" />
               {!remoteSession && (
                 <>
                   <span className="shrink-0 text-[#5f7388]" aria-hidden>
@@ -541,11 +531,11 @@ export const GlobalPlayerV2: React.FC = () => {
 
         {/* Center controls — desktop */}
         <div
-          className={`hidden md:flex flex-col items-center gap-2.5 col-span-1 px-3 ${
+          className={`hidden md:flex flex-col items-center gap-3.5 lg:gap-4 col-span-1 px-2 lg:px-4 ${
             remoteSession ? 'opacity-40' : ''
           }`}
         >
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-4 lg:gap-6">
             <button
               type="button"
               disabled={Boolean(remoteSession)}
@@ -553,7 +543,7 @@ export const GlobalPlayerV2: React.FC = () => {
                 if (remoteSession) return;
                 jumpBy(-prefs.seekStep);
               }}
-              className="text-[#95a7ba] hover:text-[#f6f8fb] p-2 rounded-xl hover:bg-[#111d2d]/60 disabled:pointer-events-none"
+              className="hidden lg:flex text-[#95a7ba] hover:text-[#f6f8fb] p-2.5 rounded-xl hover:bg-[#111d2d]/60 disabled:pointer-events-none items-center justify-center"
               title={`−${prefs.seekStep}s`}
             >
               <RotateCcw className="w-4 h-4" />
@@ -565,7 +555,7 @@ export const GlobalPlayerV2: React.FC = () => {
                 if (remoteSession) return;
                 playPrevTrack();
               }}
-              className="text-[#c8d1db] hover:text-[#f6f8fb] p-2 rounded-xl hover:bg-[#111d2d]/60 disabled:pointer-events-none"
+              className="text-[#c8d1db] hover:text-[#f6f8fb] p-2.5 rounded-xl hover:bg-[#111d2d]/60 disabled:pointer-events-none"
             >
               <SkipBack className="w-5 h-5 fill-current" />
             </button>
@@ -595,7 +585,7 @@ export const GlobalPlayerV2: React.FC = () => {
                 if (remoteSession) return;
                 playNextTrack();
               }}
-              className="text-[#c8d1db] hover:text-[#f6f8fb] p-2 rounded-xl hover:bg-[#111d2d]/60 disabled:pointer-events-none"
+              className="text-[#c8d1db] hover:text-[#f6f8fb] p-2.5 rounded-xl hover:bg-[#111d2d]/60 disabled:pointer-events-none"
             >
               <SkipForward className="w-5 h-5 fill-current" />
             </button>
@@ -606,15 +596,15 @@ export const GlobalPlayerV2: React.FC = () => {
                 if (remoteSession) return;
                 jumpBy(prefs.seekStep);
               }}
-              className="text-[#95a7ba] hover:text-[#f6f8fb] p-2 rounded-xl hover:bg-[#111d2d]/60 disabled:pointer-events-none"
+              className="hidden lg:flex text-[#95a7ba] hover:text-[#f6f8fb] p-2.5 rounded-xl hover:bg-[#111d2d]/60 disabled:pointer-events-none items-center justify-center"
               title={`+${prefs.seekStep}s`}
             >
               <RotateCw className="w-4 h-4" />
             </button>
           </div>
           {!remoteSession && (
-            <div className="flex items-center gap-3 w-full max-w-md text-[11px] font-mono font-semibold text-[#95a7ba]">
-              <span className="w-10 text-right tabular-nums text-[#f1d4c1]">{formatTime(currentTime)}</span>
+            <div className="flex items-center gap-3.5 w-full max-w-xl text-[11px] font-mono font-semibold text-[#95a7ba]">
+              <span className="w-11 text-right tabular-nums text-[#f1d4c1]">{formatTime(currentTime)}</span>
               <input
                 type="range"
                 min={0}
@@ -625,22 +615,22 @@ export const GlobalPlayerV2: React.FC = () => {
                 className="flex-1 h-1.5 rounded-full appearance-none cursor-pointer bg-[#162538]"
                 style={{ background: theme.sliderBackground(progressPercent), accentColor: theme.sliderAccentColor }}
               />
-              <span className="w-10 tabular-nums">{formatTime(duration)}</span>
+              <span className="w-11 tabular-nums">{formatTime(duration)}</span>
             </div>
           )}
         </div>
 
         {/* Right tools — desktop */}
-        <div className="hidden md:flex items-center justify-end gap-2 shrink-0 md:col-span-1">
+        <div className="hidden md:flex items-center justify-end gap-2 shrink-0 md:col-span-1 min-w-0">
           {prefs.showQuickControls && (
-            <div className="flex items-center gap-1.5 shrink-0">
+            <div className="hidden xl:flex items-center gap-1.5 shrink-0">
               <button
                 type="button"
                 onClick={cycleRepeat}
-                className={`h-10 w-10 rounded-xl border text-[10px] font-bold flex items-center justify-center shrink-0 transition-colors ${
+                className={`h-9 w-9 rounded-xl text-[10px] font-bold flex items-center justify-center shrink-0 transition-colors ${
                   repeatMode !== 'all'
-                    ? `${theme.accentBgLight} ${theme.accentBorderActive} ${theme.accentText}`
-                    : 'border-[#30455c] text-[#95a7ba] hover:text-[#f6f8fb] hover:bg-[#111d2d]/60'
+                    ? `border ${theme.accentBgLight} ${theme.accentBorderActive} ${theme.accentText}`
+                    : 'text-[#95a7ba] hover:text-[#f6f8fb] hover:bg-[#111d2d]/60'
                 }`}
                 title={`Répétition : ${repeatMode}`}
               >
@@ -650,10 +640,10 @@ export const GlobalPlayerV2: React.FC = () => {
               <button
                 type="button"
                 onClick={() => setPlaybackSpeed(playbackSpeed >= 1.5 ? 1 : playbackSpeed >= 1.25 ? 1.5 : playbackSpeed >= 1 ? 1.25 : 1)}
-                className={`h-10 px-2.5 rounded-xl border text-[11px] font-bold flex items-center gap-1.5 shrink-0 transition-colors ${
+                className={`h-9 px-2 rounded-xl text-[11px] font-bold flex items-center gap-1 shrink-0 transition-colors ${
                   playbackSpeed !== 1
-                    ? `${theme.accentBgLight} ${theme.accentBorderActive} ${theme.accentText}`
-                    : 'border-[#30455c] text-[#95a7ba] hover:text-[#f6f8fb] hover:bg-[#111d2d]/60'
+                    ? `border ${theme.accentBgLight} ${theme.accentBorderActive} ${theme.accentText}`
+                    : 'text-[#95a7ba] hover:text-[#f6f8fb] hover:bg-[#111d2d]/60'
                 }`}
                 title="Vitesse"
               >
@@ -662,7 +652,7 @@ export const GlobalPlayerV2: React.FC = () => {
               </button>
 
               {sleepTimer !== null && (
-                <span className={`h-10 px-2.5 rounded-xl border text-[11px] font-mono font-bold flex items-center gap-1.5 shrink-0 ${theme.accentBgLight} ${theme.accentBorder} ${theme.accentText}`}>
+                <span className={`h-9 px-2 rounded-xl border text-[11px] font-mono font-bold flex items-center gap-1 shrink-0 ${theme.accentBgLight} ${theme.accentBorder} ${theme.accentText}`}>
                   <Clock className="w-3.5 h-3.5 animate-pulse" />
                   {formatSleepTime(sleepTimer)}
                 </span>
@@ -670,11 +660,11 @@ export const GlobalPlayerV2: React.FC = () => {
             </div>
           )}
 
-          <div ref={volumeWrapRef} className="relative flex items-center gap-2 shrink-0 pl-1">
+          <div ref={volumeWrapRef} className="relative hidden lg:flex items-center gap-1.5 shrink-0">
             <button
               type="button"
               onClick={toggleMute}
-              className={`h-10 w-10 rounded-xl flex items-center justify-center border border-[#30455c] text-[#aab7c5] hover:text-[#f6f8fb] hover:bg-[#111d2d]/70 shrink-0 ${
+              className={`h-9 w-9 rounded-xl flex items-center justify-center text-[#aab7c5] hover:text-[#f6f8fb] hover:bg-[#111d2d]/70 shrink-0 ${
                 isMuted || volume === 0 ? theme.accentText : ''
               }`}
               title="Volume"
@@ -693,112 +683,44 @@ export const GlobalPlayerV2: React.FC = () => {
                 setVolume(v);
                 setIsMuted(v === 0);
               }}
-              className="w-24 xl:w-28 h-1.5 rounded appearance-none cursor-pointer bg-[#162538] shrink-0"
+              className="w-16 xl:w-24 h-1.5 rounded appearance-none cursor-pointer bg-[#162538] shrink-0"
               style={{ accentColor: theme.sliderAccentColor }}
               aria-label="Volume"
             />
           </div>
 
-          <button
-            type="button"
-            onClick={openPlaylist}
-            className={`h-10 w-10 rounded-xl flex items-center justify-center border border-[#30455c] text-[#aab7c5] hover:text-[#f6f8fb] hover:bg-[#111d2d]/70 shrink-0 ${theme.accentTextHover}`}
-            title="Sourates"
-          >
-            <ListMusic className="w-4.5 h-4.5" />
-          </button>
-          <button
-            type="button"
-            onClick={openPersonalize}
-            className={`h-10 w-10 rounded-xl flex items-center justify-center border border-[#30455c] text-[#aab7c5] hover:text-[#f6f8fb] hover:bg-[#111d2d]/70 shrink-0 ${
-              showPersonalize ? `${theme.accentText} ${theme.accentBgLight}` : ''
-            }`}
-            title="Personnaliser"
-          >
-            <SlidersHorizontal className="w-4.5 h-4.5" />
-          </button>
-          <button
-            type="button"
-            onClick={() => setDocked((d) => !d)}
-            className={`h-8 w-8 rounded-lg flex items-center justify-center border text-[#95a7ba] hover:text-[#f6f8fb] transition-colors shrink-0 ${
-              docked ? 'border-[#cea687]/40 bg-[#f0d1bc]/10 text-[#f0d1bc]' : 'border-[#30455c] hover:bg-[#111d2d]/70'
-            }`}
-            title={docked ? 'Détacher la barre' : 'Coller en bas'}
-          >
-            {docked ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
-          </button>
-        </div>
-        </div>
-
-        {/* Mobile progress — integrated at the bottom edge of the docked player */}
-        {!remoteSession && (
-          <div
-            className="group/progress relative z-30 mx-3 mb-1.5 touch-none cursor-pointer md:hidden"
-            onPointerEnter={() => setProgressArmed(true)}
-            onPointerLeave={() => {
-              if (!isScrubbing) setProgressArmed(false);
-            }}
-            onPointerDown={(e) => {
-              e.stopPropagation();
-              setIsScrubbing(true);
-              setProgressArmed(true);
-              e.currentTarget.setPointerCapture(e.pointerId);
-              seekFromClientX(e.clientX);
-            }}
-            onPointerMove={(e) => {
-              if (!e.currentTarget.hasPointerCapture(e.pointerId)) return;
-              seekFromClientX(e.clientX);
-            }}
-            onPointerUp={(e) => {
-              if (e.currentTarget.hasPointerCapture(e.pointerId)) {
-                e.currentTarget.releasePointerCapture(e.pointerId);
-              }
-              setIsScrubbing(false);
-              setProgressArmed(false);
-            }}
-            onPointerCancel={() => {
-              setIsScrubbing(false);
-              setProgressArmed(false);
-            }}
-            onKeyDown={(e) => {
-              if (e.key === 'ArrowRight') jumpBy(prefs.seekStep);
-              if (e.key === 'ArrowLeft') jumpBy(-prefs.seekStep);
-            }}
-            role="slider"
-            aria-label="Progression de la sourate"
-            aria-valuemin={0}
-            aria-valuemax={Math.round(duration || 0)}
-            aria-valuenow={Math.round(currentTime)}
-            tabIndex={0}
-          >
-            <div
-              ref={progressTrackRef}
-              className={`relative w-full rounded-full bg-[#1b2d43]/90 transition-[height] duration-150 ${
-                progressArmed || isScrubbing ? 'h-[5px]' : 'h-[3px]'
-              }`}
+          <div className="flex items-center gap-1.5 shrink-0">
+            <button
+              type="button"
+              onClick={openPlaylist}
+              className={`h-9 w-9 rounded-xl flex items-center justify-center text-[#aab7c5] hover:text-[#f6f8fb] hover:bg-[#111d2d]/70 shrink-0 ${theme.accentTextHover}`}
+              title="Sourates"
             >
-              <div
-                className="absolute inset-y-0 left-0 rounded-full transition-[width] duration-100"
-                style={{
-                  width: `${progressPercent}%`,
-                  background: `linear-gradient(90deg, ${theme.sliderAccentColor}aa, ${theme.sliderAccentColor})`,
-                }}
-              />
-              <span
-                className={`pointer-events-none absolute top-1/2 h-2.5 w-2.5 -translate-x-1/2 -translate-y-1/2 rounded-full border border-white/70 shadow-[0_0_0_2px_rgba(7,17,29,0.45)] transition-all duration-150 ${
-                  progressArmed || isScrubbing
-                    ? 'h-3.5 w-3.5 opacity-100'
-                    : 'opacity-70'
-                }`}
-                style={{
-                  left: `${progressPercent}%`,
-                  backgroundColor: theme.sliderAccentColor,
-                }}
-                aria-hidden
-              />
-            </div>
+              <ListMusic className="w-4.5 h-4.5" />
+            </button>
+            <button
+              type="button"
+              onClick={openPersonalize}
+              className={`h-9 w-9 rounded-xl flex items-center justify-center text-[#aab7c5] hover:text-[#f6f8fb] hover:bg-[#111d2d]/70 shrink-0 ${
+                showPersonalize ? `${theme.accentText} ${theme.accentBgLight}` : ''
+              }`}
+              title="Personnaliser"
+            >
+              <SlidersHorizontal className="w-4.5 h-4.5" />
+            </button>
+            <button
+              type="button"
+              onClick={() => setDocked((d) => !d)}
+              className={`hidden lg:flex h-9 w-9 rounded-xl items-center justify-center text-[#95a7ba] hover:text-[#f6f8fb] hover:bg-[#111d2d]/70 transition-colors shrink-0 ${
+                docked ? `${theme.accentText} ${theme.accentBgLight}` : ''
+              }`}
+              title={docked ? 'Détacher la barre' : 'Coller en bas'}
+            >
+              {docked ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+            </button>
           </div>
-        )}
+        </div>
+        </div>
         </div>
       </div>
 
@@ -879,8 +801,22 @@ export const GlobalPlayerV2: React.FC = () => {
               <p className="text-sm text-[#aab7c5] mt-2">{currentTrack.reciter.name}</p>
             </button>
 
-            <div className="mx-auto mb-7 w-28 h-28 rounded-full border border-[#30455c] bg-[#111d2d]/60 flex items-center justify-center">
-              <Disc className={`w-12 h-12 ${theme.glowDisc} ${playbackStatus === 'playing' ? 'animate-[spin_12s_linear_infinite]' : ''}`} />
+            <div className="mx-auto mb-7 w-28 h-28 rounded-full border border-[#cea687]/35 bg-[#111d2d]/60 overflow-hidden shadow-[0_0_28px_rgba(206,166,135,0.12)]">
+              {coverUrl ? (
+                <img
+                  src={coverUrl}
+                  alt=""
+                  className="h-full w-full object-cover"
+                  onError={(e) => {
+                    const img = e.currentTarget;
+                    if (coverFallback && img.src !== coverFallback) img.src = coverFallback;
+                  }}
+                />
+              ) : (
+                <div className="flex h-full w-full items-center justify-center">
+                  <Disc className={`w-12 h-12 ${theme.glowDisc} ${playbackStatus === 'playing' ? 'animate-[spin_12s_linear_infinite]' : ''}`} />
+                </div>
+              )}
             </div>
 
             <div className="w-full mb-6">

@@ -95,7 +95,7 @@ export const SurahList: React.FC<SurahListProps> = ({ onChooseReciter }) => {
   }
 
   return (
-    <div className="flex flex-col gap-4">
+    <div className="flex flex-col gap-4 md:gap-5">
       <div className="relative">
         <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-[#95a7ba]" />
         <input
@@ -154,7 +154,7 @@ export const SurahList: React.FC<SurahListProps> = ({ onChooseReciter }) => {
           <p className="text-[#b4c0ce]">Aucune sourate trouvée pour &quot;{searchQuery}&quot;</p>
         </div>
       ) : (
-        <div className="flex flex-col gap-2">
+        <div className="flex flex-col gap-2 md:gap-3">
           {filteredSurahs.map((surah) => {
             const isCurrent =
               currentTrack?.surah.id === surah.id &&
@@ -172,7 +172,7 @@ export const SurahList: React.FC<SurahListProps> = ({ onChooseReciter }) => {
             return (
               <div
                 key={surah.id}
-                className={`group relative p-3 min-[390px]:p-4 rounded-2xl flex items-center gap-2.5 transition-all duration-200 border ${
+                className={`group relative p-3 min-[390px]:p-4 md:px-5 md:py-4 rounded-2xl flex items-center gap-2.5 md:gap-4 transition-all duration-200 border ${
                   isCurrent
                     ? 'surah-row-active'
                     : isDimmed
@@ -185,7 +185,7 @@ export const SurahList: React.FC<SurahListProps> = ({ onChooseReciter }) => {
                 <button
                   type="button"
                   onClick={() => handlePlay(surah)}
-                  className="flex items-center gap-3 min-w-0 flex-1 text-left tap-feedback"
+                  className="flex items-center gap-3 md:gap-4 min-w-0 flex-1 text-left tap-feedback"
                 >
                   <div className="relative flex items-center justify-center w-10 h-10 min-[390px]:w-11 min-[390px]:h-11 shrink-0">
                     <div

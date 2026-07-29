@@ -1,5 +1,5 @@
 import React, { useMemo } from 'react';
-import { Disc, Heart, Play } from 'lucide-react';
+import { Disc, Heart, Play, RefreshCw } from 'lucide-react';
 import type { Reciter, Moshaf } from '../types';
 import { getGeneratedReciterAvatar, getReciterImage } from '../utils/images';
 import { useReciterNavFusion } from '../hooks/useReciterNavFusion';
@@ -11,6 +11,7 @@ interface ListenReciterHeaderProps {
   fusionEnabled: boolean;
   isFavorite: boolean;
   onFusionProgressChange: (progress: number) => void;
+  onFusionSpacerChange?: (spacerPx: number) => void;
   onChangeReciter: () => void;
   onSelectMoshaf: (moshaf: Moshaf) => void;
   onToggleFavorite: (e: React.MouseEvent) => void;
@@ -44,21 +45,29 @@ export const ListenReciterHeader: React.FC<ListenReciterHeaderProps> = ({
   fusionEnabled,
   isFavorite,
   onFusionProgressChange,
+  onFusionSpacerChange,
   onChangeReciter,
   onSelectMoshaf,
   onToggleFavorite,
   onPlay,
   sectionRef,
 }) => {
-  const { progress, setHeaderRef, setSentinelRef } = useReciterNavFusion(fusionEnabled);
+  const { progress, spacerPx, setHeaderRef, setSentinelRef } = useReciterNavFusion(fusionEnabled);
 
   React.useEffect(() => {
     onFusionProgressChange(progress);
   }, [progress, onFusionProgressChange]);
 
   React.useEffect(() => {
-    if (!fusionEnabled) onFusionProgressChange(0);
-  }, [fusionEnabled, onFusionProgressChange]);
+    onFusionSpacerChange?.(spacerPx);
+  }, [spacerPx, onFusionSpacerChange]);
+
+  React.useEffect(() => {
+    if (!fusionEnabled) {
+      onFusionProgressChange(0);
+      onFusionSpacerChange?.(0);
+    }
+  }, [fusionEnabled, onFusionProgressChange, onFusionSpacerChange]);
 
   const badge = useMemo(
     () => getReciterBadge(activeReciter.id, activeMoshaf?.name),
@@ -91,12 +100,12 @@ export const ListenReciterHeader: React.FC<ListenReciterHeaderProps> = ({
         style={fusionEnabled ? mergeStyle : undefined}
       >
         <div
-          className={`listen-surah-header-inner reciter-fusion-card brand-card backdrop-blur-md flex flex-col gap-3 rounded-none md:rounded-2xl md:shadow-lg md:shadow-black/20 md:gap-4 md:p-5 ${
+          className={`listen-surah-header-inner reciter-fusion-card brand-card backdrop-blur-md flex flex-col gap-3 px-4 py-3 rounded-none md:rounded-2xl md:shadow-lg md:shadow-black/20 md:gap-5 md:p-6 max-[390px]:gap-2 max-[390px]:px-3 max-[390px]:py-2 ${
             controlsDisabled ? 'pointer-events-none' : ''
           }`}
         >
-          <div className="flex items-center gap-3.5 pt-0 md:gap-4">
-            <div className="reciter-fusion-avatar relative h-[5.5rem] w-[5.5rem] shrink-0 overflow-hidden rounded-full border-2 border-[#cea687]/40 bg-[#111d2d] shadow-[0_0_28px_rgba(206,166,135,0.18)] sm:h-24 sm:w-24">
+          <div className="flex items-center gap-3.5 pt-0 md:gap-5 max-[390px]:gap-2">
+            <div className="reciter-fusion-avatar relative h-[5.5rem] w-[5.5rem] shrink-0 overflow-hidden rounded-full border-2 border-[#cea687]/40 bg-[#111d2d] shadow-[0_0_28px_rgba(206,166,135,0.18)] sm:h-24 sm:w-24 max-[390px]:h-14 max-[390px]:w-14 max-[390px]:border">
               <img
                 src={getReciterImage(activeReciter)}
                 alt={activeReciter.name}
@@ -112,21 +121,24 @@ export const ListenReciterHeader: React.FC<ListenReciterHeaderProps> = ({
             </div>
 
             <div className="min-w-0 flex-1">
-              <span className="brand-chip reciter-fusion-step inline-flex max-w-full items-center truncate rounded-full px-2.5 py-1 text-[10px] font-black uppercase tracking-[0.14em]">
+              <span className="brand-chip reciter-fusion-step inline-flex max-w-full items-center truncate rounded-full px-2.5 py-1 text-[10px] font-black uppercase tracking-[0.14em] max-[390px]:px-1.5 max-[390px]:py-0 max-[390px]:text-[8px] max-[390px]:tracking-[0.1em]">
                 {badge}
               </span>
-              <h2 className="reciter-fusion-name mt-2 text-xl font-black leading-tight tracking-tight text-[#f6f8fb] sm:text-2xl">
+              <h2 className="reciter-fusion-name mt-2 text-xl font-black leading-tight tracking-tight text-[#f6f8fb] sm:text-2xl md:mt-2.5 max-[390px]:mt-0.5 max-[390px]:text-base">
                 {activeReciter.name}
               </h2>
               {(availableSurahCount > 0 || (activeMoshaf && badge !== activeMoshaf.name)) && (
-                <p className="mt-1 truncate text-xs font-medium text-[#b4c0ce]">
-                  {activeMoshaf && badge !== activeMoshaf.name ? activeMoshaf.name : null}
-                  {activeMoshaf && badge !== activeMoshaf.name && availableSurahCount > 0 ? (
-                    <span className="px-1 text-[#5f7388]">·</span>
-                  ) : null}
+                <p className="mt-1 truncate text-xs font-medium text-[#b4c0ce] md:mt-1.5 md:text-sm max-[390px]:mt-0.5 max-[390px]:text-[10px]">
+                  <span className="max-[390px]:hidden">
+                    {activeMoshaf && badge !== activeMoshaf.name ? activeMoshaf.name : null}
+                    {activeMoshaf && badge !== activeMoshaf.name && availableSurahCount > 0 ? (
+                      <span className="px-1 text-[#5f7388]">·</span>
+                    ) : null}
+                  </span>
                   {availableSurahCount > 0 ? (
                     <span className="font-semibold text-[#95a7ba]">
-                      {availableSurahCount} sourates disponibles
+                      <span className="max-[390px]:hidden">{availableSurahCount} sourates disponibles</span>
+                      <span className="hidden max-[390px]:inline">{availableSurahCount} sourates</span>
                     </span>
                   ) : null}
                 </p>
@@ -134,14 +146,14 @@ export const ListenReciterHeader: React.FC<ListenReciterHeaderProps> = ({
             </div>
           </div>
 
-          <div className="flex items-center gap-2 reciter-fusion-actions">
+          <div className="flex items-center gap-2 reciter-fusion-actions md:gap-3 max-[390px]:gap-1.5">
             <button
               type="button"
               onClick={onPlay}
-              className="brand-button-primary inline-flex flex-1 items-center justify-center gap-2 rounded-full px-5 py-3 text-sm font-bold tap-feedback"
+              className="brand-button-primary inline-flex flex-1 md:flex-none md:min-w-[11rem] items-center justify-center gap-2 rounded-full px-5 py-3 text-sm font-bold tap-feedback md:px-7 md:py-3.5 max-[390px]:gap-1 max-[390px]:px-3 max-[390px]:py-2 max-[390px]:text-xs"
               tabIndex={controlsDisabled ? -1 : 0}
             >
-              <Play className="h-4 w-4 fill-current" />
+              <Play className="h-4 w-4 fill-current max-[390px]:h-3.5 max-[390px]:w-3.5" />
               Lire
             </button>
             <button
@@ -149,22 +161,25 @@ export const ListenReciterHeader: React.FC<ListenReciterHeaderProps> = ({
               onClick={onToggleFavorite}
               aria-label={isFavorite ? 'Retirer des favoris' : 'Ajouter aux favoris'}
               aria-pressed={isFavorite}
-              className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-full border transition-colors tap-feedback ${
+              className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-full border transition-colors tap-feedback md:h-12 md:w-12 max-[390px]:h-9 max-[390px]:w-9 ${
                 isFavorite
                   ? 'border-[#cea687]/45 bg-[#f0d1bc]/16 text-[#f0d1bc]'
                   : 'border-[#46607b] bg-[#162538]/70 text-[#aab7c5] hover:text-[#f6f8fb]'
               }`}
               tabIndex={controlsDisabled ? -1 : 0}
             >
-              <Heart className={`h-4 w-4 ${isFavorite ? 'fill-current' : ''}`} />
+              <Heart className={`h-4 w-4 max-[390px]:h-3.5 max-[390px]:w-3.5 ${isFavorite ? 'fill-current' : ''}`} />
             </button>
             <button
               type="button"
               onClick={onChangeReciter}
-              className="brand-button-secondary shrink-0 rounded-full px-4 py-3 text-[12px] font-bold transition-colors tap-feedback"
+              aria-label="Changer de récitateur"
+              title="Changer de récitateur"
+              className="brand-button-secondary shrink-0 rounded-full px-4 py-3 text-[12px] font-bold transition-colors tap-feedback md:px-5 md:py-3.5 md:text-[13px] max-[390px]:flex max-[390px]:h-9 max-[390px]:w-9 max-[390px]:items-center max-[390px]:justify-center max-[390px]:px-0 max-[390px]:py-0"
               tabIndex={controlsDisabled ? -1 : 0}
             >
-              Changer
+              <span className="max-[390px]:hidden">Changer</span>
+              <RefreshCw className="hidden h-3.5 w-3.5 max-[390px]:block" aria-hidden />
             </button>
           </div>
         </div>

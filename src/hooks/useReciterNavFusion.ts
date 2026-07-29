@@ -1,21 +1,31 @@
 import { useEffect, useRef, useState, useCallback } from 'react';
 
 const DESKTOP_MIN = 768;
-const MERGE_SCROLL_RANGE = 460;
+/** Scroll distance after sticky to complete the navbar merge (long pages). */
+export const MERGE_SCROLL_RANGE = 460;
+/** Faster merge when the page is short — less empty spacer needed. */
+const SHORT_MERGE_SCROLL_RANGE = 280;
+/** Extra room so the header can reach sticky before the merge scroll. */
+const FUSION_STICK_BUFFER = 100;
 
 /**
  * Desktop-only fusion progress (0→1).
  * Uses a sentinel placed just above the sticky header:
  * once the sentinel leaves the viewport under the navbar, further scroll
  * drives the merge into the navbar capsule.
- * Mobile keeps a simple sticky header (no fusion — too unstable with sticky + transforms).
+ *
+ * Short pages get a compact merge range + a minimal bottom spacer so fusion
+ * can finish. Long pages keep the full MERGE_SCROLL_RANGE and spacerPx = 0.
  */
 export function useReciterNavFusion(enabled: boolean) {
   const [progress, setProgress] = useState(0);
+  const [spacerPx, setSpacerPx] = useState(0);
   const headerRef = useRef<HTMLElement | null>(null);
   const sentinelRef = useRef<HTMLDivElement | null>(null);
   const stuckRef = useRef(false);
   const stickScrollY = useRef(0);
+  const mergeRangeRef = useRef(MERGE_SCROLL_RANGE);
+  const spacerPxRef = useRef(0);
   const rafId = useRef<number | null>(null);
 
   const setHeaderRef = useCallback((node: HTMLElement | null) => {
@@ -27,15 +37,47 @@ export function useReciterNavFusion(enabled: boolean) {
   }, []);
 
   useEffect(() => {
+    spacerPxRef.current = spacerPx;
+  }, [spacerPx]);
+
+  useEffect(() => {
     if (!enabled) {
       stuckRef.current = false;
       stickScrollY.current = 0;
+      mergeRangeRef.current = MERGE_SCROLL_RANGE;
       setProgress(0);
+      setSpacerPx(0);
+      spacerPxRef.current = 0;
       return;
     }
 
+    const updateSpacer = () => {
+      if (window.innerWidth < DESKTOP_MIN) {
+        if (spacerPxRef.current !== 0) {
+          spacerPxRef.current = 0;
+          setSpacerPx(0);
+        }
+        mergeRangeRef.current = MERGE_SCROLL_RANGE;
+        return;
+      }
+
+      const currentSpacer = spacerPxRef.current;
+      const rawMaxScroll = Math.max(
+        0,
+        document.documentElement.scrollHeight - window.innerHeight - currentSpacer,
+      );
+      const needed = SHORT_MERGE_SCROLL_RANGE + FUSION_STICK_BUFFER;
+      const nextSpacer = Math.max(0, Math.ceil(needed - rawMaxScroll));
+
+      if (Math.abs(nextSpacer - currentSpacer) >= 8) {
+        spacerPxRef.current = nextSpacer;
+        setSpacerPx(nextSpacer);
+      }
+    };
+
     const compute = () => {
       rafId.current = null;
+      updateSpacer();
 
       if (window.innerWidth < DESKTOP_MIN) {
         stuckRef.current = false;
@@ -61,10 +103,13 @@ export function useReciterNavFusion(enabled: boolean) {
       if (!stuckRef.current) {
         stuckRef.current = true;
         stickScrollY.current = scrollY;
+        // Short pages (spacer active): faster merge. Long pages: full range.
+        mergeRangeRef.current =
+          spacerPxRef.current > 0 ? SHORT_MERGE_SCROLL_RANGE : MERGE_SCROLL_RANGE;
       }
 
       const delta = Math.max(0, scrollY - stickScrollY.current);
-      const next = Math.min(1, delta / MERGE_SCROLL_RANGE);
+      const next = Math.min(1, delta / Math.max(1, mergeRangeRef.current));
       setProgress((prev) => (Math.abs(prev - next) < 0.008 ? prev : next));
     };
 
@@ -77,12 +122,21 @@ export function useReciterNavFusion(enabled: boolean) {
     window.addEventListener('scroll', schedule, { passive: true });
     window.addEventListener('resize', schedule, { passive: true });
 
+    const ro = typeof ResizeObserver !== 'undefined'
+      ? new ResizeObserver(schedule)
+      : null;
+    if (ro) {
+      ro.observe(document.documentElement);
+      if (headerRef.current) ro.observe(headerRef.current);
+    }
+
     return () => {
       window.removeEventListener('scroll', schedule);
       window.removeEventListener('resize', schedule);
+      ro?.disconnect();
       if (rafId.current != null) window.cancelAnimationFrame(rafId.current);
     };
   }, [enabled]);
 
-  return { progress, setHeaderRef, setSentinelRef };
+  return { progress, spacerPx, setHeaderRef, setSentinelRef };
 }
