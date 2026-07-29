@@ -1,7 +1,7 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { useAudio } from '../context/AudioContext';
 import {
-  Play, Pause, SkipForward, SkipBack, ChevronDown, Volume2, VolumeX,
+  Play, Pause, SkipForward, SkipBack, ChevronDown, ChevronUp, Volume2, VolumeX,
   Disc, ListMusic, Search, X, Settings, Sparkles, Check, Moon, Repeat,
   Repeat1, Clock, RotateCcw, RotateCw, Gauge, Maximize2, SlidersHorizontal, MonitorSmartphone
 } from 'lucide-react';
@@ -117,6 +117,7 @@ export const GlobalPlayerV2: React.FC = () => {
   const [showPlaylist, setShowPlaylist] = useState(false);
   const [showPersonalize, setShowPersonalize] = useState(false);
   const [showVolumePopover, setShowVolumePopover] = useState(false);
+  const [docked, setDocked] = useState(false);
   const [drawerSearch, setDrawerSearch] = useState('');
   const currentSurahRowRef = useRef<HTMLButtonElement | null>(null);
   const volumeWrapRef = useRef<HTMLDivElement | null>(null);
@@ -332,20 +333,27 @@ export const GlobalPlayerV2: React.FC = () => {
     <>
       {/* ── Mini bar: full-width on mobile, large desktop player bar ── */}
       <div
-        className={`fixed z-[50] transition-all duration-300
-          left-0 right-0 w-full max-w-none translate-x-0
-          bottom-[calc(4.35rem-1px+env(safe-area-inset-bottom,0px))]
-          md:left-8 md:right-8 md:translate-x-0 md:w-auto md:mx-auto md:max-w-6xl md:bottom-6 md:z-[51]
-          rounded-none md:rounded-[1.75rem]
+        className={`fixed z-[50] transition-all duration-500 ease-[cubic-bezier(0.25,1,0.5,1)]
+          max-md:left-0 max-md:right-0 max-md:w-full max-md:max-w-none
+          max-md:bottom-[calc(4.35rem-1px+env(safe-area-inset-bottom,0px))]
+          md:z-[51] rounded-none
           mobile-dock-chrome mobile-dock-player glass-panel-opaque
           border-0 max-md:border-t max-md:border-[#cea687]/18
           md:border md:border-[#cea687]/25
-          md:shadow-[0_24px_60px_rgba(0,0,0,0.45),0_0_40px_rgba(206,166,135,0.08)]
           overflow-hidden md:overflow-hidden
           ${remoteSession && !isExpanded ? 'md:min-h-0' : density.barClass}
           ${prefs.showGlow ? `bg-gradient-to-r ${theme.accentGlow} via-transparent to-transparent` : ''}
           ${isExpanded ? 'opacity-0 pointer-events-none translate-y-3 md:opacity-100 md:pointer-events-auto md:translate-y-0' : 'opacity-100'}
         `}
+        style={typeof window !== 'undefined' && window.matchMedia('(min-width:768px)').matches ? {
+          bottom: docked ? 0 : '1.5rem',
+          left: docked ? 0 : '2rem',
+          right: docked ? 0 : '2rem',
+          maxWidth: docked ? '100%' : '72rem',
+          marginInline: 'auto',
+          borderRadius: docked ? 0 : '1.75rem',
+          boxShadow: docked ? 'none' : '0 24px 60px rgba(0,0,0,0.45), 0 0 40px rgba(206,166,135,0.08)',
+        } : undefined}
         onTouchStart={onMiniBarTouchStart}
         onTouchEnd={onMiniBarTouchEnd}
       >
@@ -708,6 +716,16 @@ export const GlobalPlayerV2: React.FC = () => {
             title="Personnaliser"
           >
             <SlidersHorizontal className="w-4.5 h-4.5" />
+          </button>
+          <button
+            type="button"
+            onClick={() => setDocked((d) => !d)}
+            className={`h-8 w-8 rounded-lg flex items-center justify-center border text-[#95a7ba] hover:text-[#f6f8fb] transition-colors shrink-0 ${
+              docked ? 'border-[#cea687]/40 bg-[#f0d1bc]/10 text-[#f0d1bc]' : 'border-[#30455c] hover:bg-[#111d2d]/70'
+            }`}
+            title={docked ? 'Détacher la barre' : 'Coller en bas'}
+          >
+            {docked ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
           </button>
         </div>
         </div>
