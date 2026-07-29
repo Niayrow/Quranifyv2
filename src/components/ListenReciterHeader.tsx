@@ -167,36 +167,41 @@ export const ListenReciterHeader: React.FC<ListenReciterHeaderProps> = ({
               Changer
             </button>
           </div>
-
-          {activeReciter.moshaf.length > 1 && (
-            <div className="reciter-fusion-riwaya flex flex-col gap-1.5 border-t border-[#30455c]/40 pt-3">
-              <span className="flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-widest text-[#95a7ba]">
-                <Disc className="h-3 w-3 text-[#f0d1bc]" />
-                Riwaya
-              </span>
-              <div className="flex flex-wrap gap-1.5">
-                {activeReciter.moshaf.map((m) => {
-                  const isMoshafSelected = activeMoshaf?.id === m.id;
-                  return (
-                    <button
-                      key={m.id}
-                      type="button"
-                      onClick={() => onSelectMoshaf(m)}
-                      className={`rounded-lg border px-2.5 py-1 text-[10px] font-medium transition-all tap-feedback ${
-                        isMoshafSelected
-                          ? 'border-[#cea687]/35 bg-[#f0d1bc]/12 text-[#f1d4c1]'
-                          : 'border-[#30455c] bg-[#111d2d]/68 text-[#b4c0ce] hover:bg-[#162538] hover:text-[#e6edf5]'
-                      }`}
-                      tabIndex={progress >= 0.35 ? -1 : 0}
-                    >
-                      {m.name}
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
-          )}
         </div>
+
+        {activeReciter.moshaf.length > 1 && (
+          <div
+            className={`reciter-fusion-riwaya mt-2.5 flex flex-col gap-1.5 rounded-none border border-[#30455c]/35 bg-[#111d2d]/55 px-3.5 py-3 md:rounded-2xl ${
+              controlsDisabled ? 'pointer-events-none' : ''
+            }`}
+            aria-hidden={progress >= 0.08}
+          >
+            <span className="flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-widest text-[#95a7ba]">
+              <Disc className="h-3 w-3 text-[#f0d1bc]" />
+              Riwaya
+            </span>
+            <div className="flex flex-wrap gap-1.5">
+              {activeReciter.moshaf.map((m) => {
+                const isMoshafSelected = activeMoshaf?.id === m.id;
+                return (
+                  <button
+                    key={m.id}
+                    type="button"
+                    onClick={() => onSelectMoshaf(m)}
+                    className={`rounded-lg border px-2.5 py-1 text-[10px] font-medium transition-all tap-feedback ${
+                      isMoshafSelected
+                        ? 'border-[#cea687]/35 bg-[#f0d1bc]/12 text-[#f1d4c1]'
+                        : 'border-[#30455c] bg-[#111d2d]/68 text-[#b4c0ce] hover:bg-[#162538] hover:text-[#e6edf5]'
+                    }`}
+                    tabIndex={progress >= 0.08 ? -1 : 0}
+                  >
+                    {m.name}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        )}
       </section>
     </>
   );

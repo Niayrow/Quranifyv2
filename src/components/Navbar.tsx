@@ -12,12 +12,18 @@ export interface ReciterNavFusionProps {
   onChangeReciter: () => void;
 }
 
+export interface ExploreNavFusionProps {
+  progress: number;
+  onExplore: () => void;
+}
+
 interface NavbarProps {
   activeTab: NavTabId;
   setActiveTab: (tab: NavTabId) => void;
   /** When true on mobile, navbar visually docks with the player bar */
   dockWithPlayer?: boolean;
   reciterFusion?: ReciterNavFusionProps | null;
+  exploreFusion?: ExploreNavFusionProps | null;
 }
 
 const LOGO_SRC = '/icons/sansfond.png';
@@ -27,6 +33,7 @@ export const Navbar: React.FC<NavbarProps> = ({
   setActiveTab,
   dockWithPlayer = false,
   reciterFusion = null,
+  exploreFusion = null,
 }) => {
   const mainTabs: Array<{ id: NavTabId; label: string; icon: typeof Home }> = [
     { id: 'home', label: 'Accueil', icon: Home },
@@ -87,11 +94,13 @@ export const Navbar: React.FC<NavbarProps> = ({
     );
   };
 
-  const fusionProgress = reciterFusion?.progress ?? 0;
-  const isFusing = Boolean(reciterFusion) && fusionProgress > 0.01;
-  const fusionStyle = reciterFusion
-    ? ({ ['--fusion-p' as string]: String(fusionProgress) } as React.CSSProperties)
-    : undefined;
+  const fusionProgress = reciterFusion?.progress ?? exploreFusion?.progress ?? 0;
+  const isFusing =
+    (Boolean(reciterFusion) || Boolean(exploreFusion)) && fusionProgress > 0.01;
+  const fusionStyle =
+    reciterFusion || exploreFusion
+      ? ({ ['--fusion-p' as string]: String(fusionProgress) } as React.CSSProperties)
+      : undefined;
 
   return (
     <nav
@@ -189,6 +198,33 @@ export const Navbar: React.FC<NavbarProps> = ({
               tabIndex={fusionProgress >= 0.85 ? 0 : -1}
             >
               Changer
+            </button>
+          </div>
+        )}
+
+        {exploreFusion && !reciterFusion && (
+          <div
+            className="nav-explore-fusion-dock nav-reciter-fusion-dock hidden md:flex items-center gap-3 px-3 pb-3 pt-0"
+            aria-hidden={fusionProgress < 0.05}
+            style={{ pointerEvents: fusionProgress >= 0.85 ? 'auto' : 'none' }}
+          >
+            <div className="nav-reciter-fusion-avatar flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-[#cea687]/35 bg-[#f0d1bc]/12 text-[#f0d1bc]">
+              <Headphones className="h-4 w-4" />
+            </div>
+            <div className="nav-reciter-fusion-meta min-w-0 flex-1">
+              <p className="text-[10px] uppercase font-bold tracking-wider text-[#f0d1bc]/90">
+                Explorer
+              </p>
+              <p className="text-sm font-semibold text-[#f6f8fb] truncate">Les voix</p>
+              <p className="text-[11px] text-[#b4c0ce] truncate">Récitateurs &amp; sourates</p>
+            </div>
+            <button
+              type="button"
+              onClick={exploreFusion.onExplore}
+              className="brand-button-primary shrink-0 rounded-xl px-3.5 py-2 text-[11px] font-bold transition-colors tap-feedback"
+              tabIndex={fusionProgress >= 0.85 ? 0 : -1}
+            >
+              Ouvrir
             </button>
           </div>
         )}

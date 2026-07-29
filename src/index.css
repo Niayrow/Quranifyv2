@@ -675,6 +675,39 @@
     filter: blur(calc(var(--fusion-p) * 1.8px));
   }
 
+  .home-explore-fusion {
+    --fusion-p: 0;
+  }
+
+  .home-explore-fusion-card {
+    transform: translateY(calc(var(--fusion-p) * -88px))
+      scale(calc(1 - var(--fusion-p) * 0.42));
+    transform-origin: top center;
+    opacity: calc(1 - max(0, (var(--fusion-p) - 0.28) / 0.72));
+    border-radius: calc(1.35rem - var(--fusion-p) * 0.45rem);
+    box-shadow:
+      0 14px 30px rgba(0, 0, 0, calc(0.22 * (1 - var(--fusion-p)))),
+      0 0 calc(18px + var(--fusion-p) * 24px)
+        rgba(206, 166, 135, calc(0.1 + var(--fusion-p) * 0.16));
+    border-color: rgba(
+      206,
+      166,
+      135,
+      calc(0.2 + var(--fusion-p) * 0.22)
+    );
+    will-change: transform, opacity;
+    transition: none;
+    filter: blur(calc(var(--fusion-p) * 1.8px));
+  }
+
+  .home-explore-fusion.is-fusing .home-explore-fusion-card {
+    pointer-events: none;
+  }
+
+  .nav-reciter-fusion-shell.is-fusing .nav-explore-fusion-dock {
+    display: flex;
+  }
+
   .listen-surah-header.is-fusing .reciter-fusion-card {
     pointer-events: none;
   }
@@ -685,10 +718,25 @@
     overflow: hidden;
   }
 
+  /* Riwaya sits outside the fusion card — collapse early so it never
+     inflates the scale/translate morph into the navbar. */
   .reciter-fusion-riwaya {
-    max-height: calc((1 - min(1, var(--fusion-p) / 0.28)) * 10rem);
-    opacity: calc(1 - min(1, var(--fusion-p) / 0.28));
+    max-height: 12rem;
+    opacity: 1;
     overflow: hidden;
+    transform-origin: top center;
+    will-change: max-height, opacity, transform, margin;
+  }
+
+  .listen-surah-header.is-fusing .reciter-fusion-riwaya {
+    max-height: 0;
+    opacity: 0;
+    margin-top: 0;
+    padding-top: 0;
+    padding-bottom: 0;
+    border-width: 0;
+    transform: translateY(calc(var(--fusion-p) * -10px)) scale(0.96);
+    pointer-events: none;
   }
 
   .reciter-fusion-step {

@@ -17,6 +17,7 @@ import { CloudSync } from './components/CloudSync';
 import { AuthPromptModal } from './components/AuthPromptModal';
 import { useAuth } from './context/AuthContext';
 import { getAudioUrl } from './utils/audioUrl';
+import { useReciterNavFusion } from './hooks/useReciterNavFusion';
 
 const SurahList = lazy(() => import('./components/SurahList').then((module) => ({ default: module.SurahList })));
 const GlobalPlayerV2 = lazy(() => import('./components/GlobalPlayerV2').then((module) => ({ default: module.GlobalPlayerV2 })));
@@ -543,6 +544,56 @@ const MakkahMomentCard: React.FC<((typeof MAKKAH_MOMENTS)[number] & { featured?:
   );
 };
 
+const HomeExploreFusionButton: React.FC<{
+  enabled: boolean;
+  onExplore: () => void;
+  onFusionProgressChange: (progress: number) => void;
+}> = ({ enabled, onExplore, onFusionProgressChange }) => {
+  const { progress, setHeaderRef, setSentinelRef } = useReciterNavFusion(enabled);
+
+  React.useEffect(() => {
+    onFusionProgressChange(progress);
+  }, [progress, onFusionProgressChange]);
+
+  React.useEffect(() => {
+    if (!enabled) onFusionProgressChange(0);
+  }, [enabled, onFusionProgressChange]);
+
+  const mergeStyle = {
+    ['--fusion-p' as string]: String(progress),
+  } as React.CSSProperties;
+
+  return (
+    <div className="min-w-0">
+      <div ref={setSentinelRef} className="hidden md:block h-0 w-full overflow-hidden" aria-hidden />
+      <div
+        ref={(node) => setHeaderRef(node)}
+        className={`home-explore-fusion relative md:sticky md:top-24 md:z-20 ${
+          enabled && progress > 0.01 ? 'is-fusing' : ''
+        }`}
+        style={enabled ? mergeStyle : undefined}
+      >
+        <button
+          type="button"
+          onClick={onExplore}
+          className="home-explore-fusion-card group w-full rounded-[1.35rem] border border-[#46607b]/35 bg-[#132031]/72 px-4 py-3.5 text-left transition-colors hover:bg-[#162538]/88 tap-feedback"
+          tabIndex={progress >= 0.92 ? -1 : 0}
+        >
+          <span className="inline-flex h-9 w-9 items-center justify-center rounded-full bg-[#20334a] text-[#f1d4c1]">
+            <Headphones className="h-4 w-4" />
+          </span>
+          <span className="mt-3 block text-[14px] font-black text-[#f6f8fb]">
+            Explorer les voix
+          </span>
+          <span className="mt-1 block text-[11px] leading-relaxed text-[#9fb1c3]">
+            Récitateurs, sourates et découverte en quelques gestes.
+          </span>
+        </button>
+      </div>
+    </div>
+  );
+};
+
 const AppContent: React.FC = () => {
   const {
     reciters,
@@ -574,13 +625,19 @@ const AppContent: React.FC = () => {
   const didRestoreListenStep = useRef(false);
   const authPromptShownRef = useRef(false);
   const [reciterFusionProgress, setReciterFusionProgress] = useState(0);
+  const [exploreFusionProgress, setExploreFusionProgress] = useState(0);
 
   const handleReciterFusionProgress = useCallback((progress: number) => {
     setReciterFusionProgress(progress);
   }, []);
 
+  const handleExploreFusionProgress = useCallback((progress: number) => {
+    setExploreFusionProgress(progress);
+  }, []);
+
   const reciterFusionEnabled =
     activeTab === 'listen' && listenStep === 'surahs' && Boolean(activeReciter);
+  const exploreFusionEnabled = activeTab === 'home';
 
   const applyDeepLink = useCallback((rawUrl: string) => {
     try {
@@ -875,6 +932,11 @@ const AppContent: React.FC = () => {
     }
   };
 
+  const handleExploreVoices = () => {
+    setActiveTab('listen');
+    setListenStep('reciters');
+  };
+
   const handleSelectReciter = (reciter: Reciter) => {
     setCategoryModalId(null);
     setActiveReciter(reciter);
@@ -966,20 +1028,16 @@ const AppContent: React.FC = () => {
         >
         
         {activeTab === 'home' && (
-          <div className="flex flex-col gap-4 md:gap-7 pb-16 sm:pb-20 max-md:pt-4">
-            <section className="relative isolate overflow-hidden rounded-[1.75rem] md:rounded-[2.4rem] ring-1 ring-[#30455c]/90 brand-card">
+          <div className="flex flex-col gap-4 md:gap-7 pb-16 sm:pb-20 max-md:pt-4 md:pt-5">
+            <section className="relative isolate rounded-[1.75rem] md:rounded-[2.4rem] ring-1 ring-[#30455c]/90 brand-card">
               <div
-                className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,rgba(240,209,188,0.24),transparent_42%),radial-gradient(circle_at_85%_18%,rgba(121,144,161,0.24),transparent_28%),linear-gradient(160deg,#162538_0%,#0f1a29_46%,#08111c_100%)]"
+                className="pointer-events-none absolute inset-0 overflow-hidden rounded-[inherit]"
                 aria-hidden="true"
-              />
-              <div
-                className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-[#f0d1bc]/45 to-transparent"
-                aria-hidden="true"
-              />
-              <div
-                className="hero-glow-pulse pointer-events-none absolute -right-10 top-10 h-36 w-36 rounded-full bg-[radial-gradient(circle,rgba(240,209,188,0.22),transparent_70%)] blur-3xl"
-                aria-hidden="true"
-              />
+              >
+                <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,rgba(240,209,188,0.24),transparent_42%),radial-gradient(circle_at_85%_18%,rgba(121,144,161,0.24),transparent_28%),linear-gradient(160deg,#162538_0%,#0f1a29_46%,#08111c_100%)]" />
+                <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-[#f0d1bc]/45 to-transparent" />
+                <div className="hero-glow-pulse absolute -right-10 top-10 h-36 w-36 rounded-full bg-[radial-gradient(circle,rgba(240,209,188,0.22),transparent_70%)] blur-3xl" />
+              </div>
 
               <div className="relative z-10 flex flex-col gap-5 px-4 py-5 sm:px-6 sm:py-6 md:px-10 md:py-10">
                 <div className="flex items-start justify-between gap-4">
@@ -1031,21 +1089,11 @@ const AppContent: React.FC = () => {
                     </span>
                   </button>
 
-                  <button
-                    type="button"
-                    onClick={() => handleNavigate('listen')}
-                    className="group rounded-[1.35rem] border border-[#46607b]/35 bg-[#132031]/72 px-4 py-3.5 text-left transition-colors hover:bg-[#162538]/88 tap-feedback"
-                  >
-                    <span className="inline-flex h-9 w-9 items-center justify-center rounded-full bg-[#20334a] text-[#f1d4c1]">
-                      <Headphones className="h-4 w-4" />
-                    </span>
-                    <span className="mt-3 block text-[14px] font-black text-[#f6f8fb]">
-                      Explorer les voix
-                    </span>
-                    <span className="mt-1 block text-[11px] leading-relaxed text-[#9fb1c3]">
-                      Récitateurs, sourates et découverte en quelques gestes.
-                    </span>
-                  </button>
+                  <HomeExploreFusionButton
+                    enabled={exploreFusionEnabled}
+                    onExplore={handleExploreVoices}
+                    onFusionProgressChange={handleExploreFusionProgress}
+                  />
                 </div>
 
                 <div className="grid grid-cols-3 gap-2 text-left">
@@ -1727,6 +1775,14 @@ const AppContent: React.FC = () => {
                 reciter: activeReciter,
                 activeMoshaf,
                 onChangeReciter: handleChangeReciter,
+              }
+            : null
+        }
+        exploreFusion={
+          exploreFusionEnabled
+            ? {
+                progress: exploreFusionProgress,
+                onExplore: handleExploreVoices,
               }
             : null
         }
