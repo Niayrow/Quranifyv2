@@ -2,8 +2,8 @@ import React, { useState, useMemo } from 'react';
 import { useAudio } from '../context/AudioContext';
 import type { Surah } from '../types';
 import {
-  Search, Play, Pause, Disc, CloudDownload, CheckCircle2,
-  Repeat1, Repeat, X,
+  Search, Play, Pause, Disc, CloudDownload, CloudCheck,
+  Repeat1, Repeat, X, Trash2,
 } from 'lucide-react';
 import { getAudioUrl } from '../utils/audioUrl';
 
@@ -294,17 +294,15 @@ export const SurahList: React.FC<SurahListProps> = ({ onChooseReciter }) => {
                     e.stopPropagation();
                     if (isDownloading) return;
                     if (isDownloaded) {
-                      if (confirm(`Supprimer « ${surah.name} » du hors-ligne ?`)) {
-                        deleteSurah(activeReciter, activeMoshaf, surah);
-                      }
+                      deleteSurah(activeReciter, activeMoshaf, surah);
                       return;
                     }
                     downloadSurah(activeReciter, activeMoshaf, surah);
                   }}
                   disabled={isDownloading}
-                  className={`w-10 h-10 rounded-full flex items-center justify-center transition-all shrink-0 tap-feedback border ${
+                  className={`group/dl w-10 h-10 rounded-full flex items-center justify-center transition-all shrink-0 tap-feedback border ${
                     isDownloaded
-                      ? 'border-[#cea687]/45 bg-[#f0d1bc]/18 text-[#f0d1bc] shadow-[0_0_14px_rgba(206,166,135,0.22)]'
+                      ? 'border-[#e8c4a8]/60 bg-[#f5dcc8]/22 text-[#f5dcc8] shadow-[0_0_16px_rgba(230,190,155,0.30)] hover:border-red-400/60 hover:bg-red-500/15 hover:text-red-400 hover:shadow-[0_0_14px_rgba(239,68,68,0.25)]'
                       : isDownloading
                         ? 'border-[#cea687]/35 bg-[#162538] text-[#f0d1bc]'
                         : 'border-[#46607b] bg-[#162538] text-[#f0d1bc] hover:border-[#cea687]/50 hover:bg-[#f0d1bc]/14 hover:shadow-[0_0_12px_rgba(206,166,135,0.18)]'
@@ -327,7 +325,10 @@ export const SurahList: React.FC<SurahListProps> = ({ onChooseReciter }) => {
                   {isDownloading ? (
                     <span className="text-[10px] font-black tabular-nums tracking-tight">{progress}%</span>
                   ) : isDownloaded ? (
-                    <CheckCircle2 className="w-5 h-5" strokeWidth={2.25} />
+                    <>
+                      <CloudCheck className="w-5 h-5 group-hover/dl:hidden" strokeWidth={2.25} />
+                      <Trash2 className="w-5 h-5 hidden group-hover/dl:block" strokeWidth={2.25} />
+                    </>
                   ) : (
                     <CloudDownload className="w-5 h-5" strokeWidth={2.25} />
                   )}

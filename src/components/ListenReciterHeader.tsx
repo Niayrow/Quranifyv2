@@ -30,6 +30,14 @@ function getReciterBadge(reciterId: number, moshafName?: string): string {
   return moshafName || 'Récitation';
 }
 
+function getAvailableSurahCount(moshaf: Moshaf | null): number {
+  if (!moshaf?.surah_list) return 0;
+  return moshaf.surah_list
+    .split(',')
+    .map((value) => value.trim())
+    .filter(Boolean).length;
+}
+
 export const ListenReciterHeader: React.FC<ListenReciterHeaderProps> = ({
   activeReciter,
   activeMoshaf,
@@ -55,6 +63,10 @@ export const ListenReciterHeader: React.FC<ListenReciterHeaderProps> = ({
   const badge = useMemo(
     () => getReciterBadge(activeReciter.id, activeMoshaf?.name),
     [activeReciter.id, activeMoshaf?.name],
+  );
+  const availableSurahCount = useMemo(
+    () => getAvailableSurahCount(activeMoshaf),
+    [activeMoshaf],
   );
 
   const mergeStyle = {
@@ -106,8 +118,18 @@ export const ListenReciterHeader: React.FC<ListenReciterHeaderProps> = ({
               <h2 className="reciter-fusion-name mt-2 text-xl font-black leading-tight tracking-tight text-[#f6f8fb] sm:text-2xl">
                 {activeReciter.name}
               </h2>
-              {activeMoshaf && badge !== activeMoshaf.name && (
-                <p className="mt-1 truncate text-xs font-medium text-[#b4c0ce]">{activeMoshaf.name}</p>
+              {(availableSurahCount > 0 || (activeMoshaf && badge !== activeMoshaf.name)) && (
+                <p className="mt-1 truncate text-xs font-medium text-[#b4c0ce]">
+                  {activeMoshaf && badge !== activeMoshaf.name ? activeMoshaf.name : null}
+                  {activeMoshaf && badge !== activeMoshaf.name && availableSurahCount > 0 ? (
+                    <span className="px-1 text-[#5f7388]">·</span>
+                  ) : null}
+                  {availableSurahCount > 0 ? (
+                    <span className="font-semibold text-[#95a7ba]">
+                      {availableSurahCount} sourates disponibles
+                    </span>
+                  ) : null}
+                </p>
               )}
             </div>
           </div>
