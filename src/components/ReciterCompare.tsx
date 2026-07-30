@@ -259,7 +259,7 @@ export const ReciterCompare: React.FC = () => {
         </div>
         <p className="text-center text-sm text-[#d0d9e3]">
           <span className="font-serif arabic-text text-[#f0d1bc] text-lg mr-2">{surah.arabicName}</span>
-          {surah.name} — {surah.englishTranslation}
+          {surah.name} — {surah.translation}
         </p>
       </div>
 

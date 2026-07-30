@@ -17,7 +17,8 @@ export interface Surah {
   name: string;
   arabicName: string;
   englishName: string;
-  englishTranslation: string;
+  /** Signification du nom de la sourate (français) */
+  translation: string;
 }
 
 export interface AudioTrack {

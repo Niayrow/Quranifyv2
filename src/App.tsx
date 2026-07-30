@@ -1200,7 +1200,7 @@ const AppContent: React.FC = () => {
                     <img
                       src="/icons/sansfond.png"
                       alt=""
-                      className="hero-logo-float h-16 w-16 sm:h-20 sm:w-20 md:h-32 md:w-32 object-contain drop-shadow-[0_10px_28px_rgba(30,80,140,0.45)]"
+                      className="hero-logo-float h-24 w-24 sm:h-28 sm:w-28 md:h-40 md:w-40 object-contain drop-shadow-[0_12px_36px_rgba(240,209,188,0.28),0_10px_28px_rgba(30,80,140,0.5)]"
                       draggable={false}
                     />
                   </div>
@@ -1393,7 +1393,7 @@ const AppContent: React.FC = () => {
                   </button>
                 </div>
 
-                <div className="-mx-1 flex gap-1 overflow-x-auto px-1 pb-1 scrollbar-thin scrollbar-thumb-slate-800 scrollbar-track-transparent">
+                <div className="-mx-1 flex gap-1 overflow-x-auto px-1 py-2 scrollbar-thin scrollbar-thumb-slate-800 scrollbar-track-transparent">
                   {featuredReciters.map((reciter) => (
                     <HomeFeaturedReciter
                       key={reciter.id}
@@ -1422,7 +1422,7 @@ const AppContent: React.FC = () => {
                     <ArrowRight className="h-3.5 w-3.5" />
                   </button>
                 </div>
-                <div className="-mx-1 flex gap-1 overflow-x-auto px-1 pb-1 scrollbar-thin scrollbar-thumb-slate-800 scrollbar-track-transparent">
+                <div className="-mx-1 flex gap-1 overflow-x-auto px-1 py-2 scrollbar-thin scrollbar-thumb-slate-800 scrollbar-track-transparent">
                   {favoritedReciters.slice(0, 8).map((reciter) => (
                     <HomeFeaturedReciter
                       key={reciter.id}

@@ -41,7 +41,7 @@ export const SurahList: React.FC<SurahListProps> = ({ onChooseReciter }) => {
     const query = searchQuery.toLowerCase().trim();
     return availableSurahs.filter(surah =>
       surah.name.toLowerCase().includes(query) ||
-      surah.englishTranslation.toLowerCase().includes(query) ||
+      surah.translation.toLowerCase().includes(query) ||
       surah.arabicName.includes(query) ||
       surah.id.toString().includes(query)
     );
@@ -95,7 +95,7 @@ export const SurahList: React.FC<SurahListProps> = ({ onChooseReciter }) => {
   }
 
   return (
-    <div className="flex flex-col gap-4 md:gap-5">
+    <div className="flex flex-col gap-3 md:gap-4">
       <div className="relative">
         <label htmlFor="surah-search" className="sr-only">
           Rechercher une sourate
@@ -108,7 +108,7 @@ export const SurahList: React.FC<SurahListProps> = ({ onChooseReciter }) => {
           onChange={(e) => setSearchQuery(e.target.value)}
           placeholder={`Rechercher ${availableSurahs.length} sourates...`}
           aria-label="Rechercher une sourate"
-          className="w-full min-h-12 pl-12 pr-5 py-3.5 bg-[#111d2d]/78 hover:bg-[#162538]/88 focus:bg-[#162538] border border-[#30455c] focus:border-[#cea687]/55 rounded-2xl text-[#e6edf5] placeholder:text-[#8295aa] text-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-[#cea687]/55 focus-visible:ring-offset-2 focus-visible:ring-offset-[#07111d] transition-all"
+          className="w-full min-h-11 pl-12 pr-5 py-3 bg-[#111d2d]/78 hover:bg-[#162538]/88 focus:bg-[#162538] border border-[#30455c] focus:border-[#cea687]/55 rounded-2xl text-[#e6edf5] placeholder:text-[#8295aa] text-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-[#cea687]/55 focus-visible:ring-offset-2 focus-visible:ring-offset-[#07111d] transition-all"
         />
         {searchQuery && (
           <button
@@ -160,7 +160,7 @@ export const SurahList: React.FC<SurahListProps> = ({ onChooseReciter }) => {
           <p className="text-[#b4c0ce]">Aucune sourate trouvée pour &quot;{searchQuery}&quot;</p>
         </div>
       ) : (
-        <div className="flex flex-col gap-2 md:gap-3">
+        <div className="flex flex-col gap-1.5 md:gap-2">
           {filteredSurahs.map((surah) => {
             const isCurrent =
               currentTrack?.surah.id === surah.id &&
@@ -178,7 +178,7 @@ export const SurahList: React.FC<SurahListProps> = ({ onChooseReciter }) => {
             return (
               <div
                 key={surah.id}
-                className={`group relative p-3 min-[390px]:p-4 md:px-5 md:py-4 rounded-2xl flex items-center gap-2.5 md:gap-4 transition-all duration-200 border ${
+                className={`group relative px-2.5 py-1.5 min-[390px]:px-3 min-[390px]:py-2 md:px-3.5 md:py-2.5 rounded-xl flex items-center gap-2 md:gap-3 transition-all duration-200 border ${
                   isCurrent
                     ? 'surah-row-active'
                     : isDimmed
@@ -191,11 +191,11 @@ export const SurahList: React.FC<SurahListProps> = ({ onChooseReciter }) => {
                 <button
                   type="button"
                   onClick={() => handlePlay(surah)}
-                  className="flex items-center gap-3 md:gap-4 min-w-0 flex-1 text-left tap-feedback"
+                  className="flex items-center gap-2 md:gap-3 min-w-0 flex-1 text-left tap-feedback"
                 >
-                  <div className="relative flex items-center justify-center w-10 h-10 min-[390px]:w-11 min-[390px]:h-11 shrink-0">
+                  <div className="relative flex items-center justify-center w-8 h-8 min-[390px]:w-9 min-[390px]:h-9 shrink-0">
                     <div
-                      className={`absolute inset-0 rotate-45 rounded-lg border transition-all duration-500 ${
+                      className={`absolute inset-0 rotate-45 rounded-md border transition-all duration-500 ${
                         isCurrent
                           ? 'border-transparent bg-[#07111d]/88 shadow-[0_0_0_1px_rgba(206,166,135,0.35)]'
                           : 'bg-[#07111d] border-[#46607b] group-hover:border-[#95a7ba]'
@@ -213,14 +213,14 @@ export const SurahList: React.FC<SurahListProps> = ({ onChooseReciter }) => {
                       }
                     />
                     <span
-                      className={`relative z-10 text-xs font-bold transition-colors ${
+                      className={`relative z-10 text-[11px] font-bold tabular-nums transition-colors ${
                         isCurrent ? 'text-[#f1d4c1]' : 'text-[#aab7c5] group-hover:text-[#eef3f8]'
                       }`}
                     >
                       {isBuffering ? (
-                        <div className="w-4 h-4 border-2 border-[#f0d1bc]/80 border-t-transparent rounded-full animate-spin" />
+                        <div className="w-3.5 h-3.5 border-2 border-[#f0d1bc]/80 border-t-transparent rounded-full animate-spin" />
                       ) : isPlaying ? (
-                        <div className="flex gap-0.5 items-end justify-center h-3.5 w-3.5">
+                        <div className="flex gap-0.5 items-end justify-center h-3 w-3">
                           <div className="w-0.5 bg-[#f0d1bc] animate-[shimmer_0.6s_infinite_alternate] h-full rounded-full" style={{ animationDelay: '0.1s' }} />
                           <div className="w-0.5 bg-white/80 animate-[shimmer_0.6s_infinite_alternate] h-2/3 rounded-full" style={{ animationDelay: '0.3s' }} />
                           <div className="w-0.5 bg-[#7990a1] animate-[shimmer_0.6s_infinite_alternate] h-full rounded-full" style={{ animationDelay: '0.5s' }} />
@@ -231,21 +231,21 @@ export const SurahList: React.FC<SurahListProps> = ({ onChooseReciter }) => {
                     </span>
                   </div>
 
-                  <div className="min-w-0 flex-1 py-1">
+                  <div className="min-w-0 flex-1">
                     <h5
-                      className={`font-bold text-base transition-colors ${
+                      className={`font-bold text-sm leading-tight transition-colors ${
                         isCurrent ? 'text-[#f8fbff]' : 'text-[#f1f5f9] group-hover:text-[#ffffff]'
                       }`}
                     >
                       {surah.name}
                     </h5>
-                    <p className="text-xs text-[#aab7c5]/85 truncate mt-0.5 font-medium">
-                      {surah.englishTranslation}
+                    <p className="text-[11px] text-[#aab7c5]/85 truncate mt-0.5 font-medium leading-snug">
+                      {surah.translation}
                     </p>
                   </div>
 
                   <span
-                    className={`font-serif text-2xl tracking-wide select-none arabic-text transition-colors shrink-0 hidden min-[420px]:inline ${
+                    className={`font-serif text-xl tracking-wide select-none arabic-text transition-colors shrink-0 hidden min-[420px]:inline ${
                       isCurrent ? 'text-[#f1d4c1]' : 'text-[#d0d9e3] group-hover:text-[#f8fbff]'
                     }`}
                   >
@@ -256,7 +256,7 @@ export const SurahList: React.FC<SurahListProps> = ({ onChooseReciter }) => {
                 <button
                   type="button"
                   onClick={() => toggleInLoop(surah.id)}
-                  className={`shrink-0 inline-flex items-center gap-1.5 h-9 px-2.5 rounded-full text-[11px] font-semibold tracking-wide transition-all tap-feedback ${
+                  className={`shrink-0 inline-flex items-center gap-1 h-8 min-w-8 px-2 rounded-full text-[11px] font-semibold tracking-wide transition-all tap-feedback ${
                     inLoop
                       ? 'bg-[#f0d1bc] text-[#111d2d]'
                       : 'bg-transparent text-[#aab7c5] ring-1 ring-inset ring-[#46607b]/80 hover:text-[#f1d4c1] hover:ring-[#cea687]/35'
@@ -266,13 +266,13 @@ export const SurahList: React.FC<SurahListProps> = ({ onChooseReciter }) => {
                   aria-label={inLoop ? `Retirer ${surah.name} de la boucle` : `Ajouter ${surah.name} à la boucle`}
                 >
                   <Repeat className={`w-3.5 h-3.5 ${inLoop ? '' : 'opacity-80'}`} />
-                  <span className="hidden min-[360px]:inline">{inLoop ? 'En boucle' : 'Boucle'}</span>
+                  <span className="hidden min-[400px]:inline">{inLoop ? 'En boucle' : 'Boucle'}</span>
                 </button>
 
                 <button
                   type="button"
                   onClick={() => handlePlay(surah)}
-                  className={`w-10 h-10 rounded-full flex items-center justify-center transition-all shrink-0 tap-feedback ${
+                  className={`w-9 h-9 rounded-full flex items-center justify-center transition-all shrink-0 tap-feedback ${
                     isCurrent
                       ? 'text-[#111d2d] shadow-[0_4px_14px_rgba(206,166,135,0.25)]'
                       : 'bg-[#162538] text-[#d0d9e3] group-hover:text-[#111d2d] group-hover:bg-[#f0d1bc] border border-[#46607b]'
@@ -288,9 +288,9 @@ export const SurahList: React.FC<SurahListProps> = ({ onChooseReciter }) => {
                   aria-label={isPlaying ? 'Pause' : 'Lire'}
                 >
                   {isPlaying ? (
-                    <Pause className="w-4 h-4 fill-current" />
+                    <Pause className="w-3.5 h-3.5 fill-current" />
                   ) : (
-                    <Play className="w-4 h-4 fill-current ml-0.5" />
+                    <Play className="w-3.5 h-3.5 fill-current ml-0.5" />
                   )}
                 </button>
 
@@ -306,7 +306,7 @@ export const SurahList: React.FC<SurahListProps> = ({ onChooseReciter }) => {
                     downloadSurah(activeReciter, activeMoshaf, surah);
                   }}
                   disabled={isDownloading}
-                  className={`group/dl w-10 h-10 rounded-full flex items-center justify-center transition-all shrink-0 tap-feedback border ${
+                  className={`group/dl w-9 h-9 rounded-full flex items-center justify-center transition-all shrink-0 tap-feedback border ${
                     isDownloaded
                       ? 'border-[#e8c4a8]/60 bg-[#f5dcc8]/22 text-[#f5dcc8] shadow-[0_0_16px_rgba(230,190,155,0.30)] hover:border-red-400/60 hover:bg-red-500/15 hover:text-red-400 hover:shadow-[0_0_14px_rgba(239,68,68,0.25)]'
                       : isDownloading
@@ -332,11 +332,11 @@ export const SurahList: React.FC<SurahListProps> = ({ onChooseReciter }) => {
                     <span className="text-[10px] font-black tabular-nums tracking-tight">{progress}%</span>
                   ) : isDownloaded ? (
                     <>
-                      <CloudCheck className="w-5 h-5 group-hover/dl:hidden" strokeWidth={2.25} />
-                      <Trash2 className="w-5 h-5 hidden group-hover/dl:block" strokeWidth={2.25} />
+                      <CloudCheck className="w-4 h-4 group-hover/dl:hidden" strokeWidth={2.25} />
+                      <Trash2 className="w-4 h-4 hidden group-hover/dl:block" strokeWidth={2.25} />
                     </>
                   ) : (
-                    <CloudDownload className="w-5 h-5" strokeWidth={2.25} />
+                    <CloudDownload className="w-4 h-4" strokeWidth={2.25} />
                   )}
                 </button>
               </div>

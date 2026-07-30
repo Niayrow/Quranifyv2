@@ -201,7 +201,7 @@ export const GlobalPlayerV2: React.FC = () => {
     return available.filter(
       (s) =>
         s.name.toLowerCase().includes(query) ||
-        s.englishTranslation.toLowerCase().includes(query) ||
+        s.translation.toLowerCase().includes(query) ||
         s.id.toString().includes(query) ||
         s.arabicName.includes(query)
     );
@@ -679,7 +679,7 @@ export const GlobalPlayerV2: React.FC = () => {
                 step={0.1}
                 value={currentTime}
                 onChange={(e) => seekTo(parseFloat(e.target.value))}
-                className="flex-1 h-2 min-h-11 rounded-full appearance-none cursor-pointer bg-[#162538]"
+                className="flex-1 h-1.5 rounded-full appearance-none cursor-pointer bg-[#162538]"
                 style={{ background: theme.sliderBackground(progressPercent), accentColor: theme.sliderAccentColor }}
                 aria-label="Position de lecture"
                 aria-valuemin={0}
@@ -736,7 +736,7 @@ export const GlobalPlayerV2: React.FC = () => {
             <button
               type="button"
               onClick={toggleMute}
-              className={`h-11 w-11 rounded-xl flex items-center justify-center text-[#aab7c5] hover:text-[#f6f8fb] hover:bg-[#111d2d]/70 shrink-0 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#cea687] ${
+              className={`h-9 w-9 rounded-xl flex items-center justify-center text-[#aab7c5] hover:text-[#f6f8fb] hover:bg-[#111d2d]/70 shrink-0 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#cea687] ${
                 isMuted || volume === 0 ? theme.accentText : ''
               }`}
               title="Volume"
@@ -756,7 +756,7 @@ export const GlobalPlayerV2: React.FC = () => {
                 setVolume(v);
                 setIsMuted(v === 0);
               }}
-              className="w-16 xl:w-24 h-2 min-h-11 rounded appearance-none cursor-pointer bg-[#162538] shrink-0"
+              className="w-16 xl:w-24 h-1.5 rounded appearance-none cursor-pointer bg-[#162538] shrink-0"
               style={{ accentColor: theme.sliderAccentColor }}
               aria-label="Volume"
             />
@@ -766,7 +766,7 @@ export const GlobalPlayerV2: React.FC = () => {
             <button
               type="button"
               onClick={openPlaylist}
-              className={`h-11 w-11 rounded-xl flex items-center justify-center text-[#aab7c5] hover:text-[#f6f8fb] hover:bg-[#111d2d]/70 shrink-0 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#cea687] ${theme.accentTextHover}`}
+              className={`h-9 w-9 rounded-xl flex items-center justify-center text-[#aab7c5] hover:text-[#f6f8fb] hover:bg-[#111d2d]/70 shrink-0 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#cea687] ${theme.accentTextHover}`}
               title="Sourates"
               aria-label="Ouvrir la liste des sourates"
             >
@@ -901,7 +901,7 @@ export const GlobalPlayerV2: React.FC = () => {
                 step={0.1}
                 value={currentTime}
                 onChange={(e) => seekTo(parseFloat(e.target.value))}
-                className="w-full h-3 min-h-11 rounded-full appearance-none cursor-pointer bg-[#111d2d]"
+                className="w-full h-2 rounded-full appearance-none cursor-pointer bg-[#111d2d]"
                 style={{ background: theme.sliderBackground(progressPercent), accentColor: theme.sliderAccentColor }}
                 aria-label="Position de lecture"
                 aria-valuemin={0}
@@ -1032,7 +1032,7 @@ export const GlobalPlayerV2: React.FC = () => {
                       setVolume(v);
                       setIsMuted(v === 0);
                     }}
-                    className="flex-1 h-3 min-h-11 rounded appearance-none cursor-pointer bg-[#162538]"
+                    className="flex-1 h-2 rounded appearance-none cursor-pointer bg-[#162538]"
                     style={{ accentColor: theme.sliderAccentColor }}
                     aria-label="Volume"
                   />
@@ -1382,7 +1382,6 @@ export const GlobalPlayerV2: React.FC = () => {
                     onChange={(e) => setDrawerSearch(e.target.value)}
                     placeholder="Nom, numéro ou arabe…"
                     aria-label="Rechercher une sourate dans la liste"
-                    autoFocus
                     className="w-full min-h-11 pl-10 pr-10 py-2.5 bg-[#111d2d]/88 border border-[#30455c]/65 rounded-2xl text-sm text-[#e6edf5] placeholder:text-[#8295aa] focus:outline-none focus:border-[#cea687]/40 focus-visible:ring-2 focus-visible:ring-[#cea687]/55"
                   />
                   {drawerSearch && (
@@ -1469,7 +1468,7 @@ export const GlobalPlayerV2: React.FC = () => {
                               {surah.name}
                             </span>
                             <span className="mt-0.5 block truncate text-[11px] font-medium text-[#95a7ba]">
-                              {surah.englishTranslation}
+                              {surah.translation}
                             </span>
                           </span>
 

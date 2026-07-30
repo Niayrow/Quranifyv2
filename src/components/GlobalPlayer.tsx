@@ -1010,7 +1010,7 @@ export const GlobalPlayer: React.FC = () => {
                               {surah.name}
                             </span>
                             <span className="block text-[11px] text-slate-500 truncate mt-0.5">
-                              {surah.englishTranslation}
+                              {surah.translation}
                             </span>
                           </span>
 

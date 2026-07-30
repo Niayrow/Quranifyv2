@@ -23,9 +23,9 @@ const Section: React.FC<{
       <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-[#f0d1bc]/10 text-[#f0d1bc]">
         <Icon className="h-3.5 w-3.5" aria-hidden />
       </span>
-      <h3 className="text-[15px] font-bold tracking-tight text-[#f6f8fb]">{title}</h3>
+      <h3 className="text-base font-bold tracking-tight text-[#f6f8fb]">{title}</h3>
     </div>
-    <div className="flex flex-col gap-3 border-l border-[#cea687]/25 pl-4 ml-3.5 text-[13px] leading-[1.7] text-[#b4c0ce]">
+    <div className="flex flex-col gap-3 border-l border-[#cea687]/25 pl-4 ml-3.5 text-sm leading-[1.7] text-[#b4c0ce]">
       {children}
     </div>
   </section>
@@ -35,8 +35,8 @@ const PanelHeader: React.FC<{ title: string; subtitle: string }> = ({ title, sub
   <header className="pb-5 border-b border-[#30455c]/55">
     <p className="text-[10px] font-black uppercase tracking-[0.2em] text-[#cea687]">Informations</p>
     <h2 className="mt-2 text-[1.35rem] font-black tracking-tight text-[#f6f8fb]">{title}</h2>
-    <p className="mt-2 max-w-xl text-sm leading-relaxed text-[#aab7c5]">{subtitle}</p>
-    <p className="mt-3 text-[11px] text-[#8295aa]">Dernière mise à jour · 30 juil. 2026</p>
+    <p className="mt-2 max-w-xl text-[15px] leading-relaxed text-[#aab7c5]">{subtitle}</p>
+    <p className="mt-3 text-xs text-[#8295aa]">Dernière mise à jour · 30 juil. 2026</p>
   </header>
 );
 
