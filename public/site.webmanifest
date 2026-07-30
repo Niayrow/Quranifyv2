@@ -1,7 +1,7 @@
 {
   "name": "Sawra - Lecteur Coranique Premium",
   "short_name": "Sawra",
-  "description": "Écoutez le Coran en streaming avec les meilleurs récitateurs. 100% gratuit, sans publicité, hors-ligne et multi-appareils.",
+  "description": "Écoutez le Coran en streaming (sources mp3quran.net). Gratuit, sans pub. Hors-ligne via téléchargements locaux. Sync multi-appareils avec un compte.",
   "id": "/",
   "start_url": "/?source=pwa",
   "scope": "/",

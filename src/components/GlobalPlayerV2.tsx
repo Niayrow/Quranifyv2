@@ -15,10 +15,15 @@ import { getGeneratedReciterAvatar, getReciterImage } from '../utils/images';
 import { SURAHS } from '../data/surahs';
 
 const formatTime = (time: number) => {
-  if (!Number.isFinite(time) || time < 0) return '0:00';
+  if (!Number.isFinite(time) || time < 0) return '–:––';
   const mins = Math.floor(time / 60);
   const secs = Math.floor(time % 60);
   return `${mins}:${secs.toString().padStart(2, '0')}`;
+};
+
+const formatDuration = (time: number) => {
+  if (!Number.isFinite(time) || time <= 0) return '–:––';
+  return formatTime(time);
 };
 
 const formatSleepTime = (seconds: number) => {
@@ -225,6 +230,42 @@ export const GlobalPlayerV2: React.FC = () => {
       window.removeEventListener('keydown', onKey);
     };
   }, [showPlaylist, showPersonalize]);
+
+  useEffect(() => {
+    if (!currentTrack || remoteSession) return;
+    const onKey = (e: KeyboardEvent) => {
+      const target = e.target as HTMLElement | null;
+      if (target?.closest('input, textarea, select, [contenteditable="true"]')) return;
+      if (showPlaylist || showPersonalize) return;
+
+      if (e.code === 'Space' || e.key === ' ') {
+        e.preventDefault();
+        togglePlay();
+        return;
+      }
+      if (e.key === 'ArrowLeft') {
+        e.preventDefault();
+        seekTo(Math.max(0, currentTime - prefs.seekStep));
+        return;
+      }
+      if (e.key === 'ArrowRight') {
+        e.preventDefault();
+        seekTo(Math.min(duration || Number.POSITIVE_INFINITY, currentTime + prefs.seekStep));
+      }
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [
+    currentTrack,
+    remoteSession,
+    showPlaylist,
+    showPersonalize,
+    togglePlay,
+    seekTo,
+    currentTime,
+    duration,
+    prefs.seekStep,
+  ]);
 
   useEffect(() => {
     if (!showPlaylist) return;
@@ -463,11 +504,11 @@ export const GlobalPlayerV2: React.FC = () => {
                   <span className="shrink-0 text-[#5f7388]" aria-hidden>
                     ·
                   </span>
-                  <span className="shrink-0 tabular-nums text-[#f1d4c1] font-medium">
+                  <span className="shrink-0 tabular-nums text-[#f1d4c1] font-medium" aria-live="polite">
                     {formatTime(currentTime)}
                     <span className="text-[#8295aa] font-normal">
                       {' / '}
-                      {formatTime(duration)}
+                      {formatDuration(duration)}
                     </span>
                   </span>
                 </>
@@ -478,8 +519,9 @@ export const GlobalPlayerV2: React.FC = () => {
           <button
             type="button"
             onClick={openPlaylist}
-            className="hidden md:block min-w-0 flex-1 text-left rounded-2xl px-1.5 py-1 tap-feedback hover:bg-[#111d2d]/55"
+            className="hidden md:block min-w-0 flex-1 text-left rounded-2xl px-1.5 py-1 tap-feedback hover:bg-[#111d2d]/55 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#cea687]"
             title="Liste des sourates"
+            aria-label="Ouvrir la liste des sourates"
           >
             <p className={`text-base font-bold text-[#f6f8fb] truncate leading-tight ${theme.accentTextHover}`}>
               {String(currentTrack.surah.id).padStart(3, '0')}. {currentTrack.surah.name}
@@ -563,8 +605,9 @@ export const GlobalPlayerV2: React.FC = () => {
                 if (remoteSession) return;
                 jumpBy(-prefs.seekStep);
               }}
-              className="hidden lg:flex text-[#95a7ba] hover:text-[#f6f8fb] p-2 rounded-xl hover:bg-[#111d2d]/60 disabled:pointer-events-none items-center justify-center"
+              className="hidden lg:flex min-h-11 min-w-11 text-[#95a7ba] hover:text-[#f6f8fb] p-2 rounded-xl hover:bg-[#111d2d]/60 disabled:pointer-events-none items-center justify-center focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#cea687]"
               title={`−${prefs.seekStep}s`}
+              aria-label={`Reculer de ${prefs.seekStep} secondes`}
             >
               <RotateCcw className="w-4 h-4" />
             </button>
@@ -575,7 +618,8 @@ export const GlobalPlayerV2: React.FC = () => {
                 if (remoteSession) return;
                 playPrevTrack();
               }}
-              className="text-[#c8d1db] hover:text-[#f6f8fb] p-2 rounded-xl hover:bg-[#111d2d]/60 disabled:pointer-events-none"
+              className="min-h-11 min-w-11 text-[#c8d1db] hover:text-[#f6f8fb] p-2 rounded-xl hover:bg-[#111d2d]/60 disabled:pointer-events-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#cea687]"
+              aria-label="Précédent"
             >
               <SkipBack className="w-5 h-5 fill-current" />
             </button>
@@ -586,11 +630,12 @@ export const GlobalPlayerV2: React.FC = () => {
                 if (remoteSession) return;
                 togglePlay();
               }}
-              className={`w-12 h-12 rounded-full flex items-center justify-center tap-feedback disabled:pointer-events-none ${
+              className={`w-12 h-12 rounded-full flex items-center justify-center tap-feedback disabled:pointer-events-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#cea687] ${
                 remoteSession
                   ? 'bg-[#30455c] text-[#95a7ba] shadow-none'
                   : `${theme.accent} text-[#111d2d] shadow-lg ${theme.accentShadow}`
               }`}
+              aria-label={playbackStatus === 'playing' ? 'Pause' : 'Lecture'}
             >
               {playbackStatus === 'playing' ? (
                 <Pause className="w-5 h-5 fill-current" />
@@ -605,7 +650,8 @@ export const GlobalPlayerV2: React.FC = () => {
                 if (remoteSession) return;
                 playNextTrack();
               }}
-              className="text-[#c8d1db] hover:text-[#f6f8fb] p-2 rounded-xl hover:bg-[#111d2d]/60 disabled:pointer-events-none"
+              className="min-h-11 min-w-11 text-[#c8d1db] hover:text-[#f6f8fb] p-2 rounded-xl hover:bg-[#111d2d]/60 disabled:pointer-events-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#cea687]"
+              aria-label="Suivant"
             >
               <SkipForward className="w-5 h-5 fill-current" />
             </button>
@@ -616,8 +662,9 @@ export const GlobalPlayerV2: React.FC = () => {
                 if (remoteSession) return;
                 jumpBy(prefs.seekStep);
               }}
-              className="hidden lg:flex text-[#95a7ba] hover:text-[#f6f8fb] p-2 rounded-xl hover:bg-[#111d2d]/60 disabled:pointer-events-none items-center justify-center"
+              className="hidden lg:flex min-h-11 min-w-11 text-[#95a7ba] hover:text-[#f6f8fb] p-2 rounded-xl hover:bg-[#111d2d]/60 disabled:pointer-events-none items-center justify-center focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#cea687]"
               title={`+${prefs.seekStep}s`}
+              aria-label={`Avancer de ${prefs.seekStep} secondes`}
             >
               <RotateCw className="w-4 h-4" />
             </button>
@@ -632,10 +679,15 @@ export const GlobalPlayerV2: React.FC = () => {
                 step={0.1}
                 value={currentTime}
                 onChange={(e) => seekTo(parseFloat(e.target.value))}
-                className="flex-1 h-1.5 rounded-full appearance-none cursor-pointer bg-[#162538]"
+                className="flex-1 h-2 min-h-11 rounded-full appearance-none cursor-pointer bg-[#162538]"
                 style={{ background: theme.sliderBackground(progressPercent), accentColor: theme.sliderAccentColor }}
+                aria-label="Position de lecture"
+                aria-valuemin={0}
+                aria-valuemax={Math.floor(duration || 0)}
+                aria-valuenow={Math.floor(currentTime)}
+                aria-valuetext={`${formatTime(currentTime)} sur ${formatDuration(duration)}`}
               />
-              <span className="w-11 tabular-nums">{formatTime(duration)}</span>
+              <span className="w-11 tabular-nums">{formatDuration(duration)}</span>
             </div>
           )}
         </div>
@@ -684,10 +736,11 @@ export const GlobalPlayerV2: React.FC = () => {
             <button
               type="button"
               onClick={toggleMute}
-              className={`h-9 w-9 rounded-xl flex items-center justify-center text-[#aab7c5] hover:text-[#f6f8fb] hover:bg-[#111d2d]/70 shrink-0 ${
+              className={`h-11 w-11 rounded-xl flex items-center justify-center text-[#aab7c5] hover:text-[#f6f8fb] hover:bg-[#111d2d]/70 shrink-0 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#cea687] ${
                 isMuted || volume === 0 ? theme.accentText : ''
               }`}
               title="Volume"
+              aria-label={isMuted || volume === 0 ? 'Activer le son' : 'Couper le son'}
             >
               {isMuted || volume === 0 ? <VolumeX className="w-4.5 h-4.5" /> : <Volume2 className="w-4.5 h-4.5" />}
             </button>
@@ -703,7 +756,7 @@ export const GlobalPlayerV2: React.FC = () => {
                 setVolume(v);
                 setIsMuted(v === 0);
               }}
-              className="w-16 xl:w-24 h-1.5 rounded appearance-none cursor-pointer bg-[#162538] shrink-0"
+              className="w-16 xl:w-24 h-2 min-h-11 rounded appearance-none cursor-pointer bg-[#162538] shrink-0"
               style={{ accentColor: theme.sliderAccentColor }}
               aria-label="Volume"
             />
@@ -713,8 +766,9 @@ export const GlobalPlayerV2: React.FC = () => {
             <button
               type="button"
               onClick={openPlaylist}
-              className={`h-9 w-9 rounded-xl flex items-center justify-center text-[#aab7c5] hover:text-[#f6f8fb] hover:bg-[#111d2d]/70 shrink-0 ${theme.accentTextHover}`}
+              className={`h-11 w-11 rounded-xl flex items-center justify-center text-[#aab7c5] hover:text-[#f6f8fb] hover:bg-[#111d2d]/70 shrink-0 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#cea687] ${theme.accentTextHover}`}
               title="Sourates"
+              aria-label="Ouvrir la liste des sourates"
             >
               <ListMusic className="w-4.5 h-4.5" />
             </button>
@@ -847,12 +901,17 @@ export const GlobalPlayerV2: React.FC = () => {
                 step={0.1}
                 value={currentTime}
                 onChange={(e) => seekTo(parseFloat(e.target.value))}
-                className="w-full h-2 rounded-full appearance-none cursor-pointer bg-[#111d2d]"
+                className="w-full h-3 min-h-11 rounded-full appearance-none cursor-pointer bg-[#111d2d]"
                 style={{ background: theme.sliderBackground(progressPercent), accentColor: theme.sliderAccentColor }}
+                aria-label="Position de lecture"
+                aria-valuemin={0}
+                aria-valuemax={Math.floor(duration || 0)}
+                aria-valuenow={Math.floor(currentTime)}
+                aria-valuetext={`${formatTime(currentTime)} sur ${formatDuration(duration)}`}
               />
-              <div className="flex justify-between text-xs font-mono text-[#95a7ba] mt-2.5">
+              <div className="flex justify-between text-xs font-mono text-[#aab7c5] mt-2.5" aria-live="polite">
                 <span>{formatTime(currentTime)}</span>
-                <span>{formatTime(duration)}</span>
+                <span>{formatDuration(duration)}</span>
               </div>
             </div>
 
@@ -959,7 +1018,7 @@ export const GlobalPlayerV2: React.FC = () => {
                   </span>
                 </div>
                 <div className="flex items-center gap-3">
-                  <button type="button" onClick={toggleMute} className="h-11 w-11 rounded-full border border-[#30455c] flex items-center justify-center text-[#d0d9e3]">
+                  <button type="button" onClick={toggleMute} className="h-11 w-11 rounded-full border border-[#30455c] flex items-center justify-center text-[#d0d9e3]" aria-label={isMuted || volume === 0 ? 'Activer le son' : 'Couper le son'}>
                     {isMuted || volume === 0 ? <VolumeX className="w-5 h-5" /> : <Volume2 className="w-5 h-5" />}
                   </button>
                   <input
@@ -973,8 +1032,9 @@ export const GlobalPlayerV2: React.FC = () => {
                       setVolume(v);
                       setIsMuted(v === 0);
                     }}
-                    className="flex-1 h-2 rounded appearance-none cursor-pointer bg-[#162538]"
+                    className="flex-1 h-3 min-h-11 rounded appearance-none cursor-pointer bg-[#162538]"
                     style={{ accentColor: theme.sliderAccentColor }}
+                    aria-label="Volume"
                   />
                 </div>
                 <button
@@ -1315,20 +1375,22 @@ export const GlobalPlayerV2: React.FC = () => {
             <div className="shrink-0 px-4 pt-3 pb-2">
               <div className="flex items-center gap-2">
                 <div className="relative min-w-0 flex-1">
-                  <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-[#95a7ba]" />
+                  <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-[#95a7ba]" aria-hidden />
                   <input
                     type="search"
                     value={drawerSearch}
                     onChange={(e) => setDrawerSearch(e.target.value)}
                     placeholder="Nom, numéro ou arabe…"
+                    aria-label="Rechercher une sourate dans la liste"
                     autoFocus
-                    className="w-full pl-10 pr-10 py-2.5 bg-[#111d2d]/88 border border-[#30455c]/65 rounded-2xl text-sm text-[#e6edf5] placeholder:text-[#8295aa] focus:outline-none focus:border-[#cea687]/40"
+                    className="w-full min-h-11 pl-10 pr-10 py-2.5 bg-[#111d2d]/88 border border-[#30455c]/65 rounded-2xl text-sm text-[#e6edf5] placeholder:text-[#8295aa] focus:outline-none focus:border-[#cea687]/40 focus-visible:ring-2 focus-visible:ring-[#cea687]/55"
                   />
                   {drawerSearch && (
                     <button
                       type="button"
                       onClick={() => setDrawerSearch('')}
-                      className="absolute right-2.5 top-1/2 -translate-y-1/2 h-7 w-7 rounded-full bg-[#162538] flex items-center justify-center text-[#aab7c5]"
+                      aria-label="Effacer la recherche"
+                      className="absolute right-2.5 top-1/2 -translate-y-1/2 h-9 w-9 rounded-full bg-[#162538] flex items-center justify-center text-[#aab7c5] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#cea687]"
                     >
                       <X className="w-3.5 h-3.5" />
                     </button>

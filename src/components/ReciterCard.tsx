@@ -125,12 +125,14 @@ export const ReciterCard: React.FC<ReciterCardProps> = ({
         <button
           type="button"
           onClick={onToggleFavorite}
-          className={`w-9 h-9 rounded-full flex items-center justify-center transition-all border tap-feedback ${
+          className={`w-11 h-11 rounded-full flex items-center justify-center transition-all border tap-feedback focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#cea687] ${
             isFavorite
               ? 'bg-[#f08c8c]/14 border-[#f08c8c]/30 text-[#f2a3a3] shadow-[0_0_12px_rgba(240,140,140,0.14)]'
               : 'bg-[#07111d]/60 border-[#30455c]/80 text-[#95a7ba] hover:text-[#f2a3a3] hover:bg-[#f08c8c]/10'
           }`}
           title={isFavorite ? 'Retirer des favoris' : 'Ajouter aux favoris'}
+          aria-label={isFavorite ? 'Retirer des favoris' : 'Ajouter aux favoris'}
+          aria-pressed={isFavorite}
         >
           <Heart className={`w-4.5 h-4.5 ${isFavorite ? 'fill-current' : ''}`} />
         </button>

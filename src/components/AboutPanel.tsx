@@ -1,11 +1,19 @@
 import React from 'react';
 import {
   Compass, Cloud, HardDrive, Headphones, Shield, Sparkles, Trash2, Wifi,
-  MonitorSmartphone, ListMusic, Smartphone, ExternalLink, History,
+  MonitorSmartphone, ListMusic, Smartphone, ExternalLink, History, BookOpen, FileText,
 } from 'lucide-react';
 import { useAudio } from '../context/AudioContext';
 
 export const APP_VERSION = '1.2.0';
+
+type LegalPanelId = 'sources' | 'privacy' | 'terms';
+
+type AboutPanelProps = {
+  onOpenLegal?: (panel: LegalPanelId) => void;
+  navDesktopStyle?: 'dock' | 'classic';
+  onNavDesktopStyleChange?: (style: 'dock' | 'classic') => void;
+};
 
 const UPDATE_HISTORY: Array<{
   version: string;
@@ -48,7 +56,11 @@ const UPDATE_HISTORY: Array<{
   },
 ];
 
-export const AboutPanel: React.FC = () => {
+export const AboutPanel: React.FC<AboutPanelProps> = ({
+  onOpenLegal,
+  navDesktopStyle = 'dock',
+  onNavDesktopStyleChange,
+}) => {
   const { cacheInfo, clearCache } = useAudio();
 
   const handleClear = async () => {
@@ -61,37 +73,37 @@ export const AboutPanel: React.FC = () => {
     {
       icon: Headphones,
       title: 'Écoute en streaming',
-      body: 'Des centaines de récitateurs, lecteur personnalisable, reprise automatique et contrôles depuis l’écran de verrouillage.',
+      body: 'Catalogue de récitateurs via mp3quran.net, lecteur personnalisable, reprise automatique et contrôles média système.',
     },
     {
       icon: MonitorSmartphone,
-      title: 'Multi-appareils',
-      body: 'Lecture en temps réel entre téléphone et ordinateur : basculez ici, reprise de position, arrêt automatique sur l’autre appareil.',
+      title: 'Multi-appareils (compte requis)',
+      body: 'Avec un compte GoMuslimLife : favoris, reprise et position synchronisés. Sans compte, tout reste sur cet appareil.',
     },
     {
       icon: ListMusic,
       title: 'Boucle de sourates',
-      body: 'Sélectionnez les sourates à répéter. La sélection, le thème, le volume et la vitesse suivent votre compte cloud.',
+      body: 'Sélectionnez les sourates à répéter. Avec un compte, la sélection et les préférences suivent le cloud.',
     },
     {
       icon: HardDrive,
-      title: 'Mode hors-ligne',
-      body: 'Téléchargez des sourates pour les écouter sans connexion. Vos réglages locaux restent mémorisés sur l’appareil.',
+      title: 'Hors-ligne (téléchargement manuel)',
+      body: 'Seules les sourates que vous téléchargez sont écoutables sans réseau. Le catalogue et le streaming restent en ligne.',
     },
     {
       icon: Cloud,
       title: 'Compte GoMuslimLife',
-      body: 'Un seul compte pour Sawra et GoMuslimLife.com : favoris, reprise d’écoute et préférences synchronisés.',
+      body: 'Un compte pour Sawra et GoMuslimLife.com : favoris, reprise et préférences — pas de pub ni d’historique commercialisé.',
     },
     {
       icon: Smartphone,
-      title: 'Applications mobiles',
-      body: 'Versions iOS et Android en préparation (bientôt sur l’App Store et Google Play).',
+      title: 'Sur votre téléphone dès maintenant',
+      body: 'Ajoutez Sawra à l’écran d’accueil (PWA). Les apps App Store et Google Play sont en préparation ; une liste d’attente suivra.',
     },
     {
       icon: Shield,
       title: 'Données & confidentialité',
-      body: 'Sans compte, tout reste local. Avec un compte : favoris, reprise et préférences — pas de pub ni d’historique commercialisé.',
+      body: 'Sans compte : stockage local uniquement. Avec compte : sync ciblée (favoris, reprise, préférences). Détails dans Confidentialité.',
     },
   ];
 
@@ -113,7 +125,7 @@ export const AboutPanel: React.FC = () => {
                 <h2 className="text-xl font-bold text-[#f6f8fb]">À propos de Sawra</h2>
               </div>
               <p className="mt-1 text-sm leading-relaxed text-[#b4c0ce]">
-                Lecteur coranique simple et rapide — web &amp; bientôt en app.
+                Lecteur coranique web / PWA — gratuit, sans pub, sources audio documentées.
               </p>
             </div>
           </div>
@@ -185,6 +197,35 @@ export const AboutPanel: React.FC = () => {
         ))}
       </div>
 
+      {onNavDesktopStyleChange && (
+        <div className="hidden md:flex items-center justify-between gap-3 rounded-2xl border border-[#30455c]/55 bg-[#111d2d]/65 px-3.5 py-2.5">
+          <div className="min-w-0">
+            <p className="text-xs font-semibold text-[#e6edf5]">Navbar desktop</p>
+            <p className="text-[10px] text-[#95a7ba]">
+              {navDesktopStyle === 'classic' ? 'Barre pleine largeur' : 'Dock flottant'}
+            </p>
+          </div>
+          <button
+            type="button"
+            role="switch"
+            aria-checked={navDesktopStyle === 'classic'}
+            aria-label="Passer en navbar classique"
+            onClick={() =>
+              onNavDesktopStyleChange(navDesktopStyle === 'classic' ? 'dock' : 'classic')
+            }
+            className={`relative h-7 w-12 shrink-0 rounded-full transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#cea687] ${
+              navDesktopStyle === 'classic' ? 'bg-[#cea687]' : 'bg-[#30455c]'
+            }`}
+          >
+            <span
+              className={`absolute top-0.5 left-0.5 h-6 w-6 rounded-full bg-[#f6f8fb] shadow transition-transform ${
+                navDesktopStyle === 'classic' ? 'translate-x-5' : 'translate-x-0'
+              }`}
+            />
+          </button>
+        </div>
+      )}
+
       <div className="glass-panel rounded-3xl border border-[#30455c]/60 p-4 flex flex-col gap-3">
         <div className="flex items-center justify-between border-b border-[#111d2d] pb-2">
           <div className="flex items-center gap-2">
@@ -192,9 +233,14 @@ export const AboutPanel: React.FC = () => {
             <h4 className="text-sm font-semibold text-[#e6edf5]">Cache hors-ligne</h4>
           </div>
           <span className="brand-chip-cool text-[10px] font-bold px-2.5 py-0.5 rounded-full uppercase tracking-wider">
-            Actif
+            Local
           </span>
         </div>
+
+        <p className="text-[11px] leading-relaxed text-[#95a7ba]">
+          Stockage navigateur uniquement. Non synchronisé entre appareils. Peut être purgé par
+          le système si l’espace manque.
+        </p>
 
         <div className="flex justify-between items-center text-xs">
           <div className="flex flex-col gap-0.5">
@@ -211,7 +257,7 @@ export const AboutPanel: React.FC = () => {
           <button
             type="button"
             onClick={handleClear}
-            className="mt-1 flex items-center justify-center gap-2 w-full py-2.5 bg-rose-500/10 border border-rose-500/20 hover:bg-rose-500/20 hover:border-rose-500/40 text-rose-400 text-xs font-semibold rounded-xl transition-all duration-200 cursor-pointer"
+            className="mt-1 flex min-h-11 items-center justify-center gap-2 w-full py-2.5 bg-rose-500/10 border border-rose-500/20 hover:bg-rose-500/20 hover:border-rose-500/40 text-rose-400 text-xs font-semibold rounded-xl transition-all duration-200 cursor-pointer focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#cea687]"
           >
             <Trash2 className="w-4 h-4" />
             <span>Vider le cache hors-ligne</span>
@@ -219,10 +265,30 @@ export const AboutPanel: React.FC = () => {
         )}
       </div>
 
+      {onOpenLegal && (
+        <div className="grid grid-cols-1 gap-2 sm:grid-cols-3">
+          {([
+            { id: 'sources' as const, label: 'Sources & licences', icon: BookOpen },
+            { id: 'privacy' as const, label: 'Confidentialité', icon: Shield },
+            { id: 'terms' as const, label: 'Conditions', icon: FileText },
+          ]).map(({ id, label, icon: Icon }) => (
+            <button
+              key={id}
+              type="button"
+              onClick={() => onOpenLegal(id)}
+              className="flex min-h-11 items-center gap-2 rounded-2xl border border-[#30455c]/55 bg-[#111d2d]/70 px-3.5 py-3 text-left text-xs font-semibold text-[#d0d9e3] transition-colors hover:border-[#46607b]/60 hover:text-[#f6f8fb] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#cea687] tap-feedback"
+            >
+              <Icon className="h-4 w-4 shrink-0 text-[#f0d1bc]" aria-hidden />
+              {label}
+            </button>
+          ))}
+        </div>
+      )}
+
       <div className="rounded-2xl border border-[#30455c]/40 bg-[#111d2d]/45 p-4 flex items-center gap-3">
         <Sparkles className="w-5 h-5 text-[#f0d1bc] shrink-0" />
         <p className="text-[11px] text-[#b4c0ce] leading-relaxed">
-          Conçu pour une écoute sereine : interface claire, sync entre appareils, et le Coran au centre.
+          Conçu pour une écoute sereine : sources claires, données maîtrisées, Coran au centre.
         </p>
       </div>
 
@@ -232,7 +298,7 @@ export const AboutPanel: React.FC = () => {
           href="https://sofianeweb.fr"
           target="_blank"
           rel="noopener noreferrer"
-          className="group flex items-center gap-1.5 rounded-full border border-[#30455c]/40 bg-[#111d2d]/45 px-2.5 py-1 text-[10px] font-black uppercase tracking-widest text-[#aab7c5] transition-all duration-300 hover:border-[#46607b]/60 hover:bg-[#162538] hover:text-[#eef3f8]"
+          className="group flex min-h-9 items-center gap-1.5 rounded-full border border-[#30455c]/40 bg-[#111d2d]/45 px-2.5 py-1 text-[10px] font-black uppercase tracking-widest text-[#aab7c5] transition-all duration-300 hover:border-[#46607b]/60 hover:bg-[#162538] hover:text-[#eef3f8] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#cea687]"
         >
           <span>Créé par sofianeweb.fr</span>
           <span className="inline-block transition-transform duration-300 group-hover:translate-x-0.5 group-hover:-translate-y-0.5">↗</span>

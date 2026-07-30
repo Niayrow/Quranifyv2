@@ -5,7 +5,7 @@ import { ReciterCard } from './components/ReciterCard';
 import { Navbar } from './components/Navbar';
 import { 
   Search, Heart, AlertTriangle, Headphones, Play, ArrowRight,
-  Bookmark, Download, Disc, ExternalLink, Cloud, WifiOff, ChevronDown, History
+  Bookmark, Download, Disc, ExternalLink, Cloud, WifiOff, ChevronDown, History, Share
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import type { Reciter } from './types';
@@ -31,9 +31,14 @@ const GlobalPlayerV2 = lazy(() => import('./components/GlobalPlayerV2').then((mo
 const AboutPanel = lazy(() => import('./components/AboutPanel').then((module) => ({ default: module.AboutPanel })));
 const ReciterCompare = lazy(() => import('./components/ReciterCompare').then((module) => ({ default: module.ReciterCompare })));
 const AccountPanel = lazy(() => import('./components/AccountPanel').then((module) => ({ default: module.AccountPanel })));
+const SourcesPanel = lazy(() => import('./components/TrustLegalPanels').then((module) => ({ default: module.SourcesPanel })));
+const PrivacyPanel = lazy(() => import('./components/TrustLegalPanels').then((module) => ({ default: module.PrivacyPanel })));
+const TermsPanel = lazy(() => import('./components/TrustLegalPanels').then((module) => ({ default: module.TermsPanel })));
 const TAB_IDS = ['home', 'listen', 'moments', 'favorites', 'more'] as const;
 type TabId = typeof TAB_IDS[number];
-type MorePanel = 'account' | 'moments' | 'downloads' | 'priorities' | 'compare' | 'about';
+type MorePanel = 'account' | 'legal' | 'priorities' | 'compare' | 'about' | 'moments';
+type AccountSub = 'profile' | 'downloads';
+type LegalSub = 'sources' | 'privacy' | 'terms';
 type ListenStep = 'reciters' | 'surahs';
 
 const PRODUCT_PRIORITIES: Array<{
@@ -44,20 +49,46 @@ const PRODUCT_PRIORITIES: Array<{
   icon: LucideIcon;
 }> = [
   {
-    id: 'offline',
-    title: 'Mode hors-ligne audio',
-    summary: 'Permettre le téléchargement ou le cache local des récitations pour écouter sans réseau.',
-    detail: 'Priorité mobile la plus forte pour les trajets, le sommeil et les zones à faible connexion.',
-    icon: Download,
-  },
-  {
     id: 'library',
     title: 'Bibliothèque personnelle',
     summary: 'Étendre les favoris vers des signets de sourates, historique et reprise ciblée.',
     detail: 'Une couche personnelle améliore fortement la fidélisation et les reprises quotidiennes.',
     icon: Bookmark,
   },
+  {
+    id: 'native',
+    title: 'Apps natives & liste d’attente',
+    summary: 'Préparer App Store / Google Play tout en renforçant l’installation PWA « écran d’accueil ».',
+    detail: 'La PWA fonctionne déjà ; les stores arriveront ensuite avec une inscription claire.',
+    icon: Share,
+  },
 ];
+
+const MORE_PANEL_IDS: MorePanel[] = ['account', 'legal', 'priorities', 'compare', 'about', 'moments'];
+const ACCOUNT_SUB_IDS: AccountSub[] = ['profile', 'downloads'];
+const LEGAL_SUB_IDS: LegalSub[] = ['sources', 'privacy', 'terms'];
+
+const isMorePanel = (value: string | null): value is MorePanel =>
+  Boolean(value && MORE_PANEL_IDS.includes(value as MorePanel));
+
+const isAccountSub = (value: string | null): value is AccountSub =>
+  Boolean(value && ACCOUNT_SUB_IDS.includes(value as AccountSub));
+
+const isLegalSub = (value: string | null): value is LegalSub =>
+  Boolean(value && LEGAL_SUB_IDS.includes(value as LegalSub));
+
+/** Normalize legacy panel query values (downloads, sources, …) into top-level + sub. */
+const resolveMoreNavigation = (
+  raw: string | null
+): { panel: MorePanel; accountSub?: AccountSub; legalSub?: LegalSub } => {
+  if (raw === 'downloads') return { panel: 'account', accountSub: 'downloads' };
+  if (raw === 'account') return { panel: 'account', accountSub: 'profile' };
+  if (raw === 'sources' || raw === 'privacy' || raw === 'terms') {
+    return { panel: 'legal', legalSub: raw };
+  }
+  if (isMorePanel(raw)) return { panel: raw };
+  return { panel: 'account', accountSub: 'profile' };
+};
 
 const mapLegacyTab = (tab: string | null): TabId => {
   switch (tab) {
@@ -75,6 +106,12 @@ const mapLegacyTab = (tab: string | null): TabId => {
     case 'more':
     case 'compare':
     case 'about':
+    case 'sources':
+    case 'privacy':
+    case 'terms':
+    case 'legal':
+    case 'account':
+    case 'downloads':
       return 'more';
     case 'home':
     default:
@@ -86,6 +123,33 @@ const getInitialTab = (): TabId => {
   if (typeof window === 'undefined') return 'home';
   const tab = new URLSearchParams(window.location.search).get('tab');
   return mapLegacyTab(tab);
+};
+
+const getInitialMorePanel = (): MorePanel => {
+  if (typeof window === 'undefined') return 'account';
+  const params = new URLSearchParams(window.location.search);
+  const fromPanel = resolveMoreNavigation(params.get('panel'));
+  if (params.get('panel')) return fromPanel.panel;
+  const tab = params.get('tab');
+  return resolveMoreNavigation(tab).panel;
+};
+
+const getInitialAccountSub = (): AccountSub => {
+  if (typeof window === 'undefined') return 'profile';
+  const params = new URLSearchParams(window.location.search);
+  const section = params.get('section');
+  if (isAccountSub(section)) return section;
+  const raw = params.get('panel') || params.get('tab');
+  return resolveMoreNavigation(raw).accountSub ?? 'profile';
+};
+
+const getInitialLegalSub = (): LegalSub => {
+  if (typeof window === 'undefined') return 'sources';
+  const params = new URLSearchParams(window.location.search);
+  const section = params.get('section');
+  if (isLegalSub(section)) return section;
+  const raw = params.get('panel') || params.get('tab');
+  return resolveMoreNavigation(raw).legalSub ?? 'sources';
 };
 
 const FEATURED_RECITER_IDS = [123, 54, 102, 92, 30, 31];
@@ -619,7 +683,9 @@ const AppContent: React.FC = () => {
   const { user, loading: authLoading } = useAuth();
 
   const [activeTab, setActiveTab] = useState<TabId>(() => getInitialTab());
-  const [morePanel, setMorePanel] = useState<MorePanel>('account');
+  const [morePanel, setMorePanel] = useState<MorePanel>(() => getInitialMorePanel());
+  const [accountSub, setAccountSub] = useState<AccountSub>(() => getInitialAccountSub());
+  const [legalSub, setLegalSub] = useState<LegalSub>(() => getInitialLegalSub());
   const [listenStep, setListenStep] = useState<ListenStep>('reciters');
   const [categoryModalId, setCategoryModalId] = useState<ReciterCategoryId | null>(null);
   const [reciterSearch, setReciterSearch] = useState<string>('');
@@ -661,19 +727,34 @@ const AppContent: React.FC = () => {
     try {
       const url = new URL(rawUrl, window.location.origin);
       const tab = url.searchParams.get('tab');
-      if (tab === 'compare') {
-        setMorePanel('compare');
+      const panelParam = url.searchParams.get('panel');
+      const sectionParam = url.searchParams.get('section');
+
+      const openMore = (raw: string | null) => {
+        const resolved = resolveMoreNavigation(raw);
+        setMorePanel(resolved.panel);
+        if (resolved.accountSub) setAccountSub(resolved.accountSub);
+        if (resolved.legalSub) setLegalSub(resolved.legalSub);
+        if (resolved.panel === 'legal' && isLegalSub(sectionParam)) setLegalSub(sectionParam);
+        if (resolved.panel === 'account' && isAccountSub(sectionParam)) setAccountSub(sectionParam);
         setActiveTab('more');
+      };
+
+      if (
+        tab === 'compare' ||
+        tab === 'about' ||
+        tab === 'sources' ||
+        tab === 'privacy' ||
+        tab === 'terms' ||
+        tab === 'downloads' ||
+        tab === 'account' ||
+        tab === 'legal'
+      ) {
+        openMore(tab);
         return;
       }
-      if (tab === 'about') {
-        setMorePanel('about');
-        setActiveTab('more');
-        return;
-      }
-      if (tab === 'account') {
-        setMorePanel('account');
-        setActiveTab('more');
+      if (panelParam) {
+        openMore(panelParam);
         return;
       }
       if (tab === 'moments') {
@@ -735,12 +816,20 @@ const AppContent: React.FC = () => {
     params.set('tab', activeTab);
     if (activeTab === 'more') {
       params.set('panel', morePanel);
+      if (morePanel === 'account') {
+        params.set('section', accountSub);
+      } else if (morePanel === 'legal') {
+        params.set('section', legalSub);
+      } else {
+        params.delete('section');
+      }
     } else {
       params.delete('panel');
+      params.delete('section');
     }
     const nextUrl = `${window.location.pathname}?${params.toString()}${window.location.hash}`;
     window.history.replaceState({}, '', nextUrl);
-  }, [activeTab, morePanel]);
+  }, [activeTab, morePanel, accountSub, legalSub]);
 
   useEffect(() => {
     if (!isLoadingReciters) {
@@ -958,12 +1047,24 @@ const AppContent: React.FC = () => {
     }));
   }, [downloadedEntries]);
 
-  const handleNavigate = (tab: TabId, panel?: MorePanel) => {
+  const handleNavigate = (
+    tab: TabId,
+    panel?: MorePanel,
+    options?: { accountSub?: AccountSub; legalSub?: LegalSub }
+  ) => {
     setActiveTab(tab);
     if (panel) setMorePanel(panel);
+    if (options?.accountSub) setAccountSub(options.accountSub);
+    if (options?.legalSub) setLegalSub(options.legalSub);
     if (tab === 'listen') {
       setListenStep(activeReciter ? 'surahs' : 'reciters');
     }
+  };
+
+  const openLegal = (section: LegalSub) => {
+    setMorePanel('legal');
+    setLegalSub(section);
+    setActiveTab('more');
   };
 
   const handleExploreVoices = () => {
@@ -1136,9 +1237,9 @@ const AppContent: React.FC = () => {
 
                 <div className="grid grid-cols-3 gap-2 text-left">
                   {[
-                    { label: 'Hors-ligne', value: 'Audio prêt', icon: WifiOff },
-                    { label: 'Multi-appareils', value: 'Sync fluide', icon: Cloud },
-                    { label: 'Expérience', value: 'Mobile first', icon: Disc },
+                    { label: 'Hors-ligne', value: 'Sourates téléchargées', icon: WifiOff },
+                    { label: 'Multi-appareils', value: 'Compte requis', icon: Cloud },
+                    { label: 'Audio', value: 'Source mp3quran', icon: Disc },
                   ].map((item) => {
                     const Icon = item.icon;
                     return (
@@ -1146,8 +1247,8 @@ const AppContent: React.FC = () => {
                         key={item.label}
                         className="rounded-2xl border border-[#46607b]/28 bg-[#132031]/58 px-3 py-3"
                       >
-                        <Icon className="h-4 w-4 text-[#f0d1bc]" />
-                        <p className="mt-3 text-[10px] font-black uppercase tracking-[0.14em] text-[#8ea1b3]">
+                        <Icon className="h-4 w-4 text-[#f0d1bc]" aria-hidden />
+                        <p className="mt-3 text-[10px] font-black uppercase tracking-[0.14em] text-[#aab7c5]">
                           {item.label}
                         </p>
                         <p className="mt-1 text-[12px] font-semibold text-[#f6f8fb] leading-snug">
@@ -1172,7 +1273,7 @@ const AppContent: React.FC = () => {
                   <p className="mt-1 text-xs leading-relaxed text-[#9fb1c3]">
                     {currentTrack
                       ? `${currentTrack.surah.name} avec ${currentTrack.reciter.name}.`
-                      : 'Choisissez un réciteur et commencez depuis une interface pensée pour le mobile.'}
+                      : 'Choisissez un récitateur, puis une sourate — la lecture démarre tout de suite.'}
                   </p>
                 </div>
                 <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-[#20334a] text-[#f0d1bc]">
@@ -1216,23 +1317,27 @@ const AppContent: React.FC = () => {
                   {
                     id: 'favorites',
                     label: 'Favoris',
-                    hint: favoritedReciters.length ? `${favoritedReciters.length} voix` : 'Vos sélections',
+                    hint: favoritedReciters.length
+                      ? `${favoritedReciters.length} récitateur${favoritedReciters.length > 1 ? 's' : ''}`
+                      : 'Aucun pour l’instant',
                     icon: Heart,
                     onClick: () => handleNavigate('favorites'),
                   },
                   {
                     id: 'downloads',
                     label: 'Téléchargées',
-                    hint: downloadedEntries.length ? `${downloadedEntries.length} sourate(s)` : 'Voir le hors-ligne',
+                    hint: downloadedEntries.length
+                      ? `${downloadedEntries.length} sourate${downloadedEntries.length > 1 ? 's' : ''} hors-ligne`
+                      : 'Télécharger pour hors-ligne',
                     icon: Download,
-                    onClick: () => handleNavigate('more', 'downloads'),
+                    onClick: () => handleNavigate('more', 'account', { accountSub: 'downloads' }),
                   },
                   {
                     id: 'account',
                     label: 'Compte',
-                    hint: 'Préférences et sync',
+                    hint: user ? 'Sync activée' : 'Local — connectez-vous pour sync',
                     icon: Cloud,
-                    onClick: () => handleNavigate('more', 'account'),
+                    onClick: () => handleNavigate('more', 'account', { accountSub: 'profile' }),
                   },
                 ].map((action) => {
                   const Icon = action.icon;
@@ -1330,20 +1435,55 @@ const AppContent: React.FC = () => {
               </section>
             )}
 
-            <div className="flex flex-wrap items-center justify-between gap-2 rounded-2xl border border-[#30455c]/50 bg-[#101b2a]/78 px-4 py-3 text-[11px] text-[#95a7ba]">
-              <span className="inline-flex items-center gap-1.5">
-                <span className="h-1.5 w-1.5 rounded-full bg-[#b98d6e]" />
-                App Store &amp; Google Play bientôt
-              </span>
-              <a
-                href={GOMUSLIMLIFE_URL}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="inline-flex items-center gap-1.5 text-[#b4c0ce] hover:text-[#f1d4c1] transition-colors"
-              >
-                GoMuslimLife
-                <ExternalLink className="h-3 w-3 opacity-60" />
-              </a>
+            <div className="flex flex-col gap-2 rounded-2xl border border-[#30455c]/50 bg-[#101b2a]/78 px-4 py-3.5">
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <button
+                  type="button"
+                  onClick={() => {
+                    const isStandalone =
+                      window.matchMedia('(display-mode: standalone)').matches ||
+                      // @ts-expect-error iOS Safari
+                      Boolean(window.navigator.standalone);
+                    if (isStandalone) {
+                      alert('Sawra est déjà installé sur cet appareil.');
+                      return;
+                    }
+                    const isIos = /iphone|ipad|ipod/i.test(navigator.userAgent);
+                    alert(
+                      isIos
+                        ? 'Sur iPhone/iPad : ouvrez Safari → Partager → « Sur l’écran d’accueil ».'
+                        : 'Sur Android/Chrome : menu ⋮ → « Installer l’application » ou « Ajouter à l’écran d’accueil ».'
+                    );
+                  }}
+                  className="inline-flex min-h-10 items-center gap-1.5 rounded-full border border-[#cea687]/30 bg-[#f0d1bc]/10 px-3.5 py-2 text-[11px] font-bold text-[#f1d4c1] transition-colors hover:bg-[#f0d1bc]/16 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#cea687] tap-feedback"
+                >
+                  <Share className="h-3.5 w-3.5" aria-hidden />
+                  Ajouter à l’écran d’accueil
+                </button>
+                <a
+                  href={GOMUSLIMLIFE_URL}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex min-h-10 items-center gap-1.5 text-[11px] text-[#b4c0ce] hover:text-[#f1d4c1] transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#cea687]"
+                >
+                  GoMuslimLife
+                  <ExternalLink className="h-3 w-3 opacity-60" aria-hidden />
+                </a>
+              </div>
+              <p className="text-[11px] leading-relaxed text-[#95a7ba]">
+                PWA disponible maintenant. Apps App Store &amp; Google Play : liste d’attente à venir.
+              </p>
+              <div className="flex flex-wrap gap-x-3 gap-y-1 text-[11px]">
+                <button type="button" onClick={() => openLegal('sources')} className="text-[#aab7c5] hover:text-[#f1d4c1] underline-offset-2 hover:underline focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#cea687]">
+                  Sources
+                </button>
+                <button type="button" onClick={() => openLegal('privacy')} className="text-[#aab7c5] hover:text-[#f1d4c1] underline-offset-2 hover:underline focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#cea687]">
+                  Confidentialité
+                </button>
+                <button type="button" onClick={() => openLegal('terms')} className="text-[#aab7c5] hover:text-[#f1d4c1] underline-offset-2 hover:underline focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#cea687]">
+                  Conditions
+                </button>
+              </div>
             </div>
           </div>
         )}
@@ -1385,19 +1525,25 @@ const AppContent: React.FC = () => {
                 )}
 
                 <div className="relative">
-                  <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-[#95a7ba]" />
+                  <label htmlFor="reciter-search" className="sr-only">
+                    Rechercher un récitateur
+                  </label>
+                  <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-[#95a7ba]" aria-hidden />
                   <input
-                    type="text"
+                    id="reciter-search"
+                    type="search"
                     value={reciterSearch}
                     onChange={(e) => setReciterSearch(e.target.value)}
                     placeholder="Rechercher un récitateur..."
-                    className="w-full pl-12 pr-5 py-3.5 bg-[#111d2d]/78 hover:bg-[#162538]/88 focus:bg-[#162538] border border-[#30455c] focus:border-[#cea687]/55 rounded-2xl text-[#e6edf5] placeholder:text-[#8295aa] text-sm focus:outline-none transition-all"
+                    aria-label="Rechercher un récitateur"
+                    className="w-full min-h-12 pl-12 pr-5 py-3.5 bg-[#111d2d]/78 hover:bg-[#162538]/88 focus:bg-[#162538] border border-[#30455c] focus:border-[#cea687]/55 rounded-2xl text-[#e6edf5] placeholder:text-[#8295aa] text-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-[#cea687]/55 focus-visible:ring-offset-2 focus-visible:ring-offset-[#07111d] transition-all"
                   />
                   {reciterSearch && (
                     <button
                       type="button"
                       onClick={() => setReciterSearch('')}
-                      className="absolute right-4 top-1/2 -translate-y-1/2 text-xs text-[#b4c0ce] hover:text-[#f6f8fb] px-2 py-1 bg-[#1b2d43] rounded-md"
+                      aria-label="Effacer la recherche"
+                      className="absolute right-3 top-1/2 -translate-y-1/2 min-h-9 min-w-9 text-xs text-[#b4c0ce] hover:text-[#f6f8fb] px-2 py-1 bg-[#1b2d43] rounded-md focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#cea687]"
                     >
                       Effacer
                     </button>
@@ -1661,190 +1807,173 @@ const AppContent: React.FC = () => {
                     Plus
                   </span>
                   <h2 className="mt-3 text-lg font-black text-[#f6f8fb]">Fonctions avancées et informations</h2>
-                  <p className="mt-1 text-xs leading-relaxed text-[#b4c0ce]">
-                    Les vues secondaires quittent la navbar principale mais restent accessibles ici avec plus de contexte.
-                  </p>
                 </div>
               </div>
 
-              <div className="mt-5 grid grid-cols-2 gap-2 sm:grid-cols-4">
-                <button
-                  onClick={() => setMorePanel('account')}
-                  className={`rounded-2xl border px-3 py-3 text-xs font-bold transition-all ${
-                    morePanel === 'account'
-                      ? 'border-[#cea687]/35 bg-[#f0d1bc]/12 text-[#f1d4c1]'
-                      : 'border-[#30455c] bg-[#111d2d]/72 text-[#b4c0ce] hover:text-[#f6f8fb]'
-                  }`}
-                >
-                  Compte
-                </button>
-                <button
-                  onClick={() => setMorePanel('downloads')}
-                  className={`rounded-2xl border px-3 py-3 text-xs font-bold transition-all ${
-                    morePanel === 'downloads'
-                      ? 'border-[#cea687]/35 bg-[#f0d1bc]/12 text-[#f1d4c1]'
-                      : 'border-[#30455c] bg-[#111d2d]/72 text-[#b4c0ce] hover:text-[#f6f8fb]'
-                  }`}
-                >
-                  Téléchargées
-                </button>
-                <button
-                  onClick={() => setMorePanel('priorities')}
-                  className={`rounded-2xl border px-3 py-3 text-xs font-bold transition-all ${
-                    morePanel === 'priorities'
-                      ? 'border-[#cea687]/35 bg-[#f0d1bc]/12 text-[#f1d4c1]'
-                      : 'border-[#30455c] bg-[#111d2d]/72 text-[#b4c0ce] hover:text-[#f6f8fb]'
-                  }`}
-                >
-                  Priorités
-                </button>
-                <button
-                  onClick={() => setMorePanel('compare')}
-                  className={`rounded-2xl border px-3 py-3 text-xs font-bold transition-all ${
-                    morePanel === 'compare'
-                      ? 'border-[#cea687]/35 bg-[#f0d1bc]/12 text-[#f1d4c1]'
-                      : 'border-[#30455c] bg-[#111d2d]/72 text-[#b4c0ce] hover:text-[#f6f8fb]'
-                  }`}
-                >
-                  Comparer
-                </button>
-                <button
-                  onClick={() => setMorePanel('about')}
-                  className={`rounded-2xl border px-3 py-3 text-xs font-bold transition-all ${
-                    morePanel === 'about'
-                      ? 'border-[#cea687]/35 bg-[#f0d1bc]/12 text-[#f1d4c1]'
-                      : 'border-[#30455c] bg-[#111d2d]/72 text-[#b4c0ce] hover:text-[#f6f8fb]'
-                  }`}
-                >
-                  À propos
-                </button>
-              </div>
-            </section>
-
-            {/* Desktop navbar style — md+ only */}
-            <section className="hidden md:flex flex-col gap-3 rounded-3xl border border-[#30455c]/50 bg-[#111d2d]/65 p-4 sm:p-5">
-              <div>
-                <p className="text-[10px] font-black uppercase tracking-[0.16em] text-[#8ea1b3]">
-                  Affichage
-                </p>
-                <h3 className="mt-1 text-base font-black text-[#f6f8fb]">Navbar desktop</h3>
-                <p className="mt-1 text-xs leading-relaxed text-[#95a7ba]">
-                  Choisissez le dock flottant (actuel) ou la barre classique pleine largeur.
-                </p>
-              </div>
-              <div className="grid grid-cols-2 gap-2">
-                <button
-                  type="button"
-                  onClick={() => handleNavDesktopStyleChange('dock')}
-                  className={`rounded-2xl border px-3 py-3 text-left transition-all ${
-                    navDesktopStyle === 'dock'
-                      ? 'border-[#cea687]/35 bg-[#f0d1bc]/12'
-                      : 'border-[#30455c] bg-[#0f1928]/80 hover:border-[#46607b]/60'
-                  }`}
-                >
-                  <span
-                    className={`block text-xs font-bold ${
-                      navDesktopStyle === 'dock' ? 'text-[#f1d4c1]' : 'text-[#f6f8fb]'
+              <div className="mt-5 grid grid-cols-2 gap-2 sm:grid-cols-5">
+                {([
+                  { id: 'account' as const, label: 'Compte' },
+                  { id: 'legal' as const, label: 'Légal' },
+                  { id: 'priorities' as const, label: 'Priorités' },
+                  { id: 'compare' as const, label: 'Comparer' },
+                  { id: 'about' as const, label: 'À propos' },
+                ]).map((item) => (
+                  <button
+                    key={item.id}
+                    type="button"
+                    onClick={() => setMorePanel(item.id)}
+                    aria-pressed={morePanel === item.id}
+                    className={`min-h-11 rounded-2xl border px-3 py-3 text-xs font-bold transition-all focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#cea687] ${
+                      morePanel === item.id
+                        ? 'border-[#cea687]/35 bg-[#f0d1bc]/12 text-[#f1d4c1]'
+                        : 'border-[#30455c] bg-[#111d2d]/72 text-[#b4c0ce] hover:text-[#f6f8fb]'
                     }`}
                   >
-                    Dock
-                  </span>
-                  <span className="mt-0.5 block text-[11px] text-[#95a7ba]">Flottant arrondi (V1)</span>
-                </button>
-                <button
-                  type="button"
-                  onClick={() => handleNavDesktopStyleChange('classic')}
-                  className={`rounded-2xl border px-3 py-3 text-left transition-all ${
-                    navDesktopStyle === 'classic'
-                      ? 'border-[#cea687]/35 bg-[#f0d1bc]/12'
-                      : 'border-[#30455c] bg-[#0f1928]/80 hover:border-[#46607b]/60'
-                  }`}
-                >
-                  <span
-                    className={`block text-xs font-bold ${
-                      navDesktopStyle === 'classic' ? 'text-[#f1d4c1]' : 'text-[#f6f8fb]'
-                    }`}
-                  >
-                    Classique
-                  </span>
-                  <span className="mt-0.5 block text-[11px] text-[#95a7ba]">Pleine largeur (V2)</span>
-                </button>
+                    {item.label}
+                  </button>
+                ))}
               </div>
             </section>
 
             {morePanel === 'account' && (
-              <Suspense fallback={<div className="shimmer-loader h-40 rounded-2xl border border-slate-900" />}>
-                <AccountPanel />
-              </Suspense>
-            )}
-
-            {morePanel === 'downloads' && (
-              <section className="flex flex-col gap-4 rounded-3xl border border-[#30455c]/50 bg-[#111d2d]/65 p-4 sm:p-5">
-                <div className="flex items-start justify-between gap-3">
-                  <div>
-                    <p className="text-[10px] font-black uppercase tracking-[0.16em] text-[#8ea1b3]">
-                      Hors-ligne
-                    </p>
-                    <h3 className="mt-1 text-lg font-black text-[#f6f8fb]">Sourates téléchargées</h3>
-                    <p className="mt-1 text-xs leading-relaxed text-[#95a7ba]">
-                      Retrouvez vos téléchargements et le récitateur associé.
-                    </p>
-                  </div>
-                  <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-[#20334a] text-[#f0d1bc]">
-                    <Download className="h-4.5 w-4.5" />
-                  </span>
+              <div className="flex flex-col gap-4">
+                <div
+                  className="flex gap-1 rounded-2xl border border-[#30455c]/50 bg-[#0f1928]/80 p-1"
+                  role="tablist"
+                  aria-label="Compte et téléchargements"
+                >
+                  {([
+                    { id: 'profile' as const, label: 'Compte & sync' },
+                    { id: 'downloads' as const, label: 'Téléchargées' },
+                  ]).map((item) => (
+                    <button
+                      key={item.id}
+                      type="button"
+                      role="tab"
+                      aria-selected={accountSub === item.id}
+                      onClick={() => setAccountSub(item.id)}
+                      className={`min-h-10 flex-1 rounded-xl px-3 py-2 text-xs font-bold transition-all focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#cea687] ${
+                        accountSub === item.id
+                          ? 'bg-[#f0d1bc]/14 text-[#f1d4c1]'
+                          : 'text-[#95a7ba] hover:text-[#e6edf5]'
+                      }`}
+                    >
+                      {item.label}
+                    </button>
+                  ))}
                 </div>
 
-                {downloadedGroups.length === 0 ? (
-                  <div className="rounded-2xl border border-[#30455c]/50 bg-[#0f1928]/80 px-4 py-5 text-center">
-                    <p className="text-sm font-semibold text-[#f6f8fb]">Aucune sourate téléchargée</p>
-                    <p className="mt-1 text-xs text-[#95a7ba]">
-                      Téléchargez une sourate depuis l’écran d’écoute pour la retrouver ici.
-                    </p>
-                  </div>
+                {accountSub === 'profile' ? (
+                  <Suspense fallback={<div className="shimmer-loader h-40 rounded-2xl border border-slate-900" />}>
+                    <AccountPanel />
+                  </Suspense>
                 ) : (
-                  <div className="flex flex-col gap-3">
-                    {downloadedGroups.map((group) => (
-                      <div
-                        key={group.reciterId}
-                        className="rounded-2xl border border-[#30455c]/45 bg-[#0f1928]/80 px-4 py-3.5"
-                      >
-                        <div className="flex items-center justify-between gap-3">
-                          <div className="min-w-0">
-                            <h4 className="truncate text-sm font-black text-[#f6f8fb]">{group.reciterName}</h4>
-                            <p className="mt-0.5 text-[11px] text-[#95a7ba]">
-                              {group.surahs.length} sourate(s) hors-ligne
-                            </p>
-                          </div>
-                          <button
-                            type="button"
-                            onClick={() => {
-                              const selected = reciters.find((reciter) => reciter.id === group.reciterId);
-                              if (!selected) return;
-                              handleSelectReciter(selected);
-                            }}
-                            className="inline-flex shrink-0 items-center gap-1 rounded-full border border-[#46607b]/35 bg-[#132031]/75 px-3 py-1.5 text-[11px] font-semibold text-[#d7e4ef] hover:text-[#f1d4c1]"
-                          >
-                            Ouvrir
-                            <ArrowRight className="h-3.5 w-3.5" />
-                          </button>
-                        </div>
-
-                        <div className="mt-3 flex flex-wrap gap-2">
-                          {group.surahs.map((surah) => (
-                            <span
-                              key={`${group.reciterId}-${surah.id}`}
-                              className="inline-flex items-center rounded-full border border-[#46607b]/30 bg-[#132031]/70 px-3 py-1.5 text-[11px] font-semibold text-[#d7e4ef]"
-                            >
-                              {surah.id}. {surah.name}
-                            </span>
-                          ))}
-                        </div>
+                  <section className="flex flex-col gap-4 rounded-3xl border border-[#30455c]/50 bg-[#111d2d]/65 p-4 sm:p-5">
+                    <div className="flex items-start justify-between gap-3">
+                      <div>
+                        <p className="text-[10px] font-black uppercase tracking-[0.16em] text-[#8ea1b3]">
+                          Hors-ligne
+                        </p>
+                        <h3 className="mt-1 text-lg font-black text-[#f6f8fb]">Sourates téléchargées</h3>
+                        <p className="mt-1 text-xs leading-relaxed text-[#95a7ba]">
+                          Fichiers stockés localement sur cet appareil. Non synchronisés avec le cloud.
+                          Seules ces sourates restent écoutables sans réseau.
+                        </p>
                       </div>
-                    ))}
-                  </div>
+                      <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-[#20334a] text-[#f0d1bc]">
+                        <Download className="h-4.5 w-4.5" />
+                      </span>
+                    </div>
+
+                    {downloadedGroups.length === 0 ? (
+                      <div className="rounded-2xl border border-[#30455c]/50 bg-[#0f1928]/80 px-4 py-5 text-center">
+                        <p className="text-sm font-semibold text-[#f6f8fb]">Aucune sourate téléchargée</p>
+                        <p className="mt-1 text-xs text-[#95a7ba]">
+                          Téléchargez une sourate depuis l’écran d’écoute pour la retrouver ici.
+                        </p>
+                      </div>
+                    ) : (
+                      <div className="flex flex-col gap-3">
+                        {downloadedGroups.map((group) => (
+                          <div
+                            key={group.reciterId}
+                            className="rounded-2xl border border-[#30455c]/45 bg-[#0f1928]/80 px-4 py-3.5"
+                          >
+                            <div className="flex items-center justify-between gap-3">
+                              <div className="min-w-0">
+                                <h4 className="truncate text-sm font-black text-[#f6f8fb]">{group.reciterName}</h4>
+                                <p className="mt-0.5 text-[11px] text-[#95a7ba]">
+                                  {group.surahs.length} sourate(s) hors-ligne
+                                </p>
+                              </div>
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  const selected = reciters.find((reciter) => reciter.id === group.reciterId);
+                                  if (!selected) return;
+                                  handleSelectReciter(selected);
+                                }}
+                                className="inline-flex shrink-0 items-center gap-1 rounded-full border border-[#46607b]/35 bg-[#132031]/75 px-3 py-1.5 text-[11px] font-semibold text-[#d7e4ef] hover:text-[#f1d4c1]"
+                              >
+                                Ouvrir
+                                <ArrowRight className="h-3.5 w-3.5" />
+                              </button>
+                            </div>
+
+                            <div className="mt-3 flex flex-wrap gap-2">
+                              {group.surahs.map((surah) => (
+                                <span
+                                  key={`${group.reciterId}-${surah.id}`}
+                                  className="inline-flex items-center rounded-full border border-[#46607b]/30 bg-[#132031]/70 px-3 py-1.5 text-[11px] font-semibold text-[#d7e4ef]"
+                                >
+                                  {surah.id}. {surah.name}
+                                </span>
+                              ))}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </section>
                 )}
-              </section>
+              </div>
+            )}
+
+            {morePanel === 'legal' && (
+              <div className="flex flex-col gap-4">
+                <div
+                  className="flex gap-1 rounded-2xl border border-[#30455c]/50 bg-[#0f1928]/80 p-1"
+                  role="tablist"
+                  aria-label="Informations légales"
+                >
+                  {([
+                    { id: 'sources' as const, label: 'Sources' },
+                    { id: 'privacy' as const, label: 'Confidentialité' },
+                    { id: 'terms' as const, label: 'Conditions' },
+                  ]).map((item) => (
+                    <button
+                      key={item.id}
+                      type="button"
+                      role="tab"
+                      aria-selected={legalSub === item.id}
+                      onClick={() => setLegalSub(item.id)}
+                      className={`min-h-10 flex-1 rounded-xl px-2 py-2 text-[11px] sm:text-xs font-bold transition-all focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#cea687] ${
+                        legalSub === item.id
+                          ? 'bg-[#f0d1bc]/14 text-[#f1d4c1]'
+                          : 'text-[#95a7ba] hover:text-[#e6edf5]'
+                      }`}
+                    >
+                      {item.label}
+                    </button>
+                  ))}
+                </div>
+
+                <Suspense fallback={<div className="shimmer-loader h-40 rounded-2xl border border-slate-900" />}>
+                  {legalSub === 'sources' && <SourcesPanel />}
+                  {legalSub === 'privacy' && <PrivacyPanel />}
+                  {legalSub === 'terms' && <TermsPanel />}
+                </Suspense>
+              </div>
             )}
 
             {morePanel === 'priorities' && (
@@ -1863,7 +1992,11 @@ const AppContent: React.FC = () => {
 
             {morePanel === 'about' && (
               <Suspense fallback={<div className="shimmer-loader h-40 rounded-2xl border border-slate-900" />}>
-                <AboutPanel />
+                <AboutPanel
+                  onOpenLegal={openLegal}
+                  navDesktopStyle={navDesktopStyle}
+                  onNavDesktopStyleChange={handleNavDesktopStyleChange}
+                />
               </Suspense>
             )}
           </div>

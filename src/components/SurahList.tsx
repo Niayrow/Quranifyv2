@@ -97,19 +97,25 @@ export const SurahList: React.FC<SurahListProps> = ({ onChooseReciter }) => {
   return (
     <div className="flex flex-col gap-4 md:gap-5">
       <div className="relative">
-        <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-[#95a7ba]" />
+        <label htmlFor="surah-search" className="sr-only">
+          Rechercher une sourate
+        </label>
+        <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-[#95a7ba]" aria-hidden />
         <input
-          type="text"
+          id="surah-search"
+          type="search"
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
           placeholder={`Rechercher ${availableSurahs.length} sourates...`}
-          className="w-full pl-12 pr-5 py-3.5 bg-[#111d2d]/78 hover:bg-[#162538]/88 focus:bg-[#162538] border border-[#30455c] focus:border-[#cea687]/55 rounded-2xl text-[#e6edf5] placeholder:text-[#8295aa] text-sm focus:outline-none transition-all"
+          aria-label="Rechercher une sourate"
+          className="w-full min-h-12 pl-12 pr-5 py-3.5 bg-[#111d2d]/78 hover:bg-[#162538]/88 focus:bg-[#162538] border border-[#30455c] focus:border-[#cea687]/55 rounded-2xl text-[#e6edf5] placeholder:text-[#8295aa] text-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-[#cea687]/55 focus-visible:ring-offset-2 focus-visible:ring-offset-[#07111d] transition-all"
         />
         {searchQuery && (
           <button
             type="button"
             onClick={() => setSearchQuery('')}
-            className="absolute right-4 top-1/2 -translate-y-1/2 text-xs text-[#b4c0ce] hover:text-[#f6f8fb] px-2 py-1 bg-[#1b2d43] rounded-md"
+            aria-label="Effacer la recherche"
+            className="absolute right-3 top-1/2 -translate-y-1/2 min-h-9 min-w-9 text-xs text-[#b4c0ce] hover:text-[#f6f8fb] px-2 py-1 bg-[#1b2d43] rounded-md focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#cea687]"
           >
             Effacer
           </button>
