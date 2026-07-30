@@ -45,6 +45,13 @@ export const CURATED_RECITER_IDS = [
   245, // Mansour Al-Salemi
   254, // Badr Al-Turki
   20, // Khaled Al-Jalil
+
+  // Ajouts demandés
+  62, // Abdullah Awad Al-Juhany
+  253, // Islam Sobhi
+  160, // Adel Al-Kalbani
+  21, // Khalid Al-Qahtani
+  16, // Laayoun El Kouchi
 ] as const;
 
 export const CURATED_RECITER_ID_SET = new Set<number>(CURATED_RECITER_IDS);

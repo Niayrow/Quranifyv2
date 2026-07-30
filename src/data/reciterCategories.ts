@@ -51,6 +51,7 @@ export const RECITER_CATEGORIES: ReciterCategory[] = [
       102, // Maher Al-Mouaiqly
       92, // Yasser Al-Dossary
       217, // Bandar Balilah
+      62, // Abdullah Awad Al-Juhany
     ]),
   },
   {
@@ -95,6 +96,8 @@ export const RECITER_CATEGORIES: ReciterCategory[] = [
       30, // Saad El-Ghamidi
       5, // Ahmed El-Ajami
       4, // Abou Bakr Al-Chatri
+      21, // Khalid Al-Qahtani
+      160, // Adel Al-Kalbani
     ]),
   },
   {
@@ -123,6 +126,8 @@ export const RECITER_CATEGORIES: ReciterCategory[] = [
       221, // Raad Al-Kurdi
       92, // Yasser Al-Dossary
       272, // Okasha Kameny
+      253, // Islam Sobhi
+      16, // Laayoun El Kouchi
     ]),
   },
 ];
