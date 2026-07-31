@@ -390,11 +390,13 @@
 .brand-button-primary {
   background: linear-gradient(135deg, #f0d1bc 0%, #cea687 100%);
   color: #111d2d;
-  box-shadow: 0 12px 30px rgba(185, 141, 110, 0.28);
+  /* Tight shadow — large blurs look offset when a parent clips with overflow:hidden */
+  box-shadow: 0 2px 8px rgba(185, 141, 110, 0.38);
 }
 
 .brand-button-primary:hover {
   background: linear-gradient(135deg, #f3d8c6 0%, #ddbca3 100%);
+  box-shadow: 0 3px 10px rgba(185, 141, 110, 0.45);
 }
 
 .brand-button-secondary {
@@ -797,6 +799,17 @@
     overflow: hidden;
     will-change: max-height, opacity, transform;
     filter: blur(calc((1 - var(--fusion-p)) * 2.5px));
+  }
+
+  /* Parent clips shadows — keep CTA glow inside the button bounds */
+  .nav-reciter-fusion-dock .brand-button-primary,
+  .nav-explore-fusion-dock .brand-button-primary {
+    box-shadow: 0 1px 3px rgba(17, 29, 45, 0.22);
+  }
+
+  .nav-reciter-fusion-dock .brand-button-primary:hover,
+  .nav-explore-fusion-dock .brand-button-primary:hover {
+    box-shadow: 0 2px 5px rgba(17, 29, 45, 0.28);
   }
 
   .nav-reciter-fusion-avatar {

@@ -18,6 +18,14 @@ import {
   savePlayerV2Prefs,
   type PlayerV2Prefs,
 } from '../components/player/playerV2Prefs';
+import { AudioEffectsEngine } from '../audio/effectsEngine';
+import {
+  effectsNeedProcessing,
+  loadAudioEffects,
+  normalizeAudioEffects,
+  saveAudioEffects,
+  type AudioEffectsSettings,
+} from '../audio/effectsTypes';
 
 export type RemotePlaybackSession = {
   reciterId: number;
@@ -40,6 +48,11 @@ interface AudioContextType {
   repeatMode: 'none' | 'one' | 'all';
   sleepTimer: number | null;
   playerTheme: string;
+  audioEffects: AudioEffectsSettings;
+  setAudioEffects: (
+    effects: AudioEffectsSettings | ((prev: AudioEffectsSettings) => AudioEffectsSettings)
+  ) => void;
+  effectsSupported: boolean;
 
   /** Another signed-in device is currently playing */
   remoteSession: RemotePlaybackSession | null;
@@ -284,10 +297,21 @@ export const AudioProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     }
   });
   const [playerV2Prefs, setPlayerV2PrefsState] = useState<PlayerV2Prefs>(() => loadPlayerV2Prefs());
+  const [audioEffects, setAudioEffectsState] = useState<AudioEffectsSettings>(() => loadAudioEffects());
+  const [effectsSupported] = useState(() => {
+    if (typeof window === 'undefined') return false;
+    return Boolean(window.AudioContext || (window as unknown as { webkitAudioContext?: unknown }).webkitAudioContext);
+  });
+  const effectsEngineRef = useRef<AudioEffectsEngine | null>(null);
+  const audioEffectsRef = useRef(audioEffects);
   const selectedSurahIdsRef = useRef<Set<number>>(selectedSurahIds);
   useEffect(() => {
     selectedSurahIdsRef.current = selectedSurahIds;
   }, [selectedSurahIds]);
+
+  useEffect(() => {
+    audioEffectsRef.current = audioEffects;
+  }, [audioEffects]);
 
   const repeatModeRef = useRef(repeatMode);
   useEffect(() => {
@@ -296,6 +320,38 @@ export const AudioProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 
   // Audio HTML5 Reference
   const audioRef = useRef<HTMLAudioElement | null>(null);
+
+  const ensureEffectsEngine = useCallback(async () => {
+    const audio = audioRef.current;
+    if (!audio || !effectsSupported) return null;
+
+    if (!effectsEngineRef.current) {
+      effectsEngineRef.current = new AudioEffectsEngine();
+    }
+    const engine = effectsEngineRef.current;
+    if (!engine.isConnected) {
+      // Required for MediaElementSource on cross-origin streams (mp3quran sends ACAO: *)
+      if (audio.src && !audio.src.startsWith('blob:')) {
+        audio.crossOrigin = 'anonymous';
+      }
+      engine.connect(audio);
+    }
+    await engine.resume();
+    engine.apply(audioEffectsRef.current);
+    return engine;
+  }, [effectsSupported]);
+
+  const syncEffectsToEngine = useCallback(async (settings: AudioEffectsSettings) => {
+    if (!effectsSupported) return;
+
+    if (effectsNeedProcessing(settings)) {
+      await ensureEffectsEngine();
+      return;
+    }
+
+    // Keep bypass path if the graph was already created (cannot detach MediaElementSource)
+    effectsEngineRef.current?.apply(settings);
+  }, [effectsSupported, ensureEffectsEngine]);
 
   // Offline / Cache States & Actions
   const [cachedUrls, setCachedUrls] = useState<Set<string>>(new Set());
@@ -413,6 +469,8 @@ export const AudioProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   useEffect(() => {
     const audio = new Audio();
     audio.preload = 'metadata';
+    // Enables Web Audio processing on CDN streams (Access-Control-Allow-Origin: *)
+    audio.crossOrigin = 'anonymous';
     audioRef.current = audio;
     
     // Set restored volume
@@ -429,6 +487,8 @@ export const AudioProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 
     return () => {
       audio.pause();
+      effectsEngineRef.current?.dispose();
+      effectsEngineRef.current = null;
       audioRef.current = null;
     };
   }, []);
@@ -737,9 +797,20 @@ export const AudioProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       console.warn('Failed to retrieve cached blob URL, playing online version', e);
     }
 
+    // crossOrigin is required for MediaElementSource on remote CDN streams
+    audio.crossOrigin = 'anonymous';
+
     audio.src = sourceToPlay;
     audio.playbackRate = playbackSpeed;
     audio.load();
+
+    if (effectsNeedProcessing(audioEffectsRef.current)) {
+      try {
+        await ensureEffectsEngine();
+      } catch (e) {
+        console.warn('Audio effects engine failed to start', e);
+      }
+    }
 
     const applyStartTime = () => {
       try {
@@ -812,6 +883,9 @@ export const AudioProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     } else if (!audio.currentSrc) {
       playTrack(currentTrack.reciter, currentTrack.moshaf, currentTrack.surah, currentTime);
     } else {
+      if (effectsNeedProcessing(audioEffectsRef.current)) {
+        void ensureEffectsEngine();
+      }
       audio.play().catch(err => {
         console.error(err);
         setPlaybackStatus('error');
@@ -831,6 +905,9 @@ export const AudioProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       if (!audio.currentSrc) {
         playTrack(currentTrack.reciter, currentTrack.moshaf, currentTrack.surah, currentTime);
         return;
+      }
+      if (effectsNeedProcessing(audioEffectsRef.current)) {
+        void ensureEffectsEngine();
       }
       audio.play().catch(err => console.error(err));
     }
@@ -897,6 +974,20 @@ export const AudioProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       });
     },
     []
+  );
+
+  const setAudioEffects = useCallback(
+    (effects: AudioEffectsSettings | ((prev: AudioEffectsSettings) => AudioEffectsSettings)) => {
+      setAudioEffectsState((prev) => {
+        const raw = typeof effects === 'function' ? effects(prev) : effects;
+        const next = normalizeAudioEffects(raw);
+        saveAudioEffects(next);
+        audioEffectsRef.current = next;
+        void syncEffectsToEngine(next);
+        return next;
+      });
+    },
+    [syncEffectsToEngine]
   );
 
   const hydrateCloudSettings = useCallback(
@@ -1054,6 +1145,9 @@ export const AudioProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       repeatMode,
       sleepTimer,
       playerTheme,
+      audioEffects,
+      setAudioEffects,
+      effectsSupported,
       remoteSession,
       setRemoteSession,
       takeOverRemoteSession,

@@ -3,7 +3,8 @@ import { useAudio } from '../context/AudioContext';
 import {
   Play, Pause, SkipForward, SkipBack, ChevronDown, ChevronUp, Volume2, VolumeX,
   Disc, ListMusic, Search, X, Settings, Sparkles, Check, Moon, Repeat,
-  Repeat1, Clock, RotateCcw, RotateCw, Gauge, Maximize2, SlidersHorizontal, MonitorSmartphone
+  Repeat1, Clock, RotateCcw, RotateCw, Gauge, Maximize2, SlidersHorizontal, MonitorSmartphone,
+  Waves
 } from 'lucide-react';
 import { PLAYER_THEMES, PLAYER_THEME_IDS, type PlayerThemeId } from './player/playerThemes';
 import {
@@ -11,6 +12,8 @@ import {
   type PlayerV2Prefs,
   type SeekStepSeconds,
 } from './player/playerV2Prefs';
+import { AudioEffectsPanel } from './player/AudioEffectsPanel';
+import { AUDIO_EFFECT_PRESETS, effectsNeedProcessing } from '../audio/effectsTypes';
 import { getGeneratedReciterAvatar, getReciterImage } from '../utils/images';
 import { SURAHS } from '../data/surahs';
 
@@ -114,6 +117,9 @@ export const GlobalPlayerV2: React.FC = () => {
     setPlayerV2Prefs,
     selectedSurahIds,
     setSelectedSurahIds,
+    audioEffects,
+    setAudioEffects,
+    effectsSupported,
   } = useAudio();
 
   const [isExpanded, setIsExpanded] = useState(false);
@@ -122,6 +128,7 @@ export const GlobalPlayerV2: React.FC = () => {
   const [showPlaylist, setShowPlaylist] = useState(false);
   const [playlistClosing, setPlaylistClosing] = useState(false);
   const [showPersonalize, setShowPersonalize] = useState(false);
+  const [showEffects, setShowEffects] = useState(false);
   const [showVolumePopover, setShowVolumePopover] = useState(false);
   const [docked, setDocked] = useState(false);
   const [drawerSearch, setDrawerSearch] = useState('');
@@ -208,7 +215,7 @@ export const GlobalPlayerV2: React.FC = () => {
   }, [currentTrack, drawerSearch, getAvailableSurahs]);
 
   useEffect(() => {
-    if (!showPlaylist && !showPersonalize) return;
+    if (!showPlaylist && !showPersonalize && !showEffects) return;
     const previous = document.body.style.overflow;
     document.body.style.overflow = 'hidden';
     const onKey = (e: KeyboardEvent) => {
@@ -220,6 +227,8 @@ export const GlobalPlayerV2: React.FC = () => {
           setPlaylistClosing(false);
           setDrawerSearch('');
         }, 240);
+      } else if (showEffects) {
+        setShowEffects(false);
       } else {
         setShowPersonalize(false);
       }
@@ -229,14 +238,14 @@ export const GlobalPlayerV2: React.FC = () => {
       document.body.style.overflow = previous;
       window.removeEventListener('keydown', onKey);
     };
-  }, [showPlaylist, showPersonalize]);
+  }, [showPlaylist, showPersonalize, showEffects]);
 
   useEffect(() => {
     if (!currentTrack || remoteSession) return;
     const onKey = (e: KeyboardEvent) => {
       const target = e.target as HTMLElement | null;
       if (target?.closest('input, textarea, select, [contenteditable="true"]')) return;
-      if (showPlaylist || showPersonalize) return;
+      if (showPlaylist || showPersonalize || showEffects) return;
 
       if (e.code === 'Space' || e.key === ' ') {
         e.preventDefault();
@@ -260,6 +269,7 @@ export const GlobalPlayerV2: React.FC = () => {
     remoteSession,
     showPlaylist,
     showPersonalize,
+    showEffects,
     togglePlay,
     seekTo,
     currentTime,
@@ -362,9 +372,22 @@ export const GlobalPlayerV2: React.FC = () => {
     setShowPlaylist(false);
     setPlaylistClosing(false);
     setShowVolumePopover(false);
+    setShowEffects(false);
     setShowPersonalize(true);
   };
 
+  const openEffects = () => {
+    setShowPlaylist(false);
+    setPlaylistClosing(false);
+    setShowVolumePopover(false);
+    setShowPersonalize(false);
+    setShowEffects(true);
+  };
+
+  const effectsActive = effectsNeedProcessing(audioEffects);
+  const activeEffectLabel =
+    AUDIO_EFFECT_PRESETS.find((p) => p.id === audioEffects.preset)?.label ??
+    (audioEffects.preset === 'custom' ? 'Perso' : null);
   const RepeatIcon = repeatMode === 'one' ? Repeat1 : Repeat;
 
   const remoteSurahName = remoteSession
@@ -765,6 +788,17 @@ export const GlobalPlayerV2: React.FC = () => {
           <div className="flex items-center gap-1.5 shrink-0">
             <button
               type="button"
+              onClick={openEffects}
+              className={`h-9 w-9 rounded-xl flex items-center justify-center text-[#aab7c5] hover:text-[#f6f8fb] hover:bg-[#111d2d]/70 shrink-0 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#cea687] ${
+                effectsActive || showEffects ? `${theme.accentText} ${theme.accentBgLight}` : ''
+              }`}
+              title="Effets audio"
+              aria-label="Ouvrir les effets audio"
+            >
+              <Waves className="w-4.5 h-4.5" />
+            </button>
+            <button
+              type="button"
               onClick={openPlaylist}
               className={`h-9 w-9 rounded-xl flex items-center justify-center text-[#aab7c5] hover:text-[#f6f8fb] hover:bg-[#111d2d]/70 shrink-0 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#cea687] ${theme.accentTextHover}`}
               title="Sourates"
@@ -962,7 +996,7 @@ export const GlobalPlayerV2: React.FC = () => {
               </button>
             </div>
 
-            <div className="grid grid-cols-3 gap-2 mt-auto">
+            <div className="grid grid-cols-4 gap-2 mt-auto">
               <button
                 type="button"
                 onClick={cycleRepeat}
@@ -982,6 +1016,18 @@ export const GlobalPlayerV2: React.FC = () => {
               >
                 <ListMusic className="w-4 h-4" />
                 Liste
+              </button>
+              <button
+                type="button"
+                onClick={openEffects}
+                className={`h-12 rounded-2xl border text-xs font-bold flex items-center justify-center gap-1.5 tap-feedback ${
+                  effectsActive
+                    ? `${theme.accentBgLight} ${theme.accentBorderActive} ${theme.accentText}`
+                    : 'border-[#30455c] text-[#d0d9e3]'
+                }`}
+              >
+                <Waves className="w-4 h-4" />
+                Effets
               </button>
               <button
                 type="button"
@@ -1224,6 +1270,32 @@ export const GlobalPlayerV2: React.FC = () => {
                 </div>
               </section>
 
+              {/* Audio effects shortcut */}
+              <section>
+                <h4 className="text-[10px] font-black uppercase tracking-widest text-[#95a7ba] mb-2">Son</h4>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowPersonalize(false);
+                    openEffects();
+                  }}
+                  className={`w-full flex items-center justify-between gap-3 rounded-2xl border px-3.5 py-3 text-left ${
+                    effectsActive ? `${theme.accentBorder} ${theme.accentBgLight}` : 'border-[#30455c] bg-[#111d2d]/40'
+                  }`}
+                >
+                  <span className="flex items-center gap-2.5 text-sm text-[#e6edf5]">
+                    <Waves className={`w-4 h-4 ${effectsActive ? theme.accentText : 'text-[#95a7ba]'}`} />
+                    Effets audio
+                    {effectsActive && activeEffectLabel && (
+                      <span className={`text-[10px] font-bold ${theme.accentText}`}>
+                        {activeEffectLabel}
+                      </span>
+                    )}
+                  </span>
+                  <span className="text-[11px] font-bold text-[#95a7ba]">Ouvrir</span>
+                </button>
+              </section>
+
               {/* Toggles */}
               <section className="flex flex-col gap-2">
                 <h4 className="text-[10px] font-black uppercase tracking-widest text-[#95a7ba] mb-1">Affichage</h4>
@@ -1256,6 +1328,34 @@ export const GlobalPlayerV2: React.FC = () => {
                   );
                 })}
               </section>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── Audio effects panel ── */}
+      {showEffects && (
+        <div className="fixed inset-0 z-[70] flex items-end sm:items-center justify-center" role="dialog" aria-modal="true" aria-label="Effets audio">
+          <button type="button" className="absolute inset-0 bg-[#07111d]/70 backdrop-blur-sm" aria-label="Fermer" onClick={() => setShowEffects(false)} />
+          <div className="relative z-10 w-full max-w-lg max-h-[88dvh] overflow-y-auto rounded-t-3xl sm:rounded-3xl border border-[#30455c] bg-[#07111d] shadow-2xl sm:mx-4 animate-[slide-up_0.28s_cubic-bezier(0.16,1,0.3,1)]">
+            <div className="sticky top-0 z-10 flex items-center justify-between gap-3 px-5 py-4 border-b border-[#111d2d] bg-[#07111d]/95 backdrop-blur">
+              <h3 className="font-bold text-[#f6f8fb]">Effets audio</h3>
+              <button type="button" onClick={() => setShowEffects(false)} className="h-9 w-9 rounded-full border border-[#30455c] flex items-center justify-center text-[#aab7c5]" aria-label="Fermer">
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+            <div className="p-5 pb-[calc(1.25rem+env(safe-area-inset-bottom,0px))]">
+              <AudioEffectsPanel
+                effects={audioEffects}
+                supported={effectsSupported}
+                theme={{
+                  accentText: theme.accentText,
+                  accentBgLight: theme.accentBgLight,
+                  accentBorderActive: theme.accentBorderActive,
+                  sliderAccentColor: theme.sliderAccentColor,
+                }}
+                onChange={setAudioEffects}
+              />
             </div>
           </div>
         </div>
