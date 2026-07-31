@@ -1,4 +1,4 @@
-package com.quranify.app;
+package app.sawra;
 
 import android.content.Context;
 import org.json.JSONException;
@@ -33,7 +33,7 @@ public class WidgetDataStore {
     public static JSONObject defaultPayload() {
         JSONObject payload = new JSONObject();
         try {
-            payload.put("reciterName", "Quranify");
+            payload.put("reciterName", "Sawra");
             payload.put("surahName", "Al-Fatihah");
             payload.put("surahId", 1);
             payload.put("surahArabic", "الفَاتِحَة");

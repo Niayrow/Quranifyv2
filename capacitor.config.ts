@@ -1,7 +1,7 @@
 import type { CapacitorConfig } from '@capacitor/cli';
 
 const config: CapacitorConfig = {
-  appId: 'com.quranify.app',
+  appId: 'app.sawra',
   appName: 'Sawra',
   webDir: 'dist',
   server: {

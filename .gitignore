@@ -25,3 +25,10 @@ dist-ssr
 
 # Reciter portrait originals (backup before brand recolor)
 public/reciters/_original/
+
+# Android release signing (never commit secrets)
+*.jks
+*.keystore
+android/keystore.properties
+android/upload-keystore.jks
+android/KEYSTORE_CREDENTIALS.txt

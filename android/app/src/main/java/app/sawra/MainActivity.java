@@ -1,4 +1,4 @@
-package com.quranify.app;
+package app.sawra;
 
 import android.os.Bundle;
 import com.getcapacitor.BridgeActivity;

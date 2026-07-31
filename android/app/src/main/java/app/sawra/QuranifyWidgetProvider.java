@@ -1,4 +1,4 @@
-package com.quranify.app;
+package app.sawra;
 
 import android.appwidget.AppWidgetManager;
 import android.app.PendingIntent;
@@ -32,7 +32,7 @@ public class QuranifyWidgetProvider extends AppWidgetProvider {
         for (int appWidgetId : appWidgetIds) {
             RemoteViews views = new RemoteViews(context.getPackageName(), R.layout.widget_quranify);
 
-            String reciterName = data.optString("reciterName", "Quranify");
+            String reciterName = data.optString("reciterName", "Sawra");
             String surahName = data.optString("surahName", "Al-Fatihah");
             String surahArabic = data.optString("surahArabic", "الفَاتِحَة");
             int surahId = data.optInt("surahId", 1);
@@ -50,7 +50,7 @@ public class QuranifyWidgetProvider extends AppWidgetProvider {
 
             Intent launchIntent = new Intent(context, MainActivity.class);
             launchIntent.setAction(Intent.ACTION_VIEW);
-            launchIntent.setData(Uri.parse("quranify://surah/" + surahId));
+            launchIntent.setData(Uri.parse("sawra://surah/" + surahId));
             launchIntent.putExtra("tab", "surahs");
             launchIntent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TOP);
 

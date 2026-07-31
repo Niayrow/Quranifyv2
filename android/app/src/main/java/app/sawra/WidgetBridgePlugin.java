@@ -1,4 +1,4 @@
-package com.quranify.app;
+package app.sawra;
 
 import com.getcapacitor.JSObject;
 import com.getcapacitor.Plugin;

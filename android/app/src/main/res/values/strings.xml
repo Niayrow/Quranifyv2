@@ -2,7 +2,7 @@
 <resources>
     <string name="app_name">Sawra</string>
     <string name="title_activity_main">Sawra</string>
-    <string name="package_name">com.quranify.app</string>
-    <string name="custom_url_scheme">com.quranify.app</string>
+    <string name="package_name">app.sawra</string>
+    <string name="custom_url_scheme">app.sawra</string>
     <string name="widget_description">Reprenez votre dernière récitation Coranique depuis l\'écran d\'accueil.</string>
 </resources>
