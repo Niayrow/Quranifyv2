@@ -98,17 +98,38 @@ def fit_contain_on_bg(img: Image.Image, size: int, ratio: float = 1.0, bg=APP_BG
     return canvas.convert("RGB")
 
 
+def trim_alpha_to_square(im: Image.Image, pad_ratio: float = 0.06) -> Image.Image:
+    """Recadre sur le contenu opaque puis recentre dans un carré (favicons plus lisibles)."""
+    im = im.convert("RGBA")
+    bbox = im.getbbox()
+    if not bbox:
+        return im
+    trimmed = im.crop(bbox)
+    side = max(trimmed.width, trimmed.height)
+    pad = max(2, int(side * pad_ratio))
+    canvas_side = side + pad * 2
+    canvas = Image.new("RGBA", (canvas_side, canvas_side), (0, 0, 0, 0))
+    offset = ((canvas_side - trimmed.width) // 2, (canvas_side - trimmed.height) // 2)
+    canvas.alpha_composite(trimmed, dest=offset)
+    return canvas
+
+
 # --- Sources ---
 if not SITE_SRC.exists():
     raise SystemExit(f"Missing {SITE_SRC}")
 if not APP_SRC.exists():
     raise SystemExit(f"Missing {APP_SRC}")
 
-site_raw = Image.open(SITE_SRC).convert("RGBA")
+# Préférer la source brute si dispo (évite de re-cropper un sansfond déjà traité)
+site_master = icons / "site-logo-source.png"
+site_raw = Image.open(site_master if site_master.exists() else SITE_SRC).convert("RGBA")
 # Si le fichier source a encore un fond noir, on le retire
 site = knock_out_black(crop_square(site_raw))
 site.save(SITE_SRC, "PNG", optimize=True)
 print(f"updated transparent {SITE_SRC.relative_to(ROOT)}")
+
+# Favicon : logo plus gros dans l’onglet (peu de marge transparente)
+site_favicon = trim_alpha_to_square(site, pad_ratio=0.04)
 
 app_raw = Image.open(APP_SRC).convert("RGBA")
 # Garder l'icône cadrée (squircle + bordure) pour PWA / stores
@@ -116,9 +137,12 @@ app = crop_square(app_raw)
 # Version plein cadre pour launchers (moins de bande noire inutile)
 app_tight = crop_square(trim_outer_black(app_raw, pad=4))
 
-# --- Transparent (UI + petits favicons) ---
-transparent_targets = {
-    icons / "logo.png": 512,
+# --- Transparent UI ---
+resize_rgba(site, 512).save(icons / "logo.png", "PNG", optimize=True)
+print("transparent logo.png 512")
+
+# --- Favicons (contenu recadré = plus grand dans l’onglet) ---
+favicon_targets = {
     icons / "favicon-16x16.png": 16,
     icons / "favicon-32x32.png": 32,
     icons / "favicon-180x180.png": 180,
@@ -126,19 +150,23 @@ transparent_targets = {
     public / "favicon-192.png": 192,
 }
 
-for path, size in transparent_targets.items():
-    resize_rgba(site, size).save(path, "PNG", optimize=True)
-    print(f"transparent {path.relative_to(ROOT)} {size}")
+for path, size in favicon_targets.items():
+    resize_rgba(site_favicon, size).save(path, "PNG", optimize=True)
+    print(f"favicon {path.relative_to(ROOT)} {size}")
 
 ico_sizes = [16, 32, 48]
-ico_imgs = [resize_rgba(site, s) for s in ico_sizes]
+ico_imgs = [resize_rgba(site_favicon, s) for s in ico_sizes]
 ico_imgs[0].save(icons / "favicon.ico", format="ICO", sizes=[(s, s) for s in ico_sizes])
 ico_imgs[0].save(public / "favicon.ico", format="ICO", sizes=[(s, s) for s in ico_sizes])
 print("favicon.ico (icons + public)")
 
 resize_rgba(site, 1024).save(icons / "icon-1024.png", "PNG", optimize=True)
 
-# --- Opaque app / PWA (source appicon) ---
+# --- Opaque app / PWA (source appicon) — dézoomé pour safe zone OS ---
+# ~0.70 laisse de la marge quand Chrome/Android/iOS masquent les coins
+PWA_ZOOM = 0.70
+MASKABLE_ZOOM = 0.66
+
 opaque = {
     icons / "apple-touch-icon.png": 180,
     icons / "android-chrome-192x192.png": 192,
@@ -151,13 +179,12 @@ opaque = {
 }
 
 for path, size in opaque.items():
-    fit_cover_rgb(app_tight, size).save(path, "PNG", optimize=True)
-    print(f"appicon {path.relative_to(ROOT)} {size}")
+    fit_contain_on_bg(app_tight, size, PWA_ZOOM).save(path, "PNG", optimize=True)
+    print(f"appicon {path.relative_to(ROOT)} {size} zoom={PWA_ZOOM}")
 
-# Maskable : safe zone ~80%
-fit_contain_on_bg(app_tight, 192, 0.82).save(icons / "maskable-192x192.png", "PNG", optimize=True)
-fit_contain_on_bg(app_tight, 512, 0.82).save(icons / "maskable-512x512.png", "PNG", optimize=True)
-print("maskable 192/512")
+fit_contain_on_bg(app_tight, 192, MASKABLE_ZOOM).save(icons / "maskable-192x192.png", "PNG", optimize=True)
+fit_contain_on_bg(app_tight, 512, MASKABLE_ZOOM).save(icons / "maskable-512x512.png", "PNG", optimize=True)
+print(f"maskable 192/512 zoom={MASKABLE_ZOOM}")
 
 # OG image
 og = Image.new("RGBA", (1200, 630), (*APP_BG, 255))
@@ -176,7 +203,7 @@ ios_icon = (
     / "AppIcon.appiconset"
     / "AppIcon-512@2x.png"
 )
-fit_cover_rgb(app_tight, 1024).save(ios_icon, "PNG", optimize=True)
+fit_contain_on_bg(app_tight, 1024, PWA_ZOOM).save(ios_icon, "PNG", optimize=True)
 print(f"ios {ios_icon.relative_to(ROOT)}")
 
 # --- Android ---
@@ -192,14 +219,14 @@ android_sizes = {
 for folder, sizes in android_sizes.items():
     dens = android_res / folder
     dens.mkdir(parents=True, exist_ok=True)
-    launcher = fit_cover_rgb(app_tight, sizes["launcher"])
+    launcher = fit_contain_on_bg(app_tight, sizes["launcher"], PWA_ZOOM)
     launcher.save(dens / "ic_launcher.png", "PNG", optimize=True)
     launcher.save(dens / "ic_launcher_round.png", "PNG", optimize=True)
 
-    # Adaptive foreground : logo plat transparent (évite double arrondi)
+    # Adaptive foreground : logo plat transparent, plus petit (safe zone)
     fg_size = sizes["foreground"]
     fg = Image.new("RGBA", (fg_size, fg_size), (0, 0, 0, 0))
-    content = resize_rgba(site, int(fg_size * 0.68))
+    content = resize_rgba(site, int(fg_size * 0.58))
     offset = ((fg_size - content.width) // 2, (fg_size - content.height) // 2)
     fg.alpha_composite(content, dest=offset)
     fg.save(dens / "ic_launcher_foreground.png", "PNG", optimize=True)
