@@ -1,4 +1,5 @@
 import React, { useDeferredValue, useEffect, useMemo, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { useAudio } from '../context/AudioContext';
 import type { Surah } from '../types';
 import {
@@ -28,12 +29,16 @@ export const SurahList: React.FC<SurahListProps> = ({ onChooseReciter }) => {
     cachedUrls,
     downloadProgress,
     downloadSurah,
+    downloadAllSurahs,
+    deleteAllSurahs,
+    batchDownload,
     deleteSurah,
   } = useAudio();
 
   const [searchQuery, setSearchQuery] = useState('');
   const [searchFocused, setSearchFocused] = useState(false);
   const [highlightIndex, setHighlightIndex] = useState(0);
+  const [showDeleteAllModal, setShowDeleteAllModal] = useState(false);
   const deferredQuery = useDeferredValue(searchQuery);
   const searchWrapRef = useRef<HTMLDivElement>(null);
 
@@ -41,25 +46,46 @@ export const SurahList: React.FC<SurahListProps> = ({ onChooseReciter }) => {
     return getAvailableSurahs(activeReciter, activeMoshaf);
   }, [activeReciter, activeMoshaf, getAvailableSurahs]);
 
+  const offlineOnlySurahs = useMemo(() => {
+    if (!activeMoshaf || typeof navigator === 'undefined' || navigator.onLine) {
+      return availableSurahs;
+    }
+    return availableSurahs.filter((surah) => cachedUrls.has(getAudioUrl(activeMoshaf, surah)));
+  }, [activeMoshaf, availableSurahs, cachedUrls]);
+
   const suggestions = useMemo(
-    () => getSurahSuggestions(availableSurahs, deferredQuery, 8),
-    [availableSurahs, deferredQuery]
+    () => getSurahSuggestions(offlineOnlySurahs, deferredQuery, 8),
+    [offlineOnlySurahs, deferredQuery]
   );
 
   const showSuggestions = searchFocused && deferredQuery.trim().length > 0 && suggestions.length > 0;
 
   const filteredSurahs = useMemo(() => {
-    if (!deferredQuery.trim()) return availableSurahs;
-    return availableSurahs
+    if (!deferredQuery.trim()) return offlineOnlySurahs;
+    return offlineOnlySurahs
       .map((surah) => ({ surah, score: scoreSurahMatch(surah, deferredQuery) }))
       .filter((item) => item.score > 0)
       .sort((a, b) => b.score - a.score || a.surah.id - b.surah.id)
       .map((item) => item.surah);
-  }, [availableSurahs, deferredQuery]);
+  }, [offlineOnlySurahs, deferredQuery]);
 
   useEffect(() => {
     setHighlightIndex(0);
   }, [deferredQuery]);
+
+  useEffect(() => {
+    if (!showDeleteAllModal) return;
+    const previous = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') setShowDeleteAllModal(false);
+    };
+    window.addEventListener('keydown', onKeyDown);
+    return () => {
+      document.body.style.overflow = previous;
+      window.removeEventListener('keydown', onKeyDown);
+    };
+  }, [showDeleteAllModal]);
 
   useEffect(() => {
     const onPointerDown = (event: MouseEvent | TouchEvent) => {
@@ -91,6 +117,17 @@ export const SurahList: React.FC<SurahListProps> = ({ onChooseReciter }) => {
   };
 
   const playlistActive = selectedSurahIds.size > 0;
+
+  const offlineReadyCount = useMemo(() => {
+    if (!activeMoshaf) return 0;
+    return availableSurahs.reduce((count, surah) => {
+      const url = getAudioUrl(activeMoshaf, surah);
+      return cachedUrls.has(url) ? count + 1 : count;
+    }, 0);
+  }, [activeMoshaf, availableSurahs, cachedUrls]);
+
+  const allOffline = availableSurahs.length > 0 && offlineReadyCount === availableSurahs.length;
+
 
   const toggleInLoop = (id: number) => {
     setSelectedSurahIds((prev) => {
@@ -168,7 +205,7 @@ export const SurahList: React.FC<SurahListProps> = ({ onChooseReciter }) => {
               setSearchFocused(false);
             }
           }}
-          placeholder={`Rechercher ${availableSurahs.length} sourates...`}
+          placeholder={`Rechercher ${offlineOnlySurahs.length} sourates...`}
           aria-label="Rechercher une sourate"
           aria-autocomplete="list"
           aria-expanded={showSuggestions}
@@ -235,6 +272,110 @@ export const SurahList: React.FC<SurahListProps> = ({ onChooseReciter }) => {
           </ul>
         )}
       </div>
+
+      {activeReciter && activeMoshaf && availableSurahs.length > 0 && (
+        <div className="flex items-center gap-2">
+          <button
+            type="button"
+            disabled={allOffline || batchDownload?.active}
+            onClick={() => downloadAllSurahs(activeReciter, activeMoshaf)}
+            className={`inline-flex min-h-10 flex-1 items-center justify-center gap-2 rounded-xl border px-3 py-2 text-[12px] font-bold transition-colors tap-feedback disabled:opacity-60 ${
+              allOffline
+                ? 'border-[#cea687]/30 bg-[#f0d1bc]/10 text-[#f1d4c1]'
+                : 'border-[#cea687]/35 bg-[#f0d1bc]/12 text-[#f1d4c1] hover:bg-[#f0d1bc]/18'
+            }`}
+            title={
+              allOffline
+                ? 'Toutes les sourates sont déjà hors-ligne'
+                : 'Télécharger toutes les sourates de ce récitateur'
+            }
+          >
+            {allOffline ? (
+              <CloudCheck className="h-4 w-4" />
+            ) : (
+              <CloudDownload className="h-4 w-4" />
+            )}
+            <span className="truncate">
+              {allOffline
+                ? 'Toutes hors-ligne'
+                : batchDownload?.active
+                  ? `En cours… ${batchDownload.done}/${batchDownload.total}`
+                  : `Tout télécharger (${availableSurahs.length - offlineReadyCount})`}
+            </span>
+          </button>
+          {offlineReadyCount > 0 && (
+            <button
+              type="button"
+              disabled={batchDownload?.active}
+              onClick={() => setShowDeleteAllModal(true)}
+              className="inline-flex h-10 shrink-0 items-center justify-center gap-1.5 rounded-xl border border-red-400/35 bg-red-500/10 px-3 text-[11px] font-semibold text-red-300 hover:bg-red-500/15 tap-feedback disabled:opacity-50"
+              title="Supprimer toutes les sourates hors-ligne de ce récitateur"
+              aria-label="Tout supprimer hors-ligne"
+            >
+              <Trash2 className="h-3.5 w-3.5" />
+              <span className="hidden min-[400px]:inline">Tout supprimer</span>
+            </button>
+          )}
+        </div>
+      )}
+
+      {showDeleteAllModal && activeReciter && activeMoshaf && createPortal(
+        <div
+          className="fixed inset-0 z-[100] flex items-center justify-center p-4 sm:p-6"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="delete-all-offline-title"
+        >
+          <button
+            type="button"
+            aria-label="Fermer"
+            className="absolute inset-0 bg-[#07111d]/72 backdrop-blur-xl"
+            onClick={() => setShowDeleteAllModal(false)}
+          />
+          <div className="relative z-10 w-full max-w-md overflow-hidden rounded-3xl border border-[#30455c]/70 bg-[#0c1522] shadow-[0_24px_80px_rgba(0,0,0,0.65)] animate-[page-enter_0.28s_cubic-bezier(0.16,1,0.3,1)]">
+            <div className="px-5 py-5 sm:px-6 sm:py-6">
+              <div className="flex items-start gap-3">
+                <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl border border-red-400/30 bg-red-500/12 text-red-300">
+                  <Trash2 className="h-5 w-5" />
+                </span>
+                <div className="min-w-0">
+                  <h2 id="delete-all-offline-title" className="text-lg font-black text-[#f6f8fb] leading-tight">
+                    Tout supprimer ?
+                  </h2>
+                  <p className="mt-2 text-sm leading-relaxed text-[#c8d1db]">
+                    Supprimer les{' '}
+                    <span className="font-bold text-[#f6f8fb]">{offlineReadyCount}</span> sourate
+                    {offlineReadyCount > 1 ? 's' : ''} hors-ligne de{' '}
+                    <span className="font-bold text-[#f1d4c1]">{activeReciter.name}</span> ?
+                    Vous pourrez les retélécharger plus tard.
+                  </p>
+                </div>
+              </div>
+              <div className="mt-5 flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
+                <button
+                  type="button"
+                  onClick={() => setShowDeleteAllModal(false)}
+                  className="inline-flex min-h-11 items-center justify-center rounded-xl border border-[#30455c] bg-[#111d2d] px-4 text-[13px] font-bold text-[#d0d9e3] hover:text-[#f6f8fb] tap-feedback"
+                >
+                  Annuler
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowDeleteAllModal(false);
+                    void deleteAllSurahs(activeReciter, activeMoshaf);
+                  }}
+                  className="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl border border-red-400/40 bg-red-500/18 px-4 text-[13px] font-bold text-red-200 hover:bg-red-500/25 tap-feedback"
+                >
+                  <Trash2 className="h-4 w-4" />
+                  Tout supprimer
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>,
+        document.body
+      )}
 
       <div className="flex items-center justify-between gap-3 px-0.5">
         <p className="min-w-0 truncate text-[11px] font-medium text-[#95a7ba]">

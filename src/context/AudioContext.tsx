@@ -12,6 +12,7 @@ import {
   deleteCachedUrl,
   getCachedBlobUrl,
   clearAudioCache,
+  isUrlCached,
 } from '../utils/offlineManager';
 import {
   DEFAULT_PLAYER_V2_PREFS,
@@ -69,7 +70,19 @@ interface AudioContextType {
   cachedUrls: Set<string>;
   downloadProgress: Record<string, number>;
   cacheInfo: { count: number; totalSizeMb: number } | null;
+  batchDownload: {
+    done: number;
+    total: number;
+    /** 0–100 progress of the file currently downloading */
+    fileProgress: number;
+    active: boolean;
+    reciterName?: string;
+    startedAt?: number;
+  } | null;
   downloadSurah: (reciter: Reciter, moshaf: Moshaf, surah: Surah) => Promise<void>;
+  downloadAllSurahs: (reciter: Reciter, moshaf: Moshaf) => Promise<void>;
+  deleteAllSurahs: (reciter: Reciter, moshaf: Moshaf) => Promise<void>;
+  cancelBatchDownload: () => void;
   deleteSurah: (reciter: Reciter, moshaf: Moshaf, surah: Surah) => Promise<void>;
   clearCache: () => Promise<void>;
   
@@ -365,6 +378,15 @@ export const AudioProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   const [cachedUrls, setCachedUrls] = useState<Set<string>>(new Set());
   const [downloadProgress, setDownloadProgress] = useState<Record<string, number>>({});
   const [cacheInfo, setCacheInfo] = useState<{ count: number; totalSizeMb: number } | null>(null);
+  const [batchDownload, setBatchDownload] = useState<{
+    done: number;
+    total: number;
+    fileProgress: number;
+    active: boolean;
+    reciterName?: string;
+    startedAt?: number;
+  } | null>(null);
+  const batchAbortRef = useRef(false);
 
   const refreshCacheInfo = useCallback(async () => {
     const info = await getAudioCacheInfo();
@@ -396,6 +418,139 @@ export const AudioProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       }, 1500);
     }
   }, [refreshCacheInfo]);
+
+  const cancelBatchDownload = useCallback(() => {
+    batchAbortRef.current = true;
+  }, []);
+
+  const downloadAllSurahs = useCallback(async (reciter: Reciter, moshaf: Moshaf) => {
+    if (batchDownload?.active) return;
+
+    const availableIds = moshaf.surah_list
+      .split(',')
+      .map((s) => parseInt(s.trim(), 10))
+      .filter((n) => !Number.isNaN(n));
+    const surahs = SURAHS.filter((surah) => availableIds.includes(surah.id));
+    if (surahs.length === 0) return;
+
+    const pending: Surah[] = [];
+    for (const surah of surahs) {
+      const url = getAudioUrl(moshaf, surah);
+      if (!(await isUrlCached(url))) pending.push(surah);
+    }
+
+    if (pending.length === 0) {
+      setBatchDownload({
+        done: 0,
+        total: 0,
+        fileProgress: 0,
+        active: false,
+        reciterName: reciter.name,
+      });
+      window.setTimeout(() => setBatchDownload(null), 2000);
+      return;
+    }
+
+    const startedAt = Date.now();
+    batchAbortRef.current = false;
+    setBatchDownload({
+      done: 0,
+      total: pending.length,
+      fileProgress: 0,
+      active: true,
+      reciterName: reciter.name,
+      startedAt,
+    });
+    let done = 0;
+
+    for (const surah of pending) {
+      if (batchAbortRef.current) break;
+      const url = getAudioUrl(moshaf, surah);
+      try {
+        setDownloadProgress((prev) => ({ ...prev, [url]: 0 }));
+        setBatchDownload({
+          done,
+          total: pending.length,
+          fileProgress: 0,
+          active: true,
+          reciterName: reciter.name,
+          startedAt,
+        });
+        await downloadAndCacheUrl(url, (progress) => {
+          const clamped = Math.min(100, Math.max(0, progress));
+          setDownloadProgress((prev) => ({ ...prev, [url]: clamped }));
+          setBatchDownload((prev) =>
+            prev?.active
+              ? { ...prev, fileProgress: Math.max(prev.fileProgress, clamped) }
+              : prev
+          );
+        });
+        // Clear file progress before incrementing done to avoid double-count rollbacks
+        setDownloadProgress((prev) => {
+          const next = { ...prev };
+          delete next[url];
+          return next;
+        });
+        done += 1;
+        setBatchDownload({
+          done,
+          total: pending.length,
+          fileProgress: 0,
+          active: true,
+          reciterName: reciter.name,
+          startedAt,
+        });
+        await refreshCacheInfo();
+      } catch (e) {
+        console.error('Failed to download surah in batch', surah.id, e);
+        setDownloadProgress((prev) => {
+          const next = { ...prev };
+          delete next[url];
+          return next;
+        });
+        setBatchDownload({
+          done,
+          total: pending.length,
+          fileProgress: 0,
+          active: true,
+          reciterName: reciter.name,
+          startedAt,
+        });
+      }
+    }
+
+    setBatchDownload({
+      done,
+      total: pending.length,
+      fileProgress: 0,
+      active: false,
+      reciterName: reciter.name,
+      startedAt,
+    });
+    window.setTimeout(() => setBatchDownload(null), 3200);
+  }, [batchDownload?.active, refreshCacheInfo]);
+
+  const deleteAllSurahs = useCallback(async (_reciter: Reciter, moshaf: Moshaf) => {
+    if (batchDownload?.active) return;
+
+    const availableIds = moshaf.surah_list
+      .split(',')
+      .map((s) => parseInt(s.trim(), 10))
+      .filter((n) => !Number.isNaN(n));
+    const surahs = SURAHS.filter((surah) => availableIds.includes(surah.id));
+
+    for (const surah of surahs) {
+      const url = getAudioUrl(moshaf, surah);
+      if (await isUrlCached(url)) {
+        try {
+          await deleteCachedUrl(url);
+        } catch (e) {
+          console.error('Failed to delete surah in batch', surah.id, e);
+        }
+      }
+    }
+    await refreshCacheInfo();
+  }, [batchDownload?.active, refreshCacheInfo]);
 
   const deleteSurah = useCallback(async (_reciter: Reciter, moshaf: Moshaf, surah: Surah) => {
     const url = getAudioUrl(moshaf, surah);
@@ -1199,7 +1354,11 @@ export const AudioProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       cachedUrls,
       downloadProgress,
       cacheInfo,
+      batchDownload,
       downloadSurah,
+      downloadAllSurahs,
+      deleteAllSurahs,
+      cancelBatchDownload,
       deleteSurah,
       clearCache
     }}>

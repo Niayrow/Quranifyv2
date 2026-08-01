@@ -579,6 +579,65 @@
   animation: shimmer 1.5s infinite;
 }
 
+@keyframes batch-toast-in {
+  from {
+    opacity: 0;
+    transform: translate3d(0, -110%, 0);
+  }
+  to {
+    opacity: 1;
+    transform: translate3d(0, 0, 0);
+  }
+}
+
+@keyframes batch-toast-out {
+  from {
+    opacity: 1;
+    transform: translate3d(0, 0, 0);
+  }
+  to {
+    opacity: 0;
+    transform: translate3d(0, -110%, 0);
+  }
+}
+
+@keyframes batch-bar-sheen {
+  0% { transform: translateX(-120%); }
+  100% { transform: translateX(220%); }
+}
+
+.batch-toast-enter {
+  animation: batch-toast-in 0.85s cubic-bezier(0.16, 1, 0.3, 1) both;
+  will-change: transform, opacity;
+}
+
+.batch-toast-exit {
+  animation: batch-toast-out 0.85s cubic-bezier(0.7, 0, 0.84, 0) both;
+  pointer-events: none;
+  will-change: transform, opacity;
+}
+
+.batch-toast-bar-sheen {
+  animation: batch-bar-sheen 1.8s ease-in-out infinite;
+}
+
+.batch-toast-scrim {
+  position: fixed;
+  inset: 0;
+  z-index: 79;
+  background: rgba(2, 6, 12, 0.62);
+  backdrop-filter: blur(2px);
+  -webkit-backdrop-filter: blur(2px);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.45s ease;
+}
+
+.batch-toast-scrim.is-on {
+  opacity: 1;
+  pointer-events: auto;
+}
+
 /* Slide up details sheet for bottom player */
 .slide-up {
   transform: translateY(0);

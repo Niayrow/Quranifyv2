@@ -4,6 +4,9 @@ import type { Reciter, Moshaf } from '../types';
 import { getGeneratedReciterAvatar, getReciterImage } from '../utils/images';
 import { useReciterNavFusion } from '../hooks/useReciterNavFusion';
 import { RECITER_CATEGORIES } from '../data/reciterCategories';
+import { useAudio } from '../context/AudioContext';
+import { getAudioUrl } from '../utils/audioUrl';
+import { SURAHS } from '../data/surahs';
 
 interface ListenReciterHeaderProps {
   activeReciter: Reciter;
@@ -52,6 +55,7 @@ export const ListenReciterHeader: React.FC<ListenReciterHeaderProps> = ({
   onPlay,
   sectionRef,
 }) => {
+  const { cachedUrls } = useAudio();
   const { progress, spacerPx, setHeaderRef, setSentinelRef } = useReciterNavFusion(fusionEnabled);
 
   React.useEffect(() => {
@@ -77,6 +81,21 @@ export const ListenReciterHeader: React.FC<ListenReciterHeaderProps> = ({
     () => getAvailableSurahCount(activeMoshaf),
     [activeMoshaf],
   );
+  const offlineSurahCount = useMemo(() => {
+    if (!activeMoshaf?.surah_list) return 0;
+    const ids = new Set(
+      activeMoshaf.surah_list
+        .split(',')
+        .map((value) => parseInt(value.trim(), 10))
+        .filter((id) => !Number.isNaN(id)),
+    );
+    let count = 0;
+    for (const surah of SURAHS) {
+      if (!ids.has(surah.id)) continue;
+      if (cachedUrls.has(getAudioUrl(activeMoshaf, surah))) count += 1;
+    }
+    return count;
+  }, [activeMoshaf, cachedUrls]);
 
   const mergeStyle = {
     ['--fusion-p' as string]: String(progress),
@@ -141,6 +160,13 @@ export const ListenReciterHeader: React.FC<ListenReciterHeaderProps> = ({
                     <span className="font-semibold text-[#95a7ba]">
                       <span className="max-[390px]:hidden">{availableSurahCount} sourates disponibles</span>
                       <span className="hidden max-[390px]:inline">{availableSurahCount} sourates</span>
+                      {offlineSurahCount > 0 ? (
+                        <span className="font-medium text-[#cea687]">
+                          <span className="px-1 text-[#5f7388]">·</span>
+                          <span className="max-[390px]:hidden">dont {offlineSurahCount} hors ligne</span>
+                          <span className="hidden max-[390px]:inline">{offlineSurahCount} hors ligne</span>
+                        </span>
+                      ) : null}
                     </span>
                   ) : null}
                 </p>

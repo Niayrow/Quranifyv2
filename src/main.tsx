@@ -2,6 +2,7 @@ import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
 import './index.css'
 import App from './App.tsx'
+import { precacheAppShellInBackground } from './utils/appShellPrecache'
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
@@ -39,6 +40,7 @@ if ('serviceWorker' in navigator && import.meta.env.PROD) {
     navigator.serviceWorker.register('/sw.js', { updateViaCache: 'none' })
       .then((registration) => {
         registration.update();
+        precacheAppShellInBackground();
       })
       .catch(() => {
         // The app remains usable when service worker registration is blocked.

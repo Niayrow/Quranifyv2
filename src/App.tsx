@@ -13,7 +13,10 @@ import { getGeneratedReciterAvatar, getReciterImage } from './utils/images';
 import { getReciterCategory, type ReciterCategoryId } from './data/reciterCategories';
 import { ReciterCategoryGrid, ReciterCategoryModal } from './components/ReciterCategoryModal';
 import { ListenReciterHeader } from './components/ListenReciterHeader';
+import { BatchDownloadToast } from './components/BatchDownloadToast';
+import { DownloadedSurahsPage } from './components/DownloadedSurahsPage';
 import { CloudSync } from './components/CloudSync';
+import { useOnlineStatus } from './hooks/useOnlineStatus';
 import { AuthPromptModal } from './components/AuthPromptModal';
 import { useAuth } from './context/AuthContext';
 import { getAudioUrl } from './utils/audioUrl';
@@ -702,6 +705,7 @@ const AppContent: React.FC = () => {
     playTrack,
   } = useAudio();
   const { user, loading: authLoading } = useAuth();
+  const isOnline = useOnlineStatus();
 
   const [activeTab, setActiveTab] = useState<TabId>(() => getInitialTab());
   const [morePanel, setMorePanel] = useState<MorePanel>(() => getInitialMorePanel());
@@ -1017,6 +1021,7 @@ const AppContent: React.FC = () => {
     const entries: Array<{
       key: string;
       reciterId: number;
+      moshafId: number;
       reciterName: string;
       surahId: number;
       surahName: string;
@@ -1031,6 +1036,7 @@ const AppContent: React.FC = () => {
           entries.push({
             key: `${reciter.id}-${moshaf.id}-${surah.id}`,
             reciterId: reciter.id,
+            moshafId: moshaf.id,
             reciterName: reciter.name,
             surahId: surah.id,
             surahName: surah.name,
@@ -1046,27 +1052,6 @@ const AppContent: React.FC = () => {
       return a.surahId - b.surahId;
     });
   }, [cachedUrls, getAvailableSurahs, reciters]);
-
-  const downloadedGroups = useMemo(() => {
-    const groups = new Map<number, { reciterName: string; surahs: Array<{ id: number; name: string }> }>();
-    for (const entry of downloadedEntries) {
-      const existing = groups.get(entry.reciterId);
-      if (existing) {
-        existing.surahs.push({ id: entry.surahId, name: entry.surahName });
-        continue;
-      }
-      groups.set(entry.reciterId, {
-        reciterName: entry.reciterName,
-        surahs: [{ id: entry.surahId, name: entry.surahName }],
-      });
-    }
-
-    return Array.from(groups.entries()).map(([reciterId, group]) => ({
-      reciterId,
-      reciterName: group.reciterName,
-      surahs: group.surahs,
-    }));
-  }, [downloadedEntries]);
 
   const handleNavigate = (
     tab: TabId,
@@ -1189,6 +1174,26 @@ const AppContent: React.FC = () => {
         
         {activeTab === 'home' && (
           <div className="flex flex-col gap-4 md:gap-7 pb-16 sm:pb-20 max-md:pt-4 md:pt-5">
+            {!isOnline && (
+              <button
+                type="button"
+                onClick={() => handleNavigate('listen')}
+                className="flex items-center gap-3 rounded-2xl border border-amber-400/30 bg-amber-400/10 px-4 py-3 text-left tap-feedback"
+              >
+                <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-amber-400/15 text-amber-300">
+                  <Download className="h-4.5 w-4.5" />
+                </span>
+                <span className="min-w-0 flex-1">
+                  <span className="block text-[13px] font-black text-[#f6f8fb]">Mode hors-ligne</span>
+                  <span className="mt-0.5 block text-[11px] text-[#d0d9e3]/85">
+                    {downloadedEntries.length > 0
+                      ? `${downloadedEntries.length} sourate${downloadedEntries.length > 1 ? 's' : ''} disponibles — ouvrir la bibliothèque`
+                      : 'Aucune sourate téléchargée sur cet appareil'}
+                  </span>
+                </span>
+                <ArrowRight className="h-4 w-4 shrink-0 text-amber-300/80" />
+              </button>
+            )}
             <section className="relative isolate rounded-[1.75rem] md:rounded-[2.4rem] ring-1 ring-[#30455c]/90 brand-card">
               <div
                 className="pointer-events-none absolute inset-0 overflow-hidden rounded-[inherit]"
@@ -1533,8 +1538,14 @@ const AppContent: React.FC = () => {
           </div>
         )}
 
-        {/* 2.1 Listening Hub — wizard: reciters then surahs */}
-        {activeTab === 'listen' && (
+        {/* 2.1 Listening Hub — online wizard / offline downloaded library */}
+        {activeTab === 'listen' && !isOnline && (
+          <div className="flex flex-col gap-5 max-md:pt-4">
+            <DownloadedSurahsPage entries={downloadedEntries} offlineMode />
+          </div>
+        )}
+
+        {activeTab === 'listen' && isOnline && (
           <div
             className={`flex flex-col ${
               listenStep === 'surahs' && activeReciter
@@ -1913,73 +1924,10 @@ const AppContent: React.FC = () => {
                     <AccountPanel />
                   </Suspense>
                 ) : (
-                  <section className="flex flex-col gap-4 rounded-3xl border border-[#30455c]/50 bg-[#111d2d]/65 p-4 sm:p-5">
-                    <div className="flex items-start justify-between gap-3">
-                      <div>
-                        <p className="text-[10px] font-black uppercase tracking-[0.16em] text-[#8ea1b3]">
-                          Hors-ligne
-                        </p>
-                        <h3 className="mt-1 text-lg font-black text-[#f6f8fb]">Sourates téléchargées</h3>
-                        <p className="mt-1 text-xs leading-relaxed text-[#95a7ba]">
-                          Fichiers stockés localement sur cet appareil. Non synchronisés avec le cloud.
-                          Seules ces sourates restent écoutables sans réseau.
-                        </p>
-                      </div>
-                      <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-[#20334a] text-[#f0d1bc]">
-                        <Download className="h-4.5 w-4.5" />
-                      </span>
-                    </div>
-
-                    {downloadedGroups.length === 0 ? (
-                      <div className="rounded-2xl border border-[#30455c]/50 bg-[#0f1928]/80 px-4 py-5 text-center">
-                        <p className="text-sm font-semibold text-[#f6f8fb]">Aucune sourate téléchargée</p>
-                        <p className="mt-1 text-xs text-[#95a7ba]">
-                          Téléchargez une sourate depuis l’écran d’écoute pour la retrouver ici.
-                        </p>
-                      </div>
-                    ) : (
-                      <div className="flex flex-col gap-3">
-                        {downloadedGroups.map((group) => (
-                          <div
-                            key={group.reciterId}
-                            className="rounded-2xl border border-[#30455c]/45 bg-[#0f1928]/80 px-4 py-3.5"
-                          >
-                            <div className="flex items-center justify-between gap-3">
-                              <div className="min-w-0">
-                                <h4 className="truncate text-sm font-black text-[#f6f8fb]">{group.reciterName}</h4>
-                                <p className="mt-0.5 text-[11px] text-[#95a7ba]">
-                                  {group.surahs.length} sourate(s) hors-ligne
-                                </p>
-                              </div>
-                              <button
-                                type="button"
-                                onClick={() => {
-                                  const selected = reciters.find((reciter) => reciter.id === group.reciterId);
-                                  if (!selected) return;
-                                  handleSelectReciter(selected);
-                                }}
-                                className="inline-flex shrink-0 items-center gap-1 rounded-full border border-[#46607b]/35 bg-[#132031]/75 px-3 py-1.5 text-[11px] font-semibold text-[#d7e4ef] hover:text-[#f1d4c1]"
-                              >
-                                Ouvrir
-                                <ArrowRight className="h-3.5 w-3.5" />
-                              </button>
-                            </div>
-
-                            <div className="mt-3 flex flex-wrap gap-2">
-                              {group.surahs.map((surah) => (
-                                <span
-                                  key={`${group.reciterId}-${surah.id}`}
-                                  className="inline-flex items-center rounded-full border border-[#46607b]/30 bg-[#132031]/70 px-3 py-1.5 text-[11px] font-semibold text-[#d7e4ef]"
-                                >
-                                  {surah.id}. {surah.name}
-                                </span>
-                              ))}
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    )}
-                  </section>
+                  <DownloadedSurahsPage
+                    entries={downloadedEntries}
+                    onOpenReciter={(selected) => handleSelectReciter(selected)}
+                  />
                 )}
               </div>
             )}
@@ -2068,6 +2016,8 @@ const AppContent: React.FC = () => {
           <GlobalPlayerV2 />
         </Suspense>
       )}
+
+      <BatchDownloadToast />
 
       {/* 4. Floating Navbar */}
       <Navbar

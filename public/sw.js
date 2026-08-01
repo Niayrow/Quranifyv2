@@ -1,4 +1,4 @@
-const CACHE_VERSION = 'quranify-pwa-v108-20260801';
+const CACHE_VERSION = 'quranify-pwa-v109-20260801';
 const APP_SHELL_CACHE = `${CACHE_VERSION}-shell`;
 const RUNTIME_CACHE = `${CACHE_VERSION}-runtime`;
 const OFFLINE_URL = '/offline.html';
@@ -19,7 +19,11 @@ const APP_SHELL_ASSETS = [
   '/icons/logo.png',
   '/icons/sansfond.webp',
   '/icons/artwork.png',
-  '/og-image.png'
+  '/og-image.png',
+  '/img/mecca.webp',
+  '/img/medine.webp',
+  '/img/riyad.webp',
+  '/img/choix.webp',
 ];
 
 const isMp3QuranRequest = (url) => (
@@ -37,6 +41,23 @@ const putRuntimeCache = async (request, response) => {
 
   const cache = await caches.open(RUNTIME_CACHE);
   await cache.put(request, response.clone());
+};
+
+const precacheUrlList = async (urls) => {
+  const cache = await caches.open(RUNTIME_CACHE);
+  await Promise.all(
+    (urls || []).map(async (url) => {
+      try {
+        const request = new Request(url, { credentials: 'same-origin' });
+        const response = await fetch(request);
+        if (response.ok) {
+          await cache.put(request, response.clone());
+        }
+      } catch {
+        // ignore individual failures
+      }
+    })
+  );
 };
 
 self.addEventListener('install', (event) => {
@@ -57,6 +78,12 @@ self.addEventListener('activate', (event) => {
       ))
       .then(() => self.clients.claim())
   );
+});
+
+self.addEventListener('message', (event) => {
+  if (event.data?.type === 'PRECACHE_URLS' && Array.isArray(event.data.urls)) {
+    event.waitUntil(precacheUrlList(event.data.urls));
+  }
 });
 
 self.addEventListener('fetch', (event) => {

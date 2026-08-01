@@ -78,16 +78,20 @@ export const downloadAndCacheUrl = async (
       onProgress(100);
       return true;
     }
-    // Stream download to track progress
+    // Stream download to track progress (monotonic — never report a lower %)
     const chunks: BlobPart[] = [];
+    let lastProgress = 0;
     while (true) {
       const { done, value } = await reader.read();
       if (done) break;
       if (value) {
         chunks.push(value);
         loadedBytes += value.length;
-        const progress = Math.round((loadedBytes / totalBytes) * 100);
-        onProgress(progress);
+        const progress = Math.min(99, Math.round((loadedBytes / totalBytes) * 100));
+        if (progress > lastProgress) {
+          lastProgress = progress;
+          onProgress(progress);
+        }
       }
     }
 
@@ -101,6 +105,7 @@ export const downloadAndCacheUrl = async (
 
     const cache = await caches.open(CACHE_NAME);
     await cache.put(url, cachedResponse);
+    onProgress(100);
     return true;
   } catch (error) {
     console.error('Error downloading and caching track:', error);
