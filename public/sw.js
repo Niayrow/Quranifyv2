@@ -1,4 +1,4 @@
-const CACHE_VERSION = 'quranify-pwa-v109-20260801';
+const CACHE_VERSION = 'quranify-pwa-v111-20260801';
 const APP_SHELL_CACHE = `${CACHE_VERSION}-shell`;
 const RUNTIME_CACHE = `${CACHE_VERSION}-runtime`;
 const OFFLINE_URL = '/offline.html';
@@ -49,6 +49,8 @@ const precacheUrlList = async (urls) => {
     (urls || []).map(async (url) => {
       try {
         const request = new Request(url, { credentials: 'same-origin' });
+        const existing = await cache.match(request);
+        if (existing) return;
         const response = await fetch(request);
         if (response.ok) {
           await cache.put(request, response.clone());

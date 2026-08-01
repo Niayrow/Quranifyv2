@@ -209,6 +209,12 @@
     padding-bottom: calc(9.5rem + env(safe-area-inset-bottom, 0px));
   }
 
+  .mobile-shell-padding[data-hide-player='true'],
+  [data-hide-player='true'].mobile-shell-padding {
+    /* Navbar only */
+    padding-bottom: calc(5.1rem + env(safe-area-inset-bottom, 0px));
+  }
+
   @media (max-width: 767px) {
     .mobile-app-shell {
       padding-top: 0 !important;
@@ -227,6 +233,11 @@
     .mobile-shell-padding {
       /* Player (~5rem) + full-width navbar (~4.35rem) + safe area */
       padding-bottom: calc(9.5rem + env(safe-area-inset-bottom, 0px));
+    }
+
+    .mobile-shell-padding[data-hide-player='true'],
+    [data-hide-player='true'].mobile-shell-padding {
+      padding-bottom: calc(5.1rem + env(safe-area-inset-bottom, 0px));
     }
 
     .listen-surah-header {
@@ -638,6 +649,27 @@
   pointer-events: auto;
 }
 
+@keyframes auth-mode-fade {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.auth-mode-fade {
+  animation: auth-mode-fade 0.38s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .auth-mode-fade {
+    animation: none;
+  }
+}
+
 /* Slide up details sheet for bottom player */
 .slide-up {
   transform: translateY(0);
@@ -746,20 +778,24 @@
   pointer-events: none;
 }
 
-/* Page transition animation */
+/* Soft page fade — micro transition between tabs / steps */
 @keyframes page-enter {
-  0% {
-    opacity: 0;
-    transform: translateY(12px) scale(0.99);
+  from {
+    opacity: 0.55;
   }
-  100% {
+  to {
     opacity: 1;
-    transform: translateY(0) scale(1);
   }
 }
 
 .animate-page-enter {
-  animation: page-enter 0.3s cubic-bezier(0.16, 1, 0.3, 1) both;
+  animation: page-enter 0.58s cubic-bezier(0.25, 0.1, 0.25, 1) both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .animate-page-enter {
+    animation: none;
+  }
 }
 
 /* Home hero presence */

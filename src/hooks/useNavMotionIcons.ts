@@ -6,6 +6,7 @@ import {
   Headphones as HeadphonesStatic,
   Play as PlayStatic,
   Settings as SettingsStatic,
+  User as UserStatic,
 } from '../icons/motion';
 
 export type NavTabIcon = ComponentType<{
@@ -24,6 +25,7 @@ const STATIC_ICONS = {
   listen: HeadphonesStatic as NavTabIcon,
   moments: PlayStatic as NavTabIcon,
   favorites: HeartStatic as NavTabIcon,
+  account: UserStatic as NavTabIcon,
   more: SettingsStatic as NavTabIcon,
 } as const;
 
@@ -70,6 +72,7 @@ export function useNavMotionIcons() {
       listen: (mod?.Headphones as NavTabIcon | undefined) ?? STATIC_ICONS.listen,
       moments: (mod?.Play as NavTabIcon | undefined) ?? STATIC_ICONS.moments,
       favorites: (mod?.Heart as NavTabIcon | undefined) ?? STATIC_ICONS.favorites,
+      account: (mod?.User as NavTabIcon | undefined) ?? STATIC_ICONS.account,
       more: (mod?.Settings as NavTabIcon | undefined) ?? STATIC_ICONS.more,
     },
   };

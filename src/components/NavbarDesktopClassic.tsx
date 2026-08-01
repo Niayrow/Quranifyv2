@@ -4,19 +4,21 @@ import type { ExploreNavFusionProps, ReciterNavFusionProps } from './Navbar';
 import { getGeneratedReciterAvatar, getReciterImage } from '../utils/images';
 import type { NavTabIcon } from '../hooks/useNavMotionIcons';
 
-type NavTabId = 'home' | 'listen' | 'moments' | 'favorites' | 'more';
+type NavTabId = 'home' | 'listen' | 'moments' | 'favorites' | 'account' | 'more';
 
 type NavIconMap = {
   home: NavTabIcon;
   listen: NavTabIcon;
   moments: NavTabIcon;
   favorites: NavTabIcon;
+  account: NavTabIcon;
   more: NavTabIcon;
 };
 
 interface NavbarDesktopClassicProps {
   activeTab: NavTabId;
   setActiveTab: (tab: NavTabId) => void;
+  showMoments?: boolean;
   reciterFusion?: ReciterNavFusionProps | null;
   exploreFusion?: ExploreNavFusionProps | null;
   icons: NavIconMap;
@@ -28,6 +30,7 @@ const LOGO_SRC = '/icons/sansfond.webp';
 export const NavbarDesktopClassic: React.FC<NavbarDesktopClassicProps> = ({
   activeTab,
   setActiveTab,
+  showMoments = true,
   reciterFusion = null,
   exploreFusion = null,
   icons,
@@ -44,8 +47,11 @@ export const NavbarDesktopClassic: React.FC<NavbarDesktopClassicProps> = ({
   const mainTabs: Array<{ id: Exclude<NavTabId, 'more'>; label: string; icon: NavTabIcon }> = [
     { id: 'home', label: 'Accueil', icon: icons.home },
     { id: 'listen', label: 'Écouter', icon: icons.listen },
-    { id: 'moments', label: 'Moments', icon: icons.moments },
+    ...(showMoments
+      ? [{ id: 'moments' as const, label: 'Moments', icon: icons.moments }]
+      : []),
     { id: 'favorites', label: 'Favoris', icon: icons.favorites },
+    { id: 'account', label: 'Connexion', icon: icons.account },
   ];
 
   const renderTab = (id: NavTabId, label: string, Icon: NavTabIcon) => {

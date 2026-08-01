@@ -11,8 +11,6 @@ type LegalPanelId = 'sources' | 'privacy' | 'terms';
 
 type AboutPanelProps = {
   onOpenLegal?: (panel: LegalPanelId) => void;
-  navDesktopStyle?: 'dock' | 'classic';
-  onNavDesktopStyleChange?: (style: 'dock' | 'classic') => void;
 };
 
 const UPDATE_HISTORY: Array<{
@@ -56,11 +54,7 @@ const UPDATE_HISTORY: Array<{
   },
 ];
 
-export const AboutPanel: React.FC<AboutPanelProps> = ({
-  onOpenLegal,
-  navDesktopStyle = 'dock',
-  onNavDesktopStyleChange,
-}) => {
+export const AboutPanel: React.FC<AboutPanelProps> = ({ onOpenLegal }) => {
   const { cacheInfo, clearCache } = useAudio();
 
   const handleClear = async () => {
@@ -196,35 +190,6 @@ export const AboutPanel: React.FC<AboutPanelProps> = ({
           </div>
         ))}
       </div>
-
-      {onNavDesktopStyleChange && (
-        <div className="hidden md:flex items-center justify-between gap-3 rounded-2xl border border-[#30455c]/55 bg-[#111d2d]/65 px-3.5 py-2.5">
-          <div className="min-w-0">
-            <p className="text-xs font-semibold text-[#e6edf5]">Navbar desktop</p>
-            <p className="text-[10px] text-[#95a7ba]">
-              {navDesktopStyle === 'classic' ? 'Barre pleine largeur' : 'Dock flottant'}
-            </p>
-          </div>
-          <button
-            type="button"
-            role="switch"
-            aria-checked={navDesktopStyle === 'classic'}
-            aria-label="Passer en navbar classique"
-            onClick={() =>
-              onNavDesktopStyleChange(navDesktopStyle === 'classic' ? 'dock' : 'classic')
-            }
-            className={`relative h-7 w-12 shrink-0 rounded-full transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#cea687] ${
-              navDesktopStyle === 'classic' ? 'bg-[#cea687]' : 'bg-[#30455c]'
-            }`}
-          >
-            <span
-              className={`absolute top-0.5 left-0.5 h-6 w-6 rounded-full bg-[#f6f8fb] shadow transition-transform ${
-                navDesktopStyle === 'classic' ? 'translate-x-5' : 'translate-x-0'
-              }`}
-            />
-          </button>
-        </div>
-      )}
 
       <div className="glass-panel rounded-3xl border border-[#30455c]/60 p-4 flex flex-col gap-3">
         <div className="flex items-center justify-between border-b border-[#111d2d] pb-2">

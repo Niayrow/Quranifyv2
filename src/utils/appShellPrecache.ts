@@ -1,6 +1,8 @@
 import { RECITER_IMAGES } from './images';
 import { RECITER_CATEGORIES } from '../data/reciterCategories';
 
+const PRECACHE_META_KEY = 'sawra.app-shell-precache';
+
 const STATIC_SHELL = [
   '/',
   '/index.html',
@@ -17,11 +19,67 @@ const STATIC_SHELL = [
   '/icons/logo.png',
 ];
 
+type PrecacheMeta = {
+  buildId: string;
+  urlCount: number;
+  completedAt: number;
+};
+
+/**
+ * Build fingerprint from current hashed JS/CSS entrypoints.
+ * Changes automatically on each Vite deploy — no manual bump needed.
+ */
+const getAppBuildId = (): string => {
+  const parts: string[] = [];
+
+  document.querySelectorAll<HTMLScriptElement>('script[type="module"][src]').forEach((el) => {
+    try {
+      parts.push(new URL(el.src).pathname);
+    } catch {
+      /* ignore */
+    }
+  });
+
+  document.querySelectorAll<HTMLLinkElement>('link[rel="stylesheet"][href]').forEach((el) => {
+    try {
+      parts.push(new URL(el.href).pathname);
+    } catch {
+      /* ignore */
+    }
+  });
+
+  return parts.sort().join('|');
+};
+
+const readPrecacheMeta = (): PrecacheMeta | null => {
+  try {
+    const raw = localStorage.getItem(PRECACHE_META_KEY);
+    if (!raw) return null;
+    const parsed = JSON.parse(raw) as PrecacheMeta;
+    if (!parsed?.buildId || typeof parsed.urlCount !== 'number') return null;
+    return parsed;
+  } catch {
+    return null;
+  }
+};
+
+const writePrecacheMeta = (buildId: string, urlCount: number) => {
+  try {
+    const meta: PrecacheMeta = {
+      buildId,
+      urlCount,
+      completedAt: Date.now(),
+    };
+    localStorage.setItem(PRECACHE_META_KEY, JSON.stringify(meta));
+  } catch {
+    // Storage may be blocked — precache still works without the skip flag
+  }
+};
+
 const waitForServiceWorker = async (): Promise<void> => {
   if (!('serviceWorker' in navigator)) return;
   const ready = await navigator.serviceWorker.ready.catch(() => null);
   if (!ready) return;
-  // Prefer an active controlling worker when available
   if (navigator.serviceWorker.controller) return;
   await new Promise<void>((resolve) => {
     const onChange = () => {
@@ -47,7 +105,9 @@ const collectShellUrls = (): string[] => {
   }
 
   document
-    .querySelectorAll<HTMLScriptElement | HTMLLinkElement>('script[src], link[rel="stylesheet"], link[rel="modulepreload"], link[rel="preload"]')
+    .querySelectorAll<HTMLScriptElement | HTMLLinkElement>(
+      'script[src], link[rel="stylesheet"], link[rel="modulepreload"], link[rel="preload"]'
+    )
     .forEach((el) => {
       const href = 'href' in el && el.href ? el.href : (el as HTMLScriptElement).src;
       if (href && href.startsWith(origin)) urls.add(href);
@@ -64,14 +124,38 @@ const collectShellUrls = (): string[] => {
   return Array.from(urls);
 };
 
-const fetchWithConcurrency = async (urls: string[], concurrency = 4) => {
+const isUrlCached = async (url: string): Promise<boolean> => {
+  try {
+    const match = await caches.match(url, { ignoreSearch: false });
+    return Boolean(match);
+  } catch {
+    return false;
+  }
+};
+
+/** True when this build was already fully precached and every URL is still present. */
+const isShellUpToDate = async (buildId: string, urls: string[]): Promise<boolean> => {
+  if (!buildId || urls.length === 0) return false;
+  const meta = readPrecacheMeta();
+  if (!meta || meta.buildId !== buildId || meta.urlCount !== urls.length) {
+    return false;
+  }
+
+  for (const url of urls) {
+    if (!(await isUrlCached(url))) return false;
+  }
+  return true;
+};
+
+const fetchMissingWithConcurrency = async (urls: string[], concurrency = 4) => {
   let index = 0;
   const workers = Array.from({ length: Math.min(concurrency, urls.length) }, async () => {
     while (index < urls.length) {
       const current = urls[index];
       index += 1;
       try {
-        await fetch(current, { credentials: 'same-origin', cache: 'reload' });
+        if (await isUrlCached(current)) continue;
+        await fetch(current, { credentials: 'same-origin', cache: 'force-cache' });
       } catch {
         // Best-effort precache — ignore individual failures
       }
@@ -83,6 +167,10 @@ const fetchWithConcurrency = async (urls: string[], concurrency = 4) => {
 /**
  * After first paint, warm the service-worker caches so app navigation
  * keeps working offline (audio downloads remain separate / on demand).
+ *
+ * Skips entirely when the current app build was already precached and
+ * all shell URLs are still in Cache Storage — avoids re-downloading
+ * on every launch until the next deploy.
  */
 export const precacheAppShellInBackground = (): void => {
   if (!import.meta.env.PROD) return;
@@ -94,10 +182,28 @@ export const precacheAppShellInBackground = (): void => {
     try {
       await waitForServiceWorker();
       if (!navigator.onLine) return;
+
+      const buildId = getAppBuildId();
       const urls = collectShellUrls();
-      await fetchWithConcurrency(urls, 4);
+      if (urls.length === 0) return;
+
+      if (await isShellUpToDate(buildId, urls)) {
+        return;
+      }
+
+      await fetchMissingWithConcurrency(urls, 4);
+
       const registration = await navigator.serviceWorker.ready.catch(() => null);
-      registration?.active?.postMessage({ type: 'PRECACHE_URLS', urls });
+      registration?.active?.postMessage({ type: 'PRECACHE_URLS', urls, buildId });
+
+      // Only mark complete if everything is actually cached now
+      let missing = 0;
+      for (const url of urls) {
+        if (!(await isUrlCached(url))) missing += 1;
+      }
+      if (missing === 0 && buildId) {
+        writePrecacheMeta(buildId, urls.length);
+      }
     } catch {
       // Silent — precache must never break the app
     }

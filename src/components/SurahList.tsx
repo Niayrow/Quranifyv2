@@ -417,7 +417,7 @@ export const SurahList: React.FC<SurahListProps> = ({ onChooseReciter }) => {
           <p className="text-[#b4c0ce]">Aucune sourate trouvée pour &quot;{searchQuery}&quot;</p>
         </div>
       ) : (
-        <div className="flex flex-col gap-1.5 md:gap-2">
+        <div className="flex flex-col gap-2.5 md:gap-3">
           {filteredSurahs.map((surah) => {
             const isCurrent =
               currentTrack?.surah.id === surah.id &&
@@ -436,7 +436,7 @@ export const SurahList: React.FC<SurahListProps> = ({ onChooseReciter }) => {
               <div
                 key={surah.id}
                 id={`surah-row-${surah.id}`}
-                className={`group relative px-2.5 py-1.5 min-[390px]:px-3 min-[390px]:py-2 md:px-3.5 md:py-2.5 rounded-xl flex items-center gap-2 md:gap-3 transition-all duration-200 border ${
+                className={`group relative px-3 py-2.5 min-[390px]:px-3.5 min-[390px]:py-3 md:px-4 md:py-3.5 rounded-2xl flex items-center gap-2.5 md:gap-3.5 transition-all duration-200 border ${
                   isCurrent
                     ? 'surah-row-active'
                     : isDimmed
@@ -491,13 +491,13 @@ export const SurahList: React.FC<SurahListProps> = ({ onChooseReciter }) => {
 
                   <div className="min-w-0 flex-1">
                     <h5
-                      className={`font-bold text-sm leading-tight transition-colors ${
+                      className={`font-bold text-sm leading-snug transition-colors ${
                         isCurrent ? 'text-[#f8fbff]' : 'text-[#f1f5f9] group-hover:text-[#ffffff]'
                       }`}
                     >
                       {surah.name}
                     </h5>
-                    <p className="text-[11px] text-[#aab7c5]/85 truncate mt-0.5 font-medium leading-snug">
+                    <p className="text-[11px] text-[#aab7c5]/85 truncate mt-1 font-medium leading-snug">
                       {surah.translation}
                     </p>
                   </div>

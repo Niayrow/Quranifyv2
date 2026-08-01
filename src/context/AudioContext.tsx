@@ -75,6 +75,8 @@ interface AudioContextType {
     total: number;
     /** 0–100 progress of the file currently downloading */
     fileProgress: number;
+    /** Name of the surah currently downloading */
+    currentSurahName?: string;
     active: boolean;
     reciterName?: string;
     startedAt?: number;
@@ -382,6 +384,7 @@ export const AudioProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     done: number;
     total: number;
     fileProgress: number;
+    currentSurahName?: string;
     active: boolean;
     reciterName?: string;
     startedAt?: number;
@@ -457,6 +460,7 @@ export const AudioProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       done: 0,
       total: pending.length,
       fileProgress: 0,
+      currentSurahName: pending[0]?.name,
       active: true,
       reciterName: reciter.name,
       startedAt,
@@ -472,6 +476,7 @@ export const AudioProvider: React.FC<{ children: React.ReactNode }> = ({ childre
           done,
           total: pending.length,
           fileProgress: 0,
+          currentSurahName: surah.name,
           active: true,
           reciterName: reciter.name,
           startedAt,
@@ -496,6 +501,7 @@ export const AudioProvider: React.FC<{ children: React.ReactNode }> = ({ childre
           done,
           total: pending.length,
           fileProgress: 0,
+          currentSurahName: surah.name,
           active: true,
           reciterName: reciter.name,
           startedAt,
@@ -512,6 +518,7 @@ export const AudioProvider: React.FC<{ children: React.ReactNode }> = ({ childre
           done,
           total: pending.length,
           fileProgress: 0,
+          currentSurahName: surah.name,
           active: true,
           reciterName: reciter.name,
           startedAt,
@@ -523,6 +530,7 @@ export const AudioProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       done,
       total: pending.length,
       fileProgress: 0,
+      currentSurahName: undefined,
       active: false,
       reciterName: reciter.name,
       startedAt,

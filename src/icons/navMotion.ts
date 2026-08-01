@@ -6,4 +6,5 @@ export {
   Play,
   Heart,
   Settings,
+  User,
 } from 'lucide-react-motion';

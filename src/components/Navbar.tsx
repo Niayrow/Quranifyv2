@@ -6,7 +6,7 @@ import type { NavDesktopStyle } from '../utils/navDesktopStyle';
 import { useNavMotionIcons, type NavTabIcon } from '../hooks/useNavMotionIcons';
 import { NavbarDesktopClassic } from './NavbarDesktopClassic';
 
-type NavTabId = 'home' | 'listen' | 'moments' | 'favorites' | 'more';
+type NavTabId = 'home' | 'listen' | 'moments' | 'favorites' | 'account' | 'more';
 
 export interface ReciterNavFusionProps {
   progress: number;
@@ -27,6 +27,8 @@ interface NavbarProps {
   dockWithPlayer?: boolean;
   /** Desktop only: floating dock (V1) or full-width classic bar (V2) */
   desktopStyle?: NavDesktopStyle;
+  /** Hide Moments (YouTube) when offline */
+  showMoments?: boolean;
   reciterFusion?: ReciterNavFusionProps | null;
   exploreFusion?: ExploreNavFusionProps | null;
 }
@@ -38,6 +40,7 @@ export const Navbar: React.FC<NavbarProps> = ({
   setActiveTab,
   dockWithPlayer = false,
   desktopStyle = 'dock',
+  showMoments = true,
   reciterFusion = null,
   exploreFusion = null,
 }) => {
@@ -47,8 +50,11 @@ export const Navbar: React.FC<NavbarProps> = ({
   const mainTabs: Array<{ id: Exclude<NavTabId, 'more'>; label: string; icon: NavTabIcon }> = [
     { id: 'home', label: 'Accueil', icon: icons.home },
     { id: 'listen', label: 'Écouter', icon: icons.listen },
-    { id: 'moments', label: 'Moments', icon: icons.moments },
+    ...(showMoments
+      ? [{ id: 'moments' as const, label: 'Moments', icon: icons.moments }]
+      : []),
     { id: 'favorites', label: 'Favoris', icon: icons.favorites },
+    { id: 'account', label: 'Connexion', icon: icons.account },
   ];
 
   const renderTab = (
@@ -119,6 +125,7 @@ export const Navbar: React.FC<NavbarProps> = ({
         <NavbarDesktopClassic
           activeTab={activeTab}
           setActiveTab={setActiveTab}
+          showMoments={showMoments}
           reciterFusion={reciterFusion}
           exploreFusion={exploreFusion}
           icons={icons}

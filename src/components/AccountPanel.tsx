@@ -1,9 +1,11 @@
 ﻿import React, { useState } from 'react';
 import {
   LogIn, LogOut, UserPlus, Mail, Lock, User, ShieldCheck, Cloud,
-  Heart, MonitorSmartphone, SlidersHorizontal, ExternalLink,
+  Heart, MonitorSmartphone, SlidersHorizontal, ExternalLink, Eye, EyeOff,
 } from '../icons/motion';
 import { useAuth } from '../context/AuthContext';
+
+type AuthMode = 'signin' | 'signup';
 
 export const AccountPanel: React.FC = () => {
   const {
@@ -18,12 +20,22 @@ export const AccountPanel: React.FC = () => {
     clearAuthError,
   } = useAuth();
 
-  const [mode, setMode] = useState<'signin' | 'signup'>('signin');
+  const [mode, setMode] = useState<AuthMode>('signin');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [displayName, setDisplayName] = useState('');
   const [busy, setBusy] = useState(false);
   const [info, setInfo] = useState<string | null>(null);
+  const [formKey, setFormKey] = useState(0);
+  const [showPassword, setShowPassword] = useState(false);
+
+  const switchMode = (next: AuthMode) => {
+    if (next === mode) return;
+    setMode(next);
+    setFormKey((k) => k + 1);
+    clearAuthError();
+    setInfo(null);
+  };
 
   if (!configured) {
     return (
@@ -39,48 +51,57 @@ export const AccountPanel: React.FC = () => {
   }
 
   if (loading) {
-    return <div className="shimmer-loader h-40 rounded-3xl border border-slate-900" />;
+    return <div className="shimmer-loader h-48 rounded-3xl border border-slate-900" />;
   }
 
   if (user) {
     const initial = (profile?.display_name || user.email || 'Q').trim().charAt(0).toUpperCase();
 
     return (
-      <div className="flex flex-col gap-4 pb-8">
-        <section className="relative overflow-hidden rounded-3xl brand-card shadow-[0_20px_50px_-28px_rgba(0,0,0,0.55)]">
-          <div className="absolute inset-0 bg-[linear-gradient(145deg,#111d2d_0%,#162538_45%,#07111d_100%)]" aria-hidden="true" />
-          <div className="absolute -top-14 -right-10 h-36 w-36 rounded-full bg-[#f0d1bc]/14 blur-3xl" aria-hidden="true" />
-          <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-[#f0d1bc]/25 to-transparent" aria-hidden="true" />
+      <div className="flex flex-col gap-4 pb-2">
+        <section className="auth-card relative overflow-hidden rounded-[1.75rem] border border-[#30455c]/50 shadow-[0_24px_60px_-30px_rgba(0,0,0,0.65)]">
+          <div
+            className="absolute inset-0 bg-[linear-gradient(155deg,#0f1a28_0%,#162538_48%,#0a121c_100%)]"
+            aria-hidden
+          />
+          <div
+            className="pointer-events-none absolute -right-16 -top-16 h-48 w-48 rounded-full bg-[radial-gradient(circle,rgba(240,209,188,0.22),transparent_68%)]"
+            aria-hidden
+          />
+          <div
+            className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-[#f0d1bc]/45 to-transparent"
+            aria-hidden
+          />
 
-          <div className="relative z-10 p-5 sm:p-6">
-            <div className="flex items-center gap-3.5">
-              <span className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-[#f0d1bc] text-lg font-black text-[#111d2d] shadow-[0_8px_24px_rgba(0,0,0,0.35)]">
+          <div className="relative z-10 p-5 sm:p-7">
+            <div className="flex items-center gap-4">
+              <span className="flex h-16 w-16 shrink-0 items-center justify-center rounded-[1.25rem] bg-gradient-to-br from-[#f0d1bc] to-[#cea687] text-xl font-black text-[#0c1522] shadow-[0_10px_28px_rgba(206,166,135,0.35)]">
                 {initial}
               </span>
               <div className="min-w-0 flex-1">
-                <p className="inline-flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-[0.14em] text-[#b4c0ce]">
+                <p className="inline-flex items-center gap-1.5 rounded-full border border-emerald-400/25 bg-emerald-400/10 px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-[0.14em] text-emerald-300">
                   <ShieldCheck className="h-3.5 w-3.5" />
                   Connecté
                 </p>
-                <h3 className="mt-1 text-lg font-black text-white truncate">
+                <h3 className="mt-2 truncate text-xl font-black tracking-tight text-[#f6f8fb]">
                   {profile?.display_name || 'Compte Sawra'}
                 </h3>
-                <p className="mt-0.5 text-sm text-[#b4c0ce] truncate">{user.email}</p>
+                <p className="mt-0.5 truncate text-sm text-[#95a7ba]">{user.email}</p>
               </div>
             </div>
 
-            <ul className="mt-5 grid gap-2">
+            <ul className="mt-6 grid gap-2 sm:grid-cols-2">
               {[
                 { icon: Heart, label: 'Favoris synchronisés' },
-                { icon: MonitorSmartphone, label: 'Lecture multi-appareils' },
-                { icon: SlidersHorizontal, label: 'Préférences & boucle cloud' },
-                { icon: Cloud, label: 'Reprise d’écoute auto' },
+                { icon: MonitorSmartphone, label: 'Multi-appareils' },
+                { icon: SlidersHorizontal, label: 'Préférences cloud' },
+                { icon: Cloud, label: 'Reprise automatique' },
               ].map(({ icon: Icon, label }) => (
                 <li
                   key={label}
-                  className="flex items-center gap-2.5 rounded-xl border border-[#30455c]/40 bg-[#111d2d]/45 px-3 py-2.5 text-xs text-[#d0d9e3]"
+                  className="flex items-center gap-2.5 rounded-2xl border border-[#30455c]/45 bg-[#0c1522]/55 px-3.5 py-3 text-[12px] font-medium text-[#d0d9e3]"
                 >
-                  <span className="brand-chip-cool flex h-7 w-7 items-center justify-center rounded-lg">
+                  <span className="flex h-8 w-8 items-center justify-center rounded-xl bg-[#f0d1bc]/12 text-[#f1d4c1]">
                     <Icon className="h-3.5 w-3.5" />
                   </span>
                   {label}
@@ -92,16 +113,16 @@ export const AccountPanel: React.FC = () => {
               href="https://gomuslimlife.com"
               target="_blank"
               rel="noopener noreferrer"
-              className="brand-button-secondary mt-4 inline-flex w-full items-center justify-center gap-2 rounded-2xl px-4 py-2.5 text-xs font-semibold transition-all"
+              className="brand-button-secondary mt-5 inline-flex w-full items-center justify-center gap-2 rounded-2xl px-4 py-3 text-xs font-semibold transition-all"
             >
-              Ouvrir GoMuslimLife.com
+              Compte partagé — ouvrir le site associé
               <ExternalLink className="h-3.5 w-3.5 opacity-60" />
             </a>
 
             <button
               type="button"
               onClick={() => void signOut()}
-              className="mt-2.5 inline-flex w-full items-center justify-center gap-2 rounded-2xl border border-rose-400/20 bg-rose-500/10 px-4 py-2.5 text-xs font-bold text-rose-300 hover:bg-rose-500/15 transition-colors tap-feedback"
+              className="mt-2.5 inline-flex w-full items-center justify-center gap-2 rounded-2xl border border-rose-400/25 bg-rose-500/10 px-4 py-3 text-xs font-bold text-rose-300 transition-colors hover:bg-rose-500/15 tap-feedback"
             >
               <LogOut className="h-4 w-4" />
               Se déconnecter
@@ -129,90 +150,129 @@ export const AccountPanel: React.FC = () => {
     setBusy(false);
 
     if (!result.ok && /existe déjà|already registered/i.test(result.message || '')) {
-      setMode('signin');
-      setInfo('Ce compte existe déjà (peut-être via GoMuslimLife.com). Utilisez « Se connecter ».');
+      switchMode('signin');
+      setInfo('Ce compte existe déjà. Utilisez « Se connecter ».');
       return;
     }
 
     if (result.message) setInfo(result.message);
   };
 
+  const isSignIn = mode === 'signin';
+
   return (
-    <div className="relative overflow-hidden rounded-3xl border border-[#30455c]/40 pb-2 shadow-[0_20px_50px_-28px_rgba(0,0,0,0.55)]">
-      <div className="absolute inset-0 bg-[linear-gradient(160deg,#111d2d_0%,#162538_55%,#07111d_100%)]" aria-hidden="true" />
-      <div className="absolute -top-12 -left-8 h-32 w-32 rounded-full bg-[#7990a1]/14 blur-3xl" aria-hidden="true" />
-      <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-[#f0d1bc]/25 to-transparent" aria-hidden="true" />
+    <div className="auth-card relative overflow-hidden rounded-[1.75rem] border border-[#30455c]/50 shadow-[0_24px_60px_-30px_rgba(0,0,0,0.65)]">
+      <div
+        className="absolute inset-0 bg-[linear-gradient(155deg,#0f1a28_0%,#162538_48%,#0a121c_100%)]"
+        aria-hidden
+      />
+      <div
+        className="pointer-events-none absolute -left-20 top-0 h-56 w-56 rounded-full bg-[radial-gradient(circle,rgba(121,144,161,0.18),transparent_70%)]"
+        aria-hidden
+      />
+      <div
+        className="pointer-events-none absolute -right-16 -top-10 h-44 w-44 rounded-full bg-[radial-gradient(circle,rgba(240,209,188,0.16),transparent_68%)]"
+        aria-hidden
+      />
+      <div
+        className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-[#f0d1bc]/45 to-transparent"
+        aria-hidden
+      />
 
-      <div className="relative z-10 p-5 sm:p-6">
-        <div className="flex items-center gap-2 mb-1">
-          {mode === 'signin' ? (
-            <LogIn className="h-4 w-4 text-[#d0d9e3]" />
-          ) : (
-            <UserPlus className="h-4 w-4 text-[#d0d9e3]" />
-          )}
-          <h3 className="text-lg font-black text-white">
-            {mode === 'signin' ? 'Connexion' : 'Créer un compte'}
-          </h3>
+      <div className="relative z-10 p-5 sm:p-7">
+        <div className="mb-6 flex items-start gap-3.5">
+          <span
+            className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl border transition-colors duration-[400ms] ${
+              isSignIn
+                ? 'border-[#cea687]/35 bg-[#f0d1bc]/14 text-[#f1d4c1]'
+                : 'border-[#46607b]/50 bg-[#20334a]/80 text-[#d0d9e3]'
+            }`}
+          >
+            {isSignIn ? <LogIn className="h-5 w-5" /> : <UserPlus className="h-5 w-5" />}
+          </span>
+          <div className="min-w-0 flex-1 overflow-hidden">
+            <p className="text-[10px] font-black uppercase tracking-[0.16em] text-[#8ea1b3]">
+              Sawra
+            </p>
+            <div key={`title-${mode}`} className="auth-mode-fade">
+              <h3 className="mt-1 text-xl font-black tracking-tight text-[#f6f8fb] sm:text-2xl">
+                {isSignIn ? 'Bon retour' : 'Créer un compte'}
+              </h3>
+              <p className="mt-1.5 text-xs leading-relaxed text-[#95a7ba] sm:text-[13px]">
+                {isSignIn
+                  ? 'Connectez-vous pour synchroniser vos favoris, votre reprise et vos préférences sur Sawra.'
+                  : 'Créez votre compte Sawra en quelques secondes pour retrouver votre écoute sur tous vos appareils.'}
+              </p>
+            </div>
+          </div>
         </div>
-        <p className="text-xs text-[#b4c0ce] mb-5 leading-relaxed">
-          {mode === 'signin'
-            ? 'Utilisez le même e-mail / mot de passe que GoMuslimLife.com si vous avez déjà un compte.'
-            : 'Créez un compte, ou connectez-vous si vous êtes déjà inscrit sur GoMuslimLife.com.'}
-        </p>
 
-        <div className="mb-4 grid grid-cols-2 gap-1.5 rounded-2xl border border-[#30455c]/40 bg-[#07111d]/35 p-1">
+        <div
+          className="relative mb-5 grid grid-cols-2 rounded-2xl border border-[#30455c]/50 bg-[#07111d]/55 p-1"
+          role="tablist"
+          aria-label="Mode d’authentification"
+        >
+          <span
+            className={`pointer-events-none absolute top-1 bottom-1 left-1 w-[calc(50%-4px)] rounded-xl bg-[#f0d1bc] shadow-[0_6px_18px_rgba(206,166,135,0.28)] transition-transform duration-[400ms] ease-[cubic-bezier(0.22,1,0.36,1)] ${
+              isSignIn ? 'translate-x-0' : 'translate-x-[calc(100%+4px)]'
+            }`}
+            aria-hidden
+          />
           <button
             type="button"
-            onClick={() => {
-              setMode('signin');
-              clearAuthError();
-              setInfo(null);
-            }}
-            className={`rounded-xl px-3 py-2.5 text-xs font-bold transition-all ${
-              mode === 'signin'
-                ? 'bg-[#f0d1bc] text-[#111d2d] shadow-[0_4px_14px_rgba(0,0,0,0.25)]'
-                : 'text-[#aab7c5] hover:text-[#eef3f8]'
+            role="tab"
+            aria-selected={isSignIn}
+            onClick={() => switchMode('signin')}
+            className={`relative z-10 rounded-xl px-3 py-2.5 text-[12px] font-bold transition-colors duration-300 ${
+              isSignIn ? 'text-[#0c1522]' : 'text-[#95a7ba] hover:text-[#e6edf5]'
             }`}
           >
             Se connecter
           </button>
           <button
             type="button"
-            onClick={() => {
-              setMode('signup');
-              clearAuthError();
-              setInfo(null);
-            }}
-            className={`rounded-xl px-3 py-2.5 text-xs font-bold transition-all ${
-              mode === 'signup'
-                ? 'bg-[#f0d1bc] text-[#111d2d] shadow-[0_4px_14px_rgba(0,0,0,0.25)]'
-                : 'text-[#aab7c5] hover:text-[#eef3f8]'
+            role="tab"
+            aria-selected={!isSignIn}
+            onClick={() => switchMode('signup')}
+            className={`relative z-10 rounded-xl px-3 py-2.5 text-[12px] font-bold transition-colors duration-300 ${
+              !isSignIn ? 'text-[#0c1522]' : 'text-[#95a7ba] hover:text-[#e6edf5]'
             }`}
           >
             S&apos;inscrire
           </button>
         </div>
 
-        <form onSubmit={onSubmit} className="flex flex-col gap-3">
-          {mode === 'signup' && (
-            <label className="flex flex-col gap-1.5">
-              <span className="text-[10px] font-bold uppercase tracking-widest text-[#95a7ba]">Pseudo</span>
-              <div className="relative">
-                <User className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-[#95a7ba]" />
-                <input
-                  value={displayName}
-                  onChange={(e) => setDisplayName(e.target.value)}
-                  placeholder="Ex. Ahmed"
-                  className="w-full rounded-xl border border-[#30455c]/40 bg-[#111d2d]/45 py-2.5 pl-10 pr-3 text-sm text-[#f6f8fb] placeholder:text-[#8295aa] focus:border-[#cea687]/40 focus:outline-none"
-                />
-              </div>
-            </label>
-          )}
+        <form key={formKey} onSubmit={onSubmit} className="auth-mode-fade flex flex-col gap-3.5">
+          <div
+            className={`grid transition-[grid-template-rows,opacity,margin] duration-[400ms] ease-[cubic-bezier(0.22,1,0.36,1)] ${
+              isSignIn ? 'grid-rows-[0fr] opacity-0 -mb-3.5' : 'grid-rows-[1fr] opacity-100 mb-0'
+            }`}
+          >
+            <div className="overflow-hidden">
+              <label className="flex flex-col gap-1.5">
+                <span className="text-[10px] font-bold uppercase tracking-widest text-[#8ea1b3]">
+                  Pseudo
+                </span>
+                <div className="relative">
+                  <User className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-[#7f93a8]" />
+                  <input
+                    value={displayName}
+                    onChange={(e) => setDisplayName(e.target.value)}
+                    placeholder="Ex. Ahmed"
+                    tabIndex={isSignIn ? -1 : 0}
+                    className="w-full rounded-2xl border border-[#30455c]/55 bg-[#0c1522]/70 py-3 pl-11 pr-3.5 text-sm text-[#f6f8fb] placeholder:text-[#6f8499] transition-colors focus:border-[#cea687]/50 focus:outline-none focus:ring-2 focus:ring-[#cea687]/20"
+                  />
+                </div>
+              </label>
+            </div>
+          </div>
 
           <label className="flex flex-col gap-1.5">
-            <span className="text-[10px] font-bold uppercase tracking-widest text-[#95a7ba]">E-mail</span>
+            <span className="text-[10px] font-bold uppercase tracking-widest text-[#8ea1b3]">
+              E-mail
+            </span>
             <div className="relative">
-              <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-[#95a7ba]" />
+              <Mail className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-[#7f93a8]" />
               <input
                 type="email"
                 required
@@ -220,31 +280,42 @@ export const AccountPanel: React.FC = () => {
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 placeholder="vous@email.com"
-                className="w-full rounded-xl border border-[#30455c]/40 bg-[#111d2d]/45 py-2.5 pl-10 pr-3 text-sm text-[#f6f8fb] placeholder:text-[#8295aa] focus:border-[#cea687]/40 focus:outline-none"
+                className="w-full rounded-2xl border border-[#30455c]/55 bg-[#0c1522]/70 py-3 pl-11 pr-3.5 text-sm text-[#f6f8fb] placeholder:text-[#6f8499] transition-colors focus:border-[#cea687]/50 focus:outline-none focus:ring-2 focus:ring-[#cea687]/20"
               />
             </div>
           </label>
 
           <label className="flex flex-col gap-1.5">
-            <span className="text-[10px] font-bold uppercase tracking-widest text-[#95a7ba]">Mot de passe</span>
+            <span className="text-[10px] font-bold uppercase tracking-widest text-[#8ea1b3]">
+              Mot de passe
+            </span>
             <div className="relative">
-              <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-[#95a7ba]" />
+              <Lock className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-[#7f93a8]" />
               <input
-                type="password"
+                type={showPassword ? 'text' : 'password'}
                 required
                 minLength={6}
-                autoComplete={mode === 'signin' ? 'current-password' : 'new-password'}
+                autoComplete={isSignIn ? 'current-password' : 'new-password'}
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 placeholder="Au moins 6 caractères"
-                className="w-full rounded-xl border border-[#30455c]/40 bg-[#111d2d]/45 py-2.5 pl-10 pr-3 text-sm text-[#f6f8fb] placeholder:text-[#8295aa] focus:border-[#cea687]/40 focus:outline-none"
+                className="w-full rounded-2xl border border-[#30455c]/55 bg-[#0c1522]/70 py-3 pl-11 pr-12 text-sm text-[#f6f8fb] placeholder:text-[#6f8499] transition-colors focus:border-[#cea687]/50 focus:outline-none focus:ring-2 focus:ring-[#cea687]/20"
               />
+              <button
+                type="button"
+                onClick={() => setShowPassword((v) => !v)}
+                className="absolute right-2.5 top-1/2 flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-xl text-[#7f93a8] transition-colors hover:bg-[#162538] hover:text-[#e6edf5] tap-feedback"
+                aria-label={showPassword ? 'Masquer le mot de passe' : 'Afficher le mot de passe'}
+                title={showPassword ? 'Masquer' : 'Afficher'}
+              >
+                {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+              </button>
             </div>
           </label>
 
           {(authError || info) && (
             <p
-              className={`text-xs rounded-xl border px-3 py-2 ${
+              className={`rounded-2xl border px-3.5 py-2.5 text-xs leading-relaxed ${
                 authError
                   ? 'border-rose-500/30 bg-rose-500/10 text-rose-300'
                   : 'border-[#cea687]/30 bg-[#f0d1bc]/10 text-[#f1d4c1]'
@@ -257,11 +328,37 @@ export const AccountPanel: React.FC = () => {
           <button
             type="submit"
             disabled={busy}
-            className="brand-button-primary mt-1 rounded-2xl px-4 py-3 text-sm font-black disabled:opacity-60 tap-feedback"
+            className="brand-button-primary mt-1 min-h-12 rounded-2xl px-4 py-3 text-sm font-black disabled:opacity-60 tap-feedback"
           >
-            {busy ? 'Patientez…' : mode === 'signin' ? 'Connexion' : 'Créer mon compte'}
+            {busy ? 'Patientez…' : isSignIn ? 'Se connecter' : 'Créer mon compte'}
           </button>
         </form>
+
+        <p className="mt-5 text-center text-[11px] leading-relaxed text-[#7f93a8]">
+          {isSignIn ? (
+            <>
+              Pas encore de compte ?{' '}
+              <button
+                type="button"
+                onClick={() => switchMode('signup')}
+                className="font-bold text-[#f1d4c1] underline-offset-2 hover:underline"
+              >
+                S&apos;inscrire
+              </button>
+            </>
+          ) : (
+            <>
+              Déjà inscrit ?{' '}
+              <button
+                type="button"
+                onClick={() => switchMode('signin')}
+                className="font-bold text-[#f1d4c1] underline-offset-2 hover:underline"
+              >
+                Se connecter
+              </button>
+            </>
+          )}
+        </p>
       </div>
     </div>
   );

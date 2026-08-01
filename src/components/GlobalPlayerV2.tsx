@@ -88,7 +88,11 @@ const DENSITY_META: Record<PlayerBarDensity, { label: string; barClass: string; 
   },
 };
 
-export const GlobalPlayerV2: React.FC = () => {
+export const GlobalPlayerV2: React.FC<{
+  /** Sync with navbar: dock = floating player, classic = full-bleed bottom bar */
+  desktopChrome?: 'dock' | 'classic';
+  onDesktopChromeChange?: (style: 'dock' | 'classic') => void;
+}> = ({ desktopChrome, onDesktopChromeChange }) => {
   const {
     currentTrack,
     playbackStatus,
@@ -130,7 +134,16 @@ export const GlobalPlayerV2: React.FC = () => {
   const [showPersonalize, setShowPersonalize] = useState(false);
   const [showEffects, setShowEffects] = useState(false);
   const [showVolumePopover, setShowVolumePopover] = useState(false);
-  const [docked, setDocked] = useState(false);
+  const [localDocked, setLocalDocked] = useState(false);
+  const docked =
+    desktopChrome !== undefined ? desktopChrome === 'classic' : localDocked;
+  const toggleDocked = () => {
+    if (onDesktopChromeChange) {
+      onDesktopChromeChange(docked ? 'dock' : 'classic');
+      return;
+    }
+    setLocalDocked((d) => !d);
+  };
   const [drawerSearch, setDrawerSearch] = useState('');
   const currentSurahRowRef = useRef<HTMLButtonElement | null>(null);
   const volumeWrapRef = useRef<HTMLDivElement | null>(null);
@@ -836,11 +849,15 @@ export const GlobalPlayerV2: React.FC = () => {
             </button>
             <button
               type="button"
-              onClick={() => setDocked((d) => !d)}
+              onClick={toggleDocked}
               className={`hidden lg:flex h-9 w-9 rounded-xl items-center justify-center text-[#95a7ba] hover:text-[#f6f8fb] hover:bg-[#111d2d]/70 transition-colors shrink-0 ${
                 docked ? `${theme.accentText} ${theme.accentBgLight}` : ''
               }`}
-              title={docked ? 'Détacher la barre' : 'Coller en bas'}
+              title={
+                docked
+                  ? 'Mode flottant (navbar + lecteur)'
+                  : 'Mode plein (navbar + lecteur)'
+              }
             >
               {docked ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
             </button>

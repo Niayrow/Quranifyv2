@@ -14,6 +14,7 @@ import { getReciterCategory, type ReciterCategoryId } from './data/reciterCatego
 import { ReciterCategoryGrid, ReciterCategoryModal } from './components/ReciterCategoryModal';
 import { ListenReciterHeader } from './components/ListenReciterHeader';
 import { BatchDownloadToast } from './components/BatchDownloadToast';
+import { NavDesktopStyleToggle } from './components/NavDesktopStyleToggle';
 import { DownloadedSurahsPage } from './components/DownloadedSurahsPage';
 import { CloudSync } from './components/CloudSync';
 import { useOnlineStatus } from './hooks/useOnlineStatus';
@@ -37,10 +38,9 @@ const AccountPanel = lazy(() => import('./components/AccountPanel').then((module
 const SourcesPanel = lazy(() => import('./components/TrustLegalPanels').then((module) => ({ default: module.SourcesPanel })));
 const PrivacyPanel = lazy(() => import('./components/TrustLegalPanels').then((module) => ({ default: module.PrivacyPanel })));
 const TermsPanel = lazy(() => import('./components/TrustLegalPanels').then((module) => ({ default: module.TermsPanel })));
-const TAB_IDS = ['home', 'listen', 'moments', 'favorites', 'more'] as const;
+const TAB_IDS = ['home', 'listen', 'moments', 'favorites', 'account', 'more'] as const;
 type TabId = typeof TAB_IDS[number];
-type MorePanel = 'account' | 'legal' | 'priorities' | 'compare' | 'about' | 'moments';
-type AccountSub = 'profile' | 'downloads';
+type MorePanel = 'downloads' | 'legal' | 'priorities' | 'compare' | 'about' | 'moments';
 type LegalSub = 'sources' | 'privacy' | 'terms';
 type ListenStep = 'reciters' | 'surahs';
 
@@ -67,15 +67,11 @@ const PRODUCT_PRIORITIES: Array<{
   },
 ];
 
-const MORE_PANEL_IDS: MorePanel[] = ['account', 'legal', 'priorities', 'compare', 'about', 'moments'];
-const ACCOUNT_SUB_IDS: AccountSub[] = ['profile', 'downloads'];
+const MORE_PANEL_IDS: MorePanel[] = ['downloads', 'legal', 'priorities', 'compare', 'about', 'moments'];
 const LEGAL_SUB_IDS: LegalSub[] = ['sources', 'privacy', 'terms'];
 
 const isMorePanel = (value: string | null): value is MorePanel =>
   Boolean(value && MORE_PANEL_IDS.includes(value as MorePanel));
-
-const isAccountSub = (value: string | null): value is AccountSub =>
-  Boolean(value && ACCOUNT_SUB_IDS.includes(value as AccountSub));
 
 const isLegalSub = (value: string | null): value is LegalSub =>
   Boolean(value && LEGAL_SUB_IDS.includes(value as LegalSub));
@@ -83,14 +79,13 @@ const isLegalSub = (value: string | null): value is LegalSub =>
 /** Normalize legacy panel query values (downloads, sources, …) into top-level + sub. */
 const resolveMoreNavigation = (
   raw: string | null
-): { panel: MorePanel; accountSub?: AccountSub; legalSub?: LegalSub } => {
-  if (raw === 'downloads') return { panel: 'account', accountSub: 'downloads' };
-  if (raw === 'account') return { panel: 'account', accountSub: 'profile' };
+): { panel: MorePanel; legalSub?: LegalSub } => {
+  if (raw === 'downloads') return { panel: 'downloads' };
   if (raw === 'sources' || raw === 'privacy' || raw === 'terms') {
     return { panel: 'legal', legalSub: raw };
   }
   if (isMorePanel(raw)) return { panel: raw };
-  return { panel: 'account', accountSub: 'profile' };
+  return { panel: 'downloads' };
 };
 
 const mapLegacyTab = (tab: string | null): TabId => {
@@ -106,6 +101,9 @@ const mapLegacyTab = (tab: string | null): TabId => {
       return 'home';
     case 'favorites':
       return 'favorites';
+    case 'account':
+    case 'profile':
+      return 'account';
     case 'more':
     case 'compare':
     case 'about':
@@ -113,7 +111,6 @@ const mapLegacyTab = (tab: string | null): TabId => {
     case 'privacy':
     case 'terms':
     case 'legal':
-    case 'account':
     case 'downloads':
       return 'more';
     case 'home':
@@ -129,21 +126,18 @@ const getInitialTab = (): TabId => {
 };
 
 const getInitialMorePanel = (): MorePanel => {
-  if (typeof window === 'undefined') return 'account';
-  const params = new URLSearchParams(window.location.search);
-  const fromPanel = resolveMoreNavigation(params.get('panel'));
-  if (params.get('panel')) return fromPanel.panel;
-  const tab = params.get('tab');
-  return resolveMoreNavigation(tab).panel;
-};
-
-const getInitialAccountSub = (): AccountSub => {
-  if (typeof window === 'undefined') return 'profile';
+  if (typeof window === 'undefined') return 'downloads';
   const params = new URLSearchParams(window.location.search);
   const section = params.get('section');
-  if (isAccountSub(section)) return section;
-  const raw = params.get('panel') || params.get('tab');
-  return resolveMoreNavigation(raw).accountSub ?? 'profile';
+  if (section === 'downloads') return 'downloads';
+  const fromPanel = resolveMoreNavigation(params.get('panel'));
+  if (params.get('panel') === 'account' || params.get('panel') === 'profile') {
+    return 'downloads';
+  }
+  if (params.get('panel')) return fromPanel.panel;
+  const tab = params.get('tab');
+  if (tab === 'account' || tab === 'profile') return 'downloads';
+  return resolveMoreNavigation(tab).panel;
 };
 
 const getInitialLegalSub = (): LegalSub => {
@@ -709,7 +703,6 @@ const AppContent: React.FC = () => {
 
   const [activeTab, setActiveTab] = useState<TabId>(() => getInitialTab());
   const [morePanel, setMorePanel] = useState<MorePanel>(() => getInitialMorePanel());
-  const [accountSub, setAccountSub] = useState<AccountSub>(() => getInitialAccountSub());
   const [legalSub, setLegalSub] = useState<LegalSub>(() => getInitialLegalSub());
   const [listenStep, setListenStep] = useState<ListenStep>('reciters');
   const [categoryModalId, setCategoryModalId] = useState<ReciterCategoryId | null>(null);
@@ -731,6 +724,13 @@ const AppContent: React.FC = () => {
     setNavDesktopStyle(style);
     saveNavDesktopStyle(style);
   }, []);
+
+  // Moments = liens YouTube → inutile hors-ligne
+  useEffect(() => {
+    if (!isOnline && activeTab === 'moments') {
+      setActiveTab('listen');
+    }
+  }, [isOnline, activeTab]);
 
   const handleReciterFusionProgress = useCallback((progress: number) => {
     setReciterFusionProgress(progress);
@@ -757,11 +757,11 @@ const AppContent: React.FC = () => {
 
       const openMore = (raw: string | null) => {
         const resolved = resolveMoreNavigation(raw);
-        setMorePanel(resolved.panel);
-        if (resolved.accountSub) setAccountSub(resolved.accountSub);
+        let panel = resolved.panel;
+        if (sectionParam === 'downloads') panel = 'downloads';
+        setMorePanel(panel);
         if (resolved.legalSub) setLegalSub(resolved.legalSub);
-        if (resolved.panel === 'legal' && isLegalSub(sectionParam)) setLegalSub(sectionParam);
-        if (resolved.panel === 'account' && isAccountSub(sectionParam)) setAccountSub(sectionParam);
+        if (panel === 'legal' && isLegalSub(sectionParam)) setLegalSub(sectionParam);
         setActiveTab('more');
       };
 
@@ -772,10 +772,17 @@ const AppContent: React.FC = () => {
         tab === 'privacy' ||
         tab === 'terms' ||
         tab === 'downloads' ||
-        tab === 'account' ||
         tab === 'legal'
       ) {
         openMore(tab);
+        return;
+      }
+      if (tab === 'account' || tab === 'profile') {
+        setActiveTab('account');
+        return;
+      }
+      if (panelParam === 'account' || panelParam === 'profile') {
+        setActiveTab('account');
         return;
       }
       if (panelParam) {
@@ -841,9 +848,7 @@ const AppContent: React.FC = () => {
     params.set('tab', activeTab);
     if (activeTab === 'more') {
       params.set('panel', morePanel);
-      if (morePanel === 'account') {
-        params.set('section', accountSub);
-      } else if (morePanel === 'legal') {
+      if (morePanel === 'legal') {
         params.set('section', legalSub);
       } else {
         params.delete('section');
@@ -854,7 +859,7 @@ const AppContent: React.FC = () => {
     }
     const nextUrl = `${window.location.pathname}?${params.toString()}${window.location.hash}`;
     window.history.replaceState({}, '', nextUrl);
-  }, [activeTab, morePanel, accountSub, legalSub]);
+  }, [activeTab, morePanel, legalSub]);
 
   useEffect(() => {
     if (!isLoadingReciters) {
@@ -934,8 +939,7 @@ const AppContent: React.FC = () => {
 
   const openAuthFromPrompt = () => {
     dismissAuthPrompt();
-    setMorePanel('account');
-    setActiveTab('more');
+    setActiveTab('account');
   };
 
   // Soft prompt once per session if logged out
@@ -1056,13 +1060,13 @@ const AppContent: React.FC = () => {
   const handleNavigate = (
     tab: TabId,
     panel?: MorePanel,
-    options?: { accountSub?: AccountSub; legalSub?: LegalSub }
+    options?: { legalSub?: LegalSub }
   ) => {
-    setActiveTab(tab);
+    const nextTab = tab === 'moments' && !isOnline ? 'listen' : tab;
+    setActiveTab(nextTab);
     if (panel) setMorePanel(panel);
-    if (options?.accountSub) setAccountSub(options.accountSub);
     if (options?.legalSub) setLegalSub(options.legalSub);
-    if (tab === 'listen') {
+    if (nextTab === 'listen') {
       setListenStep(activeReciter ? 'surahs' : 'reciters');
     }
   };
@@ -1128,6 +1132,11 @@ const AppContent: React.FC = () => {
   }, [activeReciter, isLoadingReciters]);
 
   const handleSetActiveTab = (tab: TabId) => {
+    if (tab === 'moments' && !isOnline) {
+      setActiveTab('listen');
+      setListenStep(activeReciter ? 'surahs' : 'reciters');
+      return;
+    }
     setActiveTab(tab);
     if (tab === 'listen') {
       setListenStep(activeReciter ? 'surahs' : 'reciters');
@@ -1141,10 +1150,11 @@ const AppContent: React.FC = () => {
   return (
     <div
       data-nav-desktop={navDesktopStyle}
+      data-hide-player={activeTab === 'account' ? 'true' : undefined}
       className={`flex-1 flex flex-col px-4 max-w-lg mx-auto w-full mobile-shell-padding mobile-app-shell max-md:px-0 md:w-[min(72rem,calc(100%-4rem))] md:max-w-6xl md:px-0 ${
-      navDesktopStyle === 'classic' ? 'md:pt-[4.5rem]' : 'md:pt-28'
+      navDesktopStyle === 'classic' ? 'md:pt-[5.75rem]' : 'md:pt-28'
     } ${
-      currentTrack ? 'md:pb-44' : 'md:pb-12'
+      currentTrack && activeTab !== 'account' ? 'md:pb-44' : 'md:pb-12'
     }`}>
       <CloudSync favorites={favorites} setFavorites={setFavorites} />
       <AuthPromptModal
@@ -1164,11 +1174,17 @@ const AppContent: React.FC = () => {
         }`}
       >
         <div
-          key={activeTab}
-          className={`flex flex-col ${
+          key={
+            activeTab === 'listen'
+              ? `listen-${listenStep}`
+              : activeTab === 'more'
+                ? `more-${morePanel}`
+                : activeTab
+          }
+          className={`flex flex-col animate-page-enter ${
             activeTab === 'listen' && listenStep === 'surahs' && activeReciter
-              ? 'max-md:gap-0 gap-5 max-md:animate-none animate-page-enter'
-              : 'gap-5 animate-page-enter'
+              ? 'max-md:gap-0 gap-5'
+              : 'gap-5'
           }`}
         >
         
@@ -1320,14 +1336,14 @@ const AppContent: React.FC = () => {
                       ? `${downloadedEntries.length} sourate${downloadedEntries.length > 1 ? 's' : ''} hors-ligne`
                       : 'Télécharger pour hors-ligne',
                     icon: Download,
-                    onClick: () => handleNavigate('more', 'account', { accountSub: 'downloads' }),
+                    onClick: () => handleNavigate('more', 'downloads'),
                   },
                   {
                     id: 'account',
-                    label: 'Compte',
+                    label: 'Connexion',
                     hint: user ? 'Sync activée' : 'Local — connectez-vous pour sync',
                     icon: Cloud,
-                    onClick: () => handleNavigate('more', 'account', { accountSub: 'profile' }),
+                    onClick: () => handleNavigate('account'),
                   },
                 ].map((action) => {
                   const Icon = action.icon;
@@ -1754,8 +1770,8 @@ const AppContent: React.FC = () => {
           </div>
         )}
 
-        {activeTab === 'moments' && (
-          <div className="flex flex-col gap-5 pb-16 sm:pb-20 max-md:pt-4">
+        {activeTab === 'moments' && isOnline && (
+          <div className="flex flex-col gap-5 pb-16 sm:pb-20 max-md:pt-4 md:pt-3">
             <section className="relative overflow-hidden rounded-3xl border border-[#30455c]/55 bg-[linear-gradient(180deg,rgba(17,29,45,0.94),rgba(9,17,28,0.98))] p-5 sm:p-6">
               <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,rgba(240,209,188,0.12),transparent_42%),radial-gradient(circle_at_85%_20%,rgba(121,144,161,0.14),transparent_28%)]" aria-hidden="true" />
               <div className="relative z-10 flex flex-col gap-5">
@@ -1814,7 +1830,7 @@ const AppContent: React.FC = () => {
 
         {/* 2.2 Tab Favorites View */}
         {activeTab === 'favorites' && (
-          <div className="flex flex-col gap-5 pb-16 sm:pb-20 max-md:pt-4">
+          <div className="flex flex-col gap-5 pb-16 sm:pb-20 max-md:pt-4 md:pt-3">
             <h2 className="text-lg font-bold text-[#f6f8fb] flex items-center gap-2">
               <Heart className="w-5 h-5 text-red-500 fill-current" />
               Vos Récitateurs Favoris
@@ -1853,9 +1869,18 @@ const AppContent: React.FC = () => {
           </div>
         )}
 
+        {/* 2.2b Tab Connexion */}
+        {activeTab === 'account' && (
+          <div className="flex min-h-[min(70vh,40rem)] flex-col justify-center gap-5 pb-16 sm:pb-20 max-md:pt-8 md:pt-10 md:max-w-lg md:mx-auto md:w-full">
+            <Suspense fallback={<div className="shimmer-loader h-48 rounded-3xl border border-slate-900" />}>
+              <AccountPanel />
+            </Suspense>
+          </div>
+        )}
+
         {/* 2.3 Tab More View */}
         {activeTab === 'more' && (
-          <div className="flex flex-col gap-5 max-md:pt-4">
+          <div className="flex flex-col gap-5 max-md:pt-4 md:pt-3">
             <section className="glass-panel rounded-3xl border border-[#30455c]/60 p-5">
               <div className="flex items-start justify-between gap-3">
                 <div>
@@ -1866,9 +1891,14 @@ const AppContent: React.FC = () => {
                 </div>
               </div>
 
-              <div className="mt-5 grid grid-cols-2 gap-2 sm:grid-cols-5">
+              <NavDesktopStyleToggle
+                value={navDesktopStyle}
+                onChange={handleNavDesktopStyleChange}
+              />
+
+              <div className="mt-5 grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-5">
                 {([
-                  { id: 'account' as const, label: 'Compte' },
+                  { id: 'downloads' as const, label: 'Téléchargées' },
                   { id: 'legal' as const, label: 'Légal' },
                   { id: 'priorities' as const, label: 'Priorités' },
                   { id: 'compare' as const, label: 'Comparer' },
@@ -1891,45 +1921,11 @@ const AppContent: React.FC = () => {
               </div>
             </section>
 
-            {morePanel === 'account' && (
-              <div className="flex flex-col gap-4">
-                <div
-                  className="flex gap-1 rounded-2xl border border-[#30455c]/50 bg-[#0f1928]/80 p-1"
-                  role="tablist"
-                  aria-label="Compte et téléchargements"
-                >
-                  {([
-                    { id: 'profile' as const, label: 'Compte & sync' },
-                    { id: 'downloads' as const, label: 'Téléchargées' },
-                  ]).map((item) => (
-                    <button
-                      key={item.id}
-                      type="button"
-                      role="tab"
-                      aria-selected={accountSub === item.id}
-                      onClick={() => setAccountSub(item.id)}
-                      className={`min-h-10 flex-1 rounded-xl px-3 py-2 text-xs font-bold transition-all focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#cea687] ${
-                        accountSub === item.id
-                          ? 'bg-[#f0d1bc]/14 text-[#f1d4c1]'
-                          : 'text-[#95a7ba] hover:text-[#e6edf5]'
-                      }`}
-                    >
-                      {item.label}
-                    </button>
-                  ))}
-                </div>
-
-                {accountSub === 'profile' ? (
-                  <Suspense fallback={<div className="shimmer-loader h-40 rounded-2xl border border-slate-900" />}>
-                    <AccountPanel />
-                  </Suspense>
-                ) : (
-                  <DownloadedSurahsPage
-                    entries={downloadedEntries}
-                    onOpenReciter={(selected) => handleSelectReciter(selected)}
-                  />
-                )}
-              </div>
+            {morePanel === 'downloads' && (
+              <DownloadedSurahsPage
+                entries={downloadedEntries}
+                onOpenReciter={(selected) => handleSelectReciter(selected)}
+              />
             )}
 
             {morePanel === 'legal' && (
@@ -1985,11 +1981,7 @@ const AppContent: React.FC = () => {
 
             {morePanel === 'about' && (
               <Suspense fallback={<div className="shimmer-loader h-40 rounded-2xl border border-slate-900" />}>
-                <AboutPanel
-                  onOpenLegal={openLegal}
-                  navDesktopStyle={navDesktopStyle}
-                  onNavDesktopStyleChange={handleNavDesktopStyleChange}
-                />
+                <AboutPanel onOpenLegal={openLegal} />
               </Suspense>
             )}
           </div>
@@ -2011,9 +2003,12 @@ const AppContent: React.FC = () => {
       )}
 
       {/* 3. Global Audio Player Sheet */}
-      {currentTrack && (
+      {currentTrack && activeTab !== 'account' && (
         <Suspense fallback={null}>
-          <GlobalPlayerV2 />
+          <GlobalPlayerV2
+            desktopChrome={navDesktopStyle}
+            onDesktopChromeChange={handleNavDesktopStyleChange}
+          />
         </Suspense>
       )}
 
@@ -2023,8 +2018,9 @@ const AppContent: React.FC = () => {
       <Navbar
         activeTab={activeTab}
         setActiveTab={handleSetActiveTab}
-        dockWithPlayer={Boolean(currentTrack)}
+        dockWithPlayer={Boolean(currentTrack) && activeTab !== 'account'}
         desktopStyle={navDesktopStyle}
+        showMoments={isOnline}
         reciterFusion={
           reciterFusionEnabled && activeReciter
             ? {

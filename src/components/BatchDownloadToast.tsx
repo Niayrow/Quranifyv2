@@ -160,12 +160,13 @@ export const BatchDownloadToast: React.FC = () => {
   const showToast = Boolean(display && phase !== 'hidden');
   if (!showToast && !scrimMounted) return null;
 
-  const { done, total, active, reciterName } = display ?? {
+  const { done, total, active, reciterName, currentSurahName } = display ?? {
     done: 0,
     total: 0,
     active: false,
     reciterName: '',
     fileProgress: 0,
+    currentSurahName: undefined,
   };
   const isDone = !active;
   const alreadyUpToDate = isDone && total === 0;
@@ -182,9 +183,11 @@ export const BatchDownloadToast: React.FC = () => {
 
   const subtitle = alreadyUpToDate
     ? reciterName || 'Récitateur'
-    : total > 0
-      ? `${reciterName || 'Récitateur'} · ${done} / ${total}`
-      : reciterName || 'Récitateur';
+    : isDone
+      ? `${reciterName || 'Récitateur'}${total > 0 ? ` · ${done} / ${total}` : ''}`
+      : currentSurahName
+        ? `${currentSurahName} · ${done + 1} / ${total}`
+        : `${reciterName || 'Récitateur'} · ${done} / ${total}`;
 
   return createPortal(
     <>

@@ -59,6 +59,8 @@ export {
   Mail,
   Lock,
   User,
+  Eye,
+  EyeOff,
   Database,
   Scale,
   GitCompare,
