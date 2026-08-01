@@ -4,8 +4,8 @@ import {
   Play, Pause, SkipForward, SkipBack, ChevronDown, ChevronUp, Volume2, VolumeX,
   Disc, ListMusic, Search, X, Settings, Sparkles, Check, Moon, Repeat,
   Repeat1, Clock, RotateCcw, RotateCw, Gauge, Maximize2, SlidersHorizontal, MonitorSmartphone,
-  Waves
-} from 'lucide-react';
+  SlidersVertical
+} from '../icons/motion';
 import { PLAYER_THEMES, PLAYER_THEME_IDS, type PlayerThemeId } from './player/playerThemes';
 import {
   type PlayerBarDensity,
@@ -559,58 +559,76 @@ export const GlobalPlayerV2: React.FC = () => {
             </p>
           </button>
 
-          {/* Mobile primary controls — prev / play / next */}
+          {/* Mobile primary controls — effects / prev / play / next */}
           <div
-            className={`flex items-center gap-1 shrink-0 md:hidden ${remoteSession ? 'opacity-40' : ''}`}
+            className="flex items-center gap-1 shrink-0 md:hidden"
             data-player-transport
           >
             <button
               type="button"
-              disabled={Boolean(remoteSession)}
               onClick={(e) => {
                 e.stopPropagation();
-                if (remoteSession) return;
-                playPrevTrack();
+                openEffects();
               }}
-              className="w-11 h-11 rounded-full bg-[#111d2d] border border-[#30455c] text-[#e6edf5] flex items-center justify-center tap-feedback disabled:pointer-events-none disabled:grayscale"
-              aria-label="Précédent"
-            >
-              <SkipBack className="w-5 h-5 fill-current" />
-            </button>
-            <button
-              type="button"
-              disabled={Boolean(remoteSession)}
-              onClick={(e) => {
-                e.stopPropagation();
-                if (remoteSession) return;
-                togglePlay();
-              }}
-              className={`w-12 h-12 rounded-full flex items-center justify-center tap-feedback disabled:pointer-events-none disabled:grayscale ${
-                remoteSession
-                  ? 'bg-[#30455c] text-[#95a7ba] shadow-none'
-                  : `${theme.accent} text-[#111d2d] shadow-md ${theme.accentShadow}`
+              className={`w-10 h-10 rounded-full border flex items-center justify-center tap-feedback ${
+                effectsActive || showEffects
+                  ? `${theme.accentBgLight} ${theme.accentBorderActive} ${theme.accentText}`
+                  : 'bg-[#111d2d] border-[#30455c] text-[#e6edf5]'
               }`}
-              aria-label={playbackStatus === 'playing' ? 'Pause' : 'Lecture'}
+              aria-label="Effets audio"
+              title="Effets audio"
             >
-              {playbackStatus === 'playing' ? (
-                <Pause className="w-5 h-5 fill-current" />
-              ) : (
-                <Play className="w-5 h-5 fill-current ml-0.5" />
-              )}
+              <SlidersVertical className="w-4 h-4" />
             </button>
-            <button
-              type="button"
-              disabled={Boolean(remoteSession)}
-              onClick={(e) => {
-                e.stopPropagation();
-                if (remoteSession) return;
-                playNextTrack();
-              }}
-              className="w-11 h-11 rounded-full bg-[#111d2d] border border-[#30455c] text-[#e6edf5] flex items-center justify-center tap-feedback disabled:pointer-events-none disabled:grayscale"
-              aria-label="Suivant"
-            >
-              <SkipForward className="w-5 h-5 fill-current" />
-            </button>
+            <div className={`flex items-center gap-1 ${remoteSession ? 'opacity-40' : ''}`}>
+              <button
+                type="button"
+                disabled={Boolean(remoteSession)}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  if (remoteSession) return;
+                  playPrevTrack();
+                }}
+                className="w-11 h-11 rounded-full bg-[#111d2d] border border-[#30455c] text-[#e6edf5] flex items-center justify-center tap-feedback disabled:pointer-events-none disabled:grayscale"
+                aria-label="Précédent"
+              >
+                <SkipBack className="w-5 h-5 fill-current" />
+              </button>
+              <button
+                type="button"
+                disabled={Boolean(remoteSession)}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  if (remoteSession) return;
+                  togglePlay();
+                }}
+                className={`w-12 h-12 rounded-full flex items-center justify-center tap-feedback disabled:pointer-events-none disabled:grayscale ${
+                  remoteSession
+                    ? 'bg-[#30455c] text-[#95a7ba] shadow-none'
+                    : `${theme.accent} text-[#111d2d] shadow-md ${theme.accentShadow}`
+                }`}
+                aria-label={playbackStatus === 'playing' ? 'Pause' : 'Lecture'}
+              >
+                {playbackStatus === 'playing' ? (
+                  <Pause className="w-5 h-5 fill-current" />
+                ) : (
+                  <Play className="w-5 h-5 fill-current ml-0.5" />
+                )}
+              </button>
+              <button
+                type="button"
+                disabled={Boolean(remoteSession)}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  if (remoteSession) return;
+                  playNextTrack();
+                }}
+                className="w-11 h-11 rounded-full bg-[#111d2d] border border-[#30455c] text-[#e6edf5] flex items-center justify-center tap-feedback disabled:pointer-events-none disabled:grayscale"
+                aria-label="Suivant"
+              >
+                <SkipForward className="w-5 h-5 fill-current" />
+              </button>
+            </div>
           </div>
         </div>
 
@@ -795,7 +813,7 @@ export const GlobalPlayerV2: React.FC = () => {
               title="Effets audio"
               aria-label="Ouvrir les effets audio"
             >
-              <Waves className="w-4.5 h-4.5" />
+              <SlidersVertical className="w-4.5 h-4.5" />
             </button>
             <button
               type="button"
@@ -1026,7 +1044,7 @@ export const GlobalPlayerV2: React.FC = () => {
                     : 'border-[#30455c] text-[#d0d9e3]'
                 }`}
               >
-                <Waves className="w-4 h-4" />
+                <SlidersVertical className="w-4 h-4" />
                 Effets
               </button>
               <button
@@ -1284,7 +1302,7 @@ export const GlobalPlayerV2: React.FC = () => {
                   }`}
                 >
                   <span className="flex items-center gap-2.5 text-sm text-[#e6edf5]">
-                    <Waves className={`w-4 h-4 ${effectsActive ? theme.accentText : 'text-[#95a7ba]'}`} />
+                    <SlidersVertical className={`w-4 h-4 ${effectsActive ? theme.accentText : 'text-[#95a7ba]'}`} />
                     Effets audio
                     {effectsActive && activeEffectLabel && (
                       <span className={`text-[10px] font-bold ${theme.accentText}`}>

@@ -2,7 +2,7 @@
 import {
   LogIn, LogOut, UserPlus, Mail, Lock, User, ShieldCheck, Cloud,
   Heart, MonitorSmartphone, SlidersHorizontal, ExternalLink,
-} from 'lucide-react';
+} from '../icons/motion';
 import { useAuth } from '../context/AuthContext';
 
 export const AccountPanel: React.FC = () => {

@@ -1,31 +1,37 @@
 import React from 'react';
-import { Heart, Home, Headphones, Play, Settings } from 'lucide-react';
+import { Headphones } from '../icons/motion';
 import type { ExploreNavFusionProps, ReciterNavFusionProps } from './Navbar';
 import { getGeneratedReciterAvatar, getReciterImage } from '../utils/images';
+import type { NavTabIcon } from '../hooks/useNavMotionIcons';
 
 type NavTabId = 'home' | 'listen' | 'moments' | 'favorites' | 'more';
+
+type NavIconMap = {
+  home: NavTabIcon;
+  listen: NavTabIcon;
+  moments: NavTabIcon;
+  favorites: NavTabIcon;
+  more: NavTabIcon;
+};
 
 interface NavbarDesktopClassicProps {
   activeTab: NavTabId;
   setActiveTab: (tab: NavTabId) => void;
   reciterFusion?: ReciterNavFusionProps | null;
   exploreFusion?: ExploreNavFusionProps | null;
+  icons: NavIconMap;
+  motionReady?: boolean;
 }
 
-const LOGO_SRC = '/icons/sansfond.png';
-
-const MAIN_TABS: Array<{ id: NavTabId; label: string; icon: typeof Home }> = [
-  { id: 'home', label: 'Accueil', icon: Home },
-  { id: 'listen', label: 'Écouter', icon: Headphones },
-  { id: 'moments', label: 'Moments', icon: Play },
-  { id: 'favorites', label: 'Favoris', icon: Heart },
-];
+const LOGO_SRC = '/icons/sansfond.webp';
 
 export const NavbarDesktopClassic: React.FC<NavbarDesktopClassicProps> = ({
   activeTab,
   setActiveTab,
   reciterFusion = null,
   exploreFusion = null,
+  icons,
+  motionReady = false,
 }) => {
   const fusionProgress = reciterFusion?.progress ?? exploreFusion?.progress ?? 0;
   const isFusing =
@@ -35,42 +41,50 @@ export const NavbarDesktopClassic: React.FC<NavbarDesktopClassicProps> = ({
       ? ({ ['--fusion-p' as string]: String(fusionProgress) } as React.CSSProperties)
       : undefined;
 
-  const renderTab = (
-    id: NavTabId,
-    label: string,
-    Icon: typeof Home,
-    options?: { rotateActive?: boolean },
-  ) => {
+  const mainTabs: Array<{ id: Exclude<NavTabId, 'more'>; label: string; icon: NavTabIcon }> = [
+    { id: 'home', label: 'Accueil', icon: icons.home },
+    { id: 'listen', label: 'Écouter', icon: icons.listen },
+    { id: 'moments', label: 'Moments', icon: icons.moments },
+    { id: 'favorites', label: 'Favoris', icon: icons.favorites },
+  ];
+
+  const renderTab = (id: NavTabId, label: string, Icon: NavTabIcon) => {
     const isActive = activeTab === id;
     return (
       <button
         key={id}
         type="button"
         onClick={() => setActiveTab(id)}
-        className={`nav-desktop-classic-tab group relative inline-flex items-center gap-2 rounded-xl px-3.5 py-2 transition-all duration-300 ${
-          isActive
-            ? 'bg-[#1b2d43] text-[#f0d1bc] ring-1 ring-[#cea687]/40 shadow-[inset_0_1px_0_rgba(240,209,188,0.12)]'
-            : 'text-[#9fb1c3] hover:bg-[#162538]/70 hover:text-[#eef3f8]'
-        }`}
+        data-motion-icon-group={motionReady ? '' : undefined}
+        className={`nav-tab nav-tab--desktop group relative inline-flex flex-col items-center px-3 py-1.5 transition-colors duration-300 ${
+          isActive ? 'nav-tab--active' : 'nav-tab--idle'
+        } ${motionReady ? 'nav-tab--draw-motion' : ''}`}
         aria-label={label}
         aria-current={isActive ? 'page' : undefined}
       >
-        <Icon
-          strokeWidth={isActive ? 2.4 : 2}
-          className={`h-[18px] w-[18px] transition-colors duration-300 ${
-            isActive
-              ? `text-[#f0d1bc] ${options?.rotateActive ? 'rotate-90' : ''}`
-              : `text-[#8fa3b0] group-hover:text-[#eef3f8] ${
-                  options?.rotateActive ? 'group-hover:rotate-45' : ''
-                }`
-          }`}
-        />
-        <span
-          className={`text-[13px] font-semibold tracking-wide transition-colors duration-300 ${
-            isActive ? 'text-[#f0d1bc]' : 'text-[#9fb1c3] group-hover:text-[#eef3f8]'
-          }`}
-        >
-          {label}
+        <span className="relative inline-flex flex-col items-center gap-1">
+          <Icon
+            size={17}
+            strokeWidth={isActive ? 2.35 : 1.9}
+            {...(motionReady
+              ? { trigger: 'parent-hover' as const, mode: 'signature' as const, duration: 0.55 }
+              : {})}
+            className={`nav-tab__glyph shrink-0 transition-colors duration-300 ${
+              isActive
+                ? 'text-[#f0d1bc]'
+                : 'text-[#8fa3b0] group-hover:text-[#f1d4c1]'
+            }`}
+          />
+          <span
+            className={`text-[12px] leading-none tracking-wide transition-colors duration-300 ${
+              isActive
+                ? 'font-bold text-[#f1d4c1]'
+                : 'font-medium text-[#9fb1c3] group-hover:text-[#e8eef5]'
+            }`}
+          >
+            {label}
+          </span>
+          <span className="nav-tab__aurora" aria-hidden />
         </span>
       </button>
     );
@@ -113,11 +127,11 @@ export const NavbarDesktopClassic: React.FC<NavbarDesktopClassicProps> = ({
           </div>
 
           <div className="flex items-center justify-center gap-1">
-            {MAIN_TABS.map((tab) => renderTab(tab.id, tab.label, tab.icon))}
+            {mainTabs.map((tab) => renderTab(tab.id, tab.label, tab.icon))}
           </div>
 
           <div className="flex items-center justify-end">
-            {renderTab('more', 'Options', Settings, { rotateActive: true })}
+            {renderTab('more', 'Options', icons.more)}
           </div>
         </div>
       </nav>

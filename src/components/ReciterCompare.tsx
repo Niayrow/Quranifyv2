@@ -7,7 +7,7 @@ import { getGeneratedReciterAvatar, getReciterImage } from '../utils/images';
 import { getDefaultMoshaf } from '../utils/audioUrl';
 import {
   ArrowLeftRight, Pause, Play, Search, GitCompare, RefreshCw, AlertCircle,
-} from 'lucide-react';
+} from '../icons/motion';
 
 const DEFAULT_COMPARE_IDS = [123, 54] as const;
 

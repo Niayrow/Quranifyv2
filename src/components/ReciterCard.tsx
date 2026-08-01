@@ -1,7 +1,7 @@
 ﻿import React from 'react';
 import type { Reciter } from '../types';
 import { useAudio } from '../context/AudioContext';
-import { Play, Volume2, Heart } from 'lucide-react';
+import { Play, Volume2, Heart } from '../icons/motion';
 import { getGeneratedReciterAvatar, getReciterImage } from '../utils/images';
 
 interface ReciterCardProps {

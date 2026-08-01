@@ -1,7 +1,7 @@
 import React from 'react';
 import {
   BookOpen, Cloud, Database, ExternalLink, FileText, HardDrive, Scale, Shield, WifiOff,
-} from 'lucide-react';
+} from '../icons/motion';
 
 /** Mot important — accent cuivre */
 const Em: React.FC<{ children: React.ReactNode }> = ({ children }) => (

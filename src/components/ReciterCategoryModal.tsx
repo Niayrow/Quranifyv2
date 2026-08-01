@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo } from 'react';
-import { X } from 'lucide-react';
+import { X } from '../icons/motion';
 import type { Reciter } from '../types';
 import { RECITER_CATEGORIES, type ReciterCategory, type ReciterCategoryId } from '../data/reciterCategories';
 import { ReciterCard } from './ReciterCard';
@@ -53,6 +53,9 @@ export const ReciterCategoryGrid: React.FC<ReciterCategoryGridProps> = ({
                 src={category.image}
                 alt=""
                 aria-hidden="true"
+                width="320"
+                height="176"
+                sizes="(max-width: 768px) 45vw, 220px"
                 className="absolute inset-0 h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
                 loading="lazy"
                 decoding="async"

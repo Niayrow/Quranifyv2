@@ -10,6 +10,25 @@ export default defineConfig({
   ],
   build: {
     outDir: 'dist',
+    rollupOptions: {
+      output: {
+        manualChunks(id) {
+          if (!id.includes('node_modules')) return
+          if (
+            id.includes('lucide-react-motion') ||
+            id.includes(`${'node_modules'}/motion/`) ||
+            id.includes(`${'node_modules'}\\motion\\`) ||
+            id.includes('framer-motion') ||
+            id.includes('motion-dom')
+          ) {
+            return 'nav-motion'
+          }
+          if (id.includes('@supabase')) return 'supabase'
+          if (id.includes('lucide-react')) return 'icons'
+          if (id.includes('@capacitor')) return 'capacitor'
+          if (id.includes('react-dom') || id.includes('/react/')) return 'react-vendor'
+        },
+      },
+    },
   },
 })
-

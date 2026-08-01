@@ -5,9 +5,9 @@ import { ReciterCard } from './components/ReciterCard';
 import { Navbar } from './components/Navbar';
 import { 
   Search, Heart, AlertTriangle, Headphones, Play, ArrowRight,
-  Bookmark, Download, Disc, ExternalLink, Cloud, WifiOff, ChevronDown, History, Share
-} from 'lucide-react';
-import type { LucideIcon } from 'lucide-react';
+  Bookmark, Download, ExternalLink, Cloud, ChevronDown, History, Share,
+} from './icons/motion';
+import type { AppIcon } from './icons/motion';
 import type { Reciter } from './types';
 import { getGeneratedReciterAvatar, getReciterImage } from './utils/images';
 import { getReciterCategory, type ReciterCategoryId } from './data/reciterCategories';
@@ -46,7 +46,7 @@ const PRODUCT_PRIORITIES: Array<{
   title: string;
   summary: string;
   detail: string;
-  icon: LucideIcon;
+  icon: AppIcon;
 }> = [
   {
     id: 'library',
@@ -152,7 +152,7 @@ const getInitialLegalSub = (): LegalSub => {
   return resolveMoreNavigation(raw).legalSub ?? 'sources';
 };
 
-const FEATURED_RECITER_IDS = [123, 54, 102, 92, 30, 31];
+const FEATURED_RECITER_IDS = [123, 54, 20, 86, 102, 92, 30, 31];
 const GOMUSLIMLIFE_URL = 'https://gomuslimlife.com';
 const MAKKAH_MOMENTS = [
   {
@@ -410,8 +410,12 @@ const LoadingHome: React.FC<{ progress: number; reciterCount: number }> = ({ pro
       <main className="relative w-full max-w-sm flex flex-col items-center text-center gap-8">
         <div className="flex flex-col items-center gap-4">
           <img
-            src="/icons/sansfond.png"
+            src="/icons/sansfond.webp"
             alt="Sawra"
+            width="128"
+            height="128"
+            decoding="async"
+            fetchPriority="high"
             className="w-32 h-32 object-contain drop-shadow-[0_0_24px_rgba(0,0,0,0.45)]"
           />
           <div>
@@ -462,7 +466,7 @@ interface ProductPriorityCardProps {
   title: string;
   summary: string;
   detail: string;
-  icon: LucideIcon;
+  icon: AppIcon;
 }
 
 const ProductPriorityCard: React.FC<ProductPriorityCardProps> = ({ title, summary, detail, icon: Icon }) => (
@@ -484,9 +488,15 @@ interface HomeFeaturedReciterProps {
   reciter: Reciter;
   isSelected: boolean;
   onSelect: () => void;
+  priority?: boolean;
 }
 
-const HomeFeaturedReciter: React.FC<HomeFeaturedReciterProps> = ({ reciter, isSelected, onSelect }) => {
+const HomeFeaturedReciter: React.FC<HomeFeaturedReciterProps> = ({
+  reciter,
+  isSelected,
+  onSelect,
+  priority = false,
+}) => {
   const imageUrl = getReciterImage(reciter);
   const fallbackImage = getGeneratedReciterAvatar(reciter);
 
@@ -508,8 +518,9 @@ const HomeFeaturedReciter: React.FC<HomeFeaturedReciterProps> = ({ reciter, isSe
           alt=""
           width="64"
           height="64"
-          loading="lazy"
+          loading={priority ? 'eager' : 'lazy'}
           decoding="async"
+          fetchPriority={priority ? 'high' : 'low'}
           className="h-full w-full object-cover"
           onError={(e) => {
             const img = e.currentTarget;
@@ -651,17 +662,22 @@ const HomeExploreFusionButton: React.FC<{
         <button
           type="button"
           onClick={onExplore}
-          className="home-explore-fusion-card group w-full rounded-[1.35rem] border border-[#46607b]/35 bg-[#132031]/72 px-4 py-3.5 text-left transition-colors hover:bg-[#162538]/88 tap-feedback"
+          className="home-explore-fusion-card hero-explore-btn tap-feedback"
           tabIndex={progress >= 0.92 ? -1 : 0}
+          aria-label="Explorer les voix"
         >
-          <span className="inline-flex h-9 w-9 items-center justify-center rounded-full bg-[#20334a] text-[#f1d4c1]">
+          <span className="hero-explore-btn__sheen" aria-hidden />
+          <span className="hero-explore-btn__icon" aria-hidden>
             <Headphones className="h-4 w-4" />
           </span>
-          <span className="mt-3 block text-[14px] font-black text-[#f6f8fb]">
-            Explorer les voix
+          <span className="hero-explore-btn__body">
+            <span className="hero-explore-btn__title">Explorer les voix</span>
+            <span className="hero-explore-btn__meta">
+              Récitateurs, sourates et découverte en quelques gestes.
+            </span>
           </span>
-          <span className="mt-1 block text-[11px] leading-relaxed text-[#9fb1c3]">
-            Récitateurs, sourates et découverte en quelques gestes.
+          <span className="hero-explore-btn__chevron" aria-hidden>
+            <ArrowRight className="h-3.5 w-3.5" />
           </span>
         </button>
       </div>
@@ -1183,52 +1199,78 @@ const AppContent: React.FC = () => {
                 <div className="hero-glow-pulse absolute -right-10 top-10 h-36 w-36 rounded-full bg-[radial-gradient(circle,rgba(240,209,188,0.22),transparent_70%)] blur-3xl" />
               </div>
 
-              <div className="relative z-10 flex flex-col gap-5 px-4 py-5 sm:px-6 sm:py-6 md:px-10 md:py-10">
-                <div className="flex items-start justify-between gap-4">
-                  <div className="min-w-0 max-w-[16rem] sm:max-w-sm">
-                    <p className="inline-flex items-center rounded-full border border-[#f0d1bc]/20 bg-[#f0d1bc]/8 px-3 py-1 text-[10px] font-black uppercase tracking-[0.22em] text-[#f1d4c1]/90 select-none">
-                      Sawra Audio
-                    </p>
-                    <h2 className="mt-2 text-[1.75rem] sm:text-[2.2rem] md:text-[3.4rem] font-black tracking-tight text-white leading-[1.02]">
+              <div className="relative z-10 px-4 py-4 md:px-10 md:py-9">
+                {/* Mobile: vertical, centered, fast scan */}
+                <div className="flex flex-col items-center gap-3 text-center md:hidden">
+                  <img
+                    src="/icons/sansfond.webp"
+                    alt="Sawra"
+                    width="72"
+                    height="72"
+                    decoding="async"
+                    fetchPriority="high"
+                    className="hero-logo-float h-[4.5rem] w-[4.5rem] object-contain drop-shadow-[0_12px_36px_rgba(200,160,122,0.4),0_8px_24px_rgba(0,0,0,0.55)]"
+                    draggable={false}
+                  />
+                  <h2 className="text-[1.85rem] font-black tracking-tight text-white leading-[1.05]">
+                    Le Coran,
+                    <span className="block text-[#f1d4c1]">simplement.</span>
+                  </h2>
+                  <p className="max-w-[18rem] text-[13px] leading-snug text-[#d0d9e3]/78">
+                    Reprenez votre lecture, trouvez une belle voix et restez concentré sur l'essentiel.
+                  </p>
+                  <p className="inline-flex items-center rounded-full border border-[#f0d1bc]/18 bg-[#111d2d]/70 px-3 py-1 text-[11px] font-bold text-[#f1d4c1] shadow-[inset_0_1px_0_rgba(255,255,255,0.03)]">
+                    100% gratuit. Sans pub.
+                  </p>
+                </div>
+
+                {/* Desktop: side-by-side brand */}
+                <div className="mb-5 hidden items-center justify-between gap-4 md:flex">
+                  <div className="min-w-0">
+                    <h2 className="text-[3.2rem] font-black tracking-tight text-white leading-[1.05]">
                       Le Coran,
                       <span className="block text-[#f1d4c1]">simplement.</span>
                     </h2>
-                    <p className="mt-3 text-[13px] sm:text-[14px] md:text-[15px] leading-relaxed text-[#d0d9e3]/78">
+                    <p className="mt-3 max-w-sm text-[15px] leading-relaxed text-[#d0d9e3]/78">
                       Reprenez votre lecture, trouvez une belle voix et restez concentré sur l'essentiel.
                     </p>
                     <p className="mt-3 inline-flex items-center rounded-full border border-[#f0d1bc]/18 bg-[#111d2d]/70 px-3 py-1.5 text-[11px] font-bold text-[#f1d4c1] shadow-[inset_0_1px_0_rgba(255,255,255,0.03)]">
                       100% gratuit. Sans pub.
                     </p>
                   </div>
-
-                  <div className="shrink-0 pt-1">
-                    <img
-                      src="/icons/sansfond.png"
-                      alt=""
-                      className="hero-logo-float h-24 w-24 sm:h-28 sm:w-28 md:h-40 md:w-40 object-contain drop-shadow-[0_12px_36px_rgba(200,160,122,0.4),0_8px_24px_rgba(0,0,0,0.55)]"
-                      draggable={false}
-                    />
-                  </div>
+                  <img
+                    src="/icons/sansfond.webp"
+                    alt="Sawra"
+                    width="144"
+                    height="144"
+                    decoding="async"
+                    fetchPriority="high"
+                    className="hero-logo-float h-36 w-36 shrink-0 object-contain drop-shadow-[0_12px_36px_rgba(200,160,122,0.4),0_8px_24px_rgba(0,0,0,0.55)]"
+                    draggable={false}
+                  />
                 </div>
 
-                <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-2">
+                <div className="mt-3 flex flex-col gap-2 md:mt-0 md:grid md:grid-cols-2 md:gap-2.5">
                   <button
                     type="button"
                     onClick={currentTrack ? handleResumeListening : () => handleNavigate('listen')}
-                    className="group flex items-center justify-between rounded-[1.35rem] bg-[#f0d1bc] px-4 py-3.5 text-left text-[#132031] shadow-[0_14px_30px_rgba(240,209,188,0.18)] transition-transform hover:-translate-y-0.5 tap-feedback"
+                    className="hero-resume-btn tap-feedback"
+                    aria-label={
+                      currentTrack
+                        ? `Continuer la lecture : ${currentTrack.surah.name} avec ${currentTrack.reciter.name}`
+                        : 'Continuer la lecture'
+                    }
                   >
-                    <span className="min-w-0">
-                      <span className="block text-[10px] font-black uppercase tracking-[0.16em] text-[#5d463a]">
-                        {currentTrack ? 'Continuer' : 'Commencer'}
-                      </span>
-                      <span className="mt-1 block text-[14px] font-black text-[#132031]">
-                        {currentTrack ? currentTrack.surah.name : 'Explorer les récitateurs'}
-                      </span>
-                      <span className="mt-0.5 block text-[11px] text-[#30455c] truncate">
-                        {currentTrack ? currentTrack.reciter.name : 'Choisissez une voix et lancez l’écoute'}
+                    <span className="hero-resume-btn__sheen" aria-hidden />
+                    <span className="hero-resume-btn__body">
+                      <span className="hero-resume-btn__title">Continuer la lecture</span>
+                      <span className="hero-resume-btn__meta">
+                        {currentTrack
+                          ? `${currentTrack.surah.name} · ${currentTrack.reciter.name}`
+                          : 'Choisissez une voix et lancez l’écoute'}
                       </span>
                     </span>
-                    <span className="ml-3 flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[#132031] text-[#f7ebdf]">
+                    <span className="hero-resume-btn__play" aria-hidden>
                       <Play className="ml-0.5 h-4 w-4 fill-current" />
                     </span>
                   </button>
@@ -1239,68 +1281,6 @@ const AppContent: React.FC = () => {
                     onFusionProgressChange={handleExploreFusionProgress}
                   />
                 </div>
-
-                <div className="grid grid-cols-3 gap-2 text-left">
-                  {[
-                    { label: 'Hors-ligne', value: 'Sourates téléchargées', icon: WifiOff },
-                    { label: 'Multi-appareils', value: 'Compte requis', icon: Cloud },
-                    { label: 'Audio', value: 'Source mp3quran', icon: Disc },
-                  ].map((item) => {
-                    const Icon = item.icon;
-                    return (
-                      <div
-                        key={item.label}
-                        className="rounded-2xl border border-[#46607b]/28 bg-[#132031]/58 px-3 py-3"
-                      >
-                        <Icon className="h-4 w-4 text-[#f0d1bc]" aria-hidden />
-                        <p className="mt-3 text-[10px] font-black uppercase tracking-[0.14em] text-[#aab7c5]">
-                          {item.label}
-                        </p>
-                        <p className="mt-1 text-[12px] font-semibold text-[#f6f8fb] leading-snug">
-                          {item.value}
-                        </p>
-                      </div>
-                    );
-                  })}
-                </div>
-              </div>
-            </section>
-
-            <section className="rounded-[1.6rem] border border-[#30455c]/60 bg-[linear-gradient(180deg,rgba(19,32,49,0.94),rgba(13,23,36,0.9))] px-4 py-4 shadow-[0_18px_40px_rgba(0,0,0,0.22)]">
-              <div className="flex items-start justify-between gap-3">
-                <div>
-                  <p className="text-[10px] font-black uppercase tracking-[0.18em] text-[#8ea1b3]">
-                    Reprise rapide
-                  </p>
-                  <h3 className="mt-1 text-base font-black text-[#f6f8fb]">
-                    {currentTrack ? 'Continuer votre dernière écoute' : 'Prêt pour une nouvelle écoute'}
-                  </h3>
-                  <p className="mt-1 text-xs leading-relaxed text-[#9fb1c3]">
-                    {currentTrack
-                      ? `${currentTrack.surah.name} avec ${currentTrack.reciter.name}.`
-                      : 'Choisissez un récitateur, puis une sourate — la lecture démarre tout de suite.'}
-                  </p>
-                </div>
-                <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-[#20334a] text-[#f0d1bc]">
-                  {currentTrack ? <Play className="ml-0.5 h-4 w-4 fill-current" /> : <Headphones className="h-4 w-4" />}
-                </span>
-              </div>
-
-              <div className="mt-4 flex gap-2">
-                <button
-                  type="button"
-                  onClick={currentTrack ? handleResumeListening : () => handleNavigate('listen')}
-                  className="brand-button-primary inline-flex flex-1 items-center justify-center gap-2 rounded-full px-4 py-3 text-[13px] font-bold tap-feedback"
-                >
-                  {currentTrack ? 'Reprendre' : 'Commencer'}
-                </button>
-                <button
-                  type="button"
-                  onClick={() => handleNavigate('listen')}
-                  className="brand-button-secondary inline-flex items-center justify-center gap-2 rounded-full px-4 py-3 text-[13px] font-bold tap-feedback"
-                >
-                  Explorer
-                </button>
               </div>
             </section>
 
@@ -1366,10 +1346,6 @@ const AppContent: React.FC = () => {
 
             {!isLoadingReciters && (
               <section className="flex flex-col gap-3">
-                <div className="px-0.5">
-                  <h3 className="text-sm font-black text-[#f6f8fb]">Explorer par ambiance</h3>
-                  <p className="mt-1 text-xs text-[#95a7ba]">Une entrée simple pour trouver la voix qui vous convient.</p>
-                </div>
                 <ReciterCategoryGrid
                   reciters={reciters}
                   activeCategoryId={categoryModalId}
@@ -1399,12 +1375,13 @@ const AppContent: React.FC = () => {
                 </div>
 
                 <div className="-mx-1 flex gap-1 overflow-x-auto px-1 py-2 scrollbar-thin scrollbar-thumb-slate-800 scrollbar-track-transparent">
-                  {featuredReciters.map((reciter) => (
+                  {featuredReciters.map((reciter, index) => (
                     <HomeFeaturedReciter
                       key={reciter.id}
                       reciter={reciter}
                       isSelected={activeReciter?.id === reciter.id}
                       onSelect={() => handleSelectReciter(reciter)}
+                      priority={index < 3}
                     />
                   ))}
                 </div>
@@ -1440,8 +1417,33 @@ const AppContent: React.FC = () => {
               </section>
             )}
 
-            <div className="flex flex-col gap-2 rounded-2xl border border-[#30455c]/50 bg-[#101b2a]/78 px-4 py-3.5">
-              <div className="flex flex-wrap items-center justify-between gap-2">
+            <footer className="overflow-hidden rounded-[1.5rem] border border-[#30455c]/45 bg-[linear-gradient(165deg,rgba(16,27,42,0.92),rgba(8,15,24,0.96))]">
+              <div className="flex flex-col gap-4 px-4 py-4 sm:px-5 sm:py-5">
+                <div className="flex items-start justify-between gap-3">
+                  <div className="min-w-0">
+                    <p className="text-[10px] font-black uppercase tracking-[0.2em] text-[#8ea1b3]">
+                      Sawra
+                    </p>
+                    <p className="mt-1 text-sm font-bold text-[#f6f8fb]">
+                      Le Coran, simplement.
+                    </p>
+                    <p className="mt-1 text-[11px] leading-relaxed text-[#95a7ba]">
+                      PWA dispo · Apps stores bientôt en liste d’attente
+                    </p>
+                  </div>
+                  <img
+                    src="/icons/sansfond.webp"
+                    alt=""
+                    width="40"
+                    height="40"
+                    loading="lazy"
+                    decoding="async"
+                    className="h-10 w-10 shrink-0 object-contain opacity-90"
+                    draggable={false}
+                    aria-hidden
+                  />
+                </div>
+
                 <button
                   type="button"
                   onClick={() => {
@@ -1460,36 +1462,74 @@ const AppContent: React.FC = () => {
                         : 'Sur Android/Chrome : menu ⋮ → « Installer l’application » ou « Ajouter à l’écran d’accueil ».'
                     );
                   }}
-                  className="inline-flex min-h-10 items-center gap-1.5 rounded-full border border-[#cea687]/30 bg-[#f0d1bc]/10 px-3.5 py-2 text-[11px] font-bold text-[#f1d4c1] transition-colors hover:bg-[#f0d1bc]/16 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#cea687] tap-feedback"
+                  className="inline-flex w-full min-h-11 items-center justify-center gap-2 rounded-full border border-[#cea687]/30 bg-[#f0d1bc]/12 px-4 py-2.5 text-[12px] font-bold text-[#f1d4c1] transition-colors hover:bg-[#f0d1bc]/18 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#cea687] tap-feedback"
                 >
                   <Share className="h-3.5 w-3.5" aria-hidden />
                   Ajouter à l’écran d’accueil
                 </button>
+
+                <nav
+                  aria-label="Liens utiles"
+                  className="flex flex-wrap items-center justify-center gap-x-1 gap-y-1 text-[11px]"
+                >
+                  {[
+                    { label: 'Sources', onClick: () => openLegal('sources') },
+                    { label: 'Confidentialité', onClick: () => openLegal('privacy') },
+                    { label: 'Conditions', onClick: () => openLegal('terms') },
+                  ].map((item, index) => (
+                    <React.Fragment key={item.label}>
+                      {index > 0 && (
+                        <span className="px-1.5 text-[#46607b]" aria-hidden>
+                          ·
+                        </span>
+                      )}
+                      <button
+                        type="button"
+                        onClick={item.onClick}
+                        className="min-h-9 px-1 text-[#aab7c5] transition-colors hover:text-[#f1d4c1] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#cea687]"
+                      >
+                        {item.label}
+                      </button>
+                    </React.Fragment>
+                  ))}
+                  <span className="px-1.5 text-[#46607b]" aria-hidden>
+                    ·
+                  </span>
+                  <a
+                    href={GOMUSLIMLIFE_URL}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex min-h-9 items-center gap-1 px-1 text-[#aab7c5] transition-colors hover:text-[#f1d4c1] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#cea687]"
+                  >
+                    GoMuslimLife
+                    <ExternalLink className="h-3 w-3 opacity-50" aria-hidden />
+                  </a>
+                </nav>
+              </div>
+
+              <div className="flex flex-col items-center gap-2 border-t border-[#30455c]/40 bg-[#07111d]/35 px-4 py-3.5 text-center sm:px-5">
+                <p className="text-[10px] font-black uppercase tracking-[0.22em] text-[#6d8298]">
+                  Sawra · {new Date().getFullYear()}
+                </p>
                 <a
-                  href={GOMUSLIMLIFE_URL}
+                  href="https://sofianeweb.fr"
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="inline-flex min-h-10 items-center gap-1.5 text-[11px] text-[#b4c0ce] hover:text-[#f1d4c1] transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#cea687]"
+                  className="group inline-flex items-center gap-1.5 rounded-full border border-[#30455c]/45 bg-[#0c1522]/70 px-3 py-1.5 text-[11px] text-[#95a7ba] transition-all duration-300 hover:border-[#cea687]/35 hover:bg-[#162538]/80 hover:text-[#e6edf5] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#cea687]"
                 >
-                  GoMuslimLife
-                  <ExternalLink className="h-3 w-3 opacity-60" aria-hidden />
+                  <span>Imaginé &amp; façonné par</span>
+                  <span className="font-bold text-[#f1d4c1] transition-colors group-hover:text-[#f0d1bc]">
+                    sofianeweb.fr
+                  </span>
+                  <span
+                    className="inline-block text-[#cea687] transition-transform duration-300 group-hover:translate-x-0.5 group-hover:-translate-y-0.5"
+                    aria-hidden
+                  >
+                    ↗
+                  </span>
                 </a>
               </div>
-              <p className="text-[11px] leading-relaxed text-[#95a7ba]">
-                PWA disponible maintenant. Apps App Store &amp; Google Play : liste d’attente à venir.
-              </p>
-              <div className="flex flex-wrap gap-x-3 gap-y-1 text-[11px]">
-                <button type="button" onClick={() => openLegal('sources')} className="text-[#aab7c5] hover:text-[#f1d4c1] underline-offset-2 hover:underline focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#cea687]">
-                  Sources
-                </button>
-                <button type="button" onClick={() => openLegal('privacy')} className="text-[#aab7c5] hover:text-[#f1d4c1] underline-offset-2 hover:underline focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#cea687]">
-                  Confidentialité
-                </button>
-                <button type="button" onClick={() => openLegal('terms')} className="text-[#aab7c5] hover:text-[#f1d4c1] underline-offset-2 hover:underline focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#cea687]">
-                  Conditions
-                </button>
-              </div>
-            </div>
+            </footer>
           </div>
         )}
 

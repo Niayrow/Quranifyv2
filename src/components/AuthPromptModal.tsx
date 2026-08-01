@@ -1,5 +1,5 @@
 ﻿import React from 'react';
-import { Cloud, Heart, Headphones, X, LogIn } from 'lucide-react';
+import { Cloud, Heart, Headphones, X, LogIn } from '../icons/motion';
 
 interface AuthPromptModalProps {
   open: boolean;

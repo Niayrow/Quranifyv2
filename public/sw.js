@@ -17,7 +17,7 @@ const APP_SHELL_ASSETS = [
   '/icons/maskable-192x192.png',
   '/icons/maskable-512x512.png',
   '/icons/logo.png',
-  '/icons/sansfond.png',
+  '/icons/sansfond.webp',
   '/icons/artwork.png',
   '/og-image.png'
 ];

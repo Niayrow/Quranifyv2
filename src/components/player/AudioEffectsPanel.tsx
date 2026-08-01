@@ -1,5 +1,5 @@
 import React, { useEffect, useRef } from 'react';
-import { Waves, RotateCcw, SlidersHorizontal } from 'lucide-react';
+import { Waves, RotateCcw, SlidersHorizontal } from '../../icons/motion';
 import {
   AUDIO_EFFECT_PRESETS,
   DEFAULT_AUDIO_EFFECTS,

@@ -1,11 +1,12 @@
-import React, { useState, useMemo } from 'react';
+import React, { useDeferredValue, useEffect, useMemo, useRef, useState } from 'react';
 import { useAudio } from '../context/AudioContext';
 import type { Surah } from '../types';
 import {
   Search, Play, Pause, Disc, CloudDownload, CloudCheck,
   Repeat1, Repeat, X, Trash2,
-} from 'lucide-react';
+} from '../icons/motion';
 import { getAudioUrl } from '../utils/audioUrl';
+import { getSurahSuggestions, scoreSurahMatch } from '../utils/surahSearch';
 
 interface SurahListProps {
   onChooseReciter?: () => void;
@@ -31,21 +32,63 @@ export const SurahList: React.FC<SurahListProps> = ({ onChooseReciter }) => {
   } = useAudio();
 
   const [searchQuery, setSearchQuery] = useState('');
+  const [searchFocused, setSearchFocused] = useState(false);
+  const [highlightIndex, setHighlightIndex] = useState(0);
+  const deferredQuery = useDeferredValue(searchQuery);
+  const searchWrapRef = useRef<HTMLDivElement>(null);
 
   const availableSurahs = useMemo(() => {
     return getAvailableSurahs(activeReciter, activeMoshaf);
   }, [activeReciter, activeMoshaf, getAvailableSurahs]);
 
+  const suggestions = useMemo(
+    () => getSurahSuggestions(availableSurahs, deferredQuery, 8),
+    [availableSurahs, deferredQuery]
+  );
+
+  const showSuggestions = searchFocused && deferredQuery.trim().length > 0 && suggestions.length > 0;
+
   const filteredSurahs = useMemo(() => {
-    if (!searchQuery.trim()) return availableSurahs;
-    const query = searchQuery.toLowerCase().trim();
-    return availableSurahs.filter(surah =>
-      surah.name.toLowerCase().includes(query) ||
-      surah.translation.toLowerCase().includes(query) ||
-      surah.arabicName.includes(query) ||
-      surah.id.toString().includes(query)
-    );
-  }, [availableSurahs, searchQuery]);
+    if (!deferredQuery.trim()) return availableSurahs;
+    return availableSurahs
+      .map((surah) => ({ surah, score: scoreSurahMatch(surah, deferredQuery) }))
+      .filter((item) => item.score > 0)
+      .sort((a, b) => b.score - a.score || a.surah.id - b.surah.id)
+      .map((item) => item.surah);
+  }, [availableSurahs, deferredQuery]);
+
+  useEffect(() => {
+    setHighlightIndex(0);
+  }, [deferredQuery]);
+
+  useEffect(() => {
+    const onPointerDown = (event: MouseEvent | TouchEvent) => {
+      const target = event.target as Node | null;
+      if (!target || !searchWrapRef.current?.contains(target)) {
+        setSearchFocused(false);
+      }
+    };
+    document.addEventListener('mousedown', onPointerDown);
+    document.addEventListener('touchstart', onPointerDown);
+    return () => {
+      document.removeEventListener('mousedown', onPointerDown);
+      document.removeEventListener('touchstart', onPointerDown);
+    };
+  }, []);
+
+  const selectSuggestion = (surah: Surah) => {
+    setSearchQuery('');
+    setSearchFocused(false);
+    if (activeReciter && activeMoshaf) {
+      playTrack(activeReciter, activeMoshaf, surah);
+    }
+    requestAnimationFrame(() => {
+      document.getElementById(`surah-row-${surah.id}`)?.scrollIntoView({
+        behavior: 'smooth',
+        block: 'center',
+      });
+    });
+  };
 
   const playlistActive = selectedSurahIds.size > 0;
 
@@ -96,29 +139,100 @@ export const SurahList: React.FC<SurahListProps> = ({ onChooseReciter }) => {
 
   return (
     <div className="flex flex-col gap-3 md:gap-4">
-      <div className="relative">
+      <div ref={searchWrapRef} className="relative z-20">
         <label htmlFor="surah-search" className="sr-only">
           Rechercher une sourate
         </label>
-        <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-[#95a7ba]" aria-hidden />
+        <Search className="absolute left-4 top-3.5 w-5 h-5 text-[#95a7ba] pointer-events-none" aria-hidden />
         <input
           id="surah-search"
           type="search"
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
+          onFocus={() => setSearchFocused(true)}
+          onKeyDown={(e) => {
+            if (!showSuggestions) return;
+            if (e.key === 'ArrowDown') {
+              e.preventDefault();
+              setHighlightIndex((i) => Math.min(i + 1, suggestions.length - 1));
+            } else if (e.key === 'ArrowUp') {
+              e.preventDefault();
+              setHighlightIndex((i) => Math.max(i - 1, 0));
+            } else if (e.key === 'Enter') {
+              const pick = suggestions[highlightIndex];
+              if (pick) {
+                e.preventDefault();
+                selectSuggestion(pick.surah);
+              }
+            } else if (e.key === 'Escape') {
+              setSearchFocused(false);
+            }
+          }}
           placeholder={`Rechercher ${availableSurahs.length} sourates...`}
           aria-label="Rechercher une sourate"
-          className="w-full min-h-11 pl-12 pr-5 py-3 bg-[#111d2d]/78 hover:bg-[#162538]/88 focus:bg-[#162538] border border-[#30455c] focus:border-[#cea687]/55 rounded-2xl text-[#e6edf5] placeholder:text-[#8295aa] text-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-[#cea687]/55 focus-visible:ring-offset-2 focus-visible:ring-offset-[#07111d] transition-all"
+          aria-autocomplete="list"
+          aria-expanded={showSuggestions}
+          aria-controls="surah-search-suggestions"
+          autoComplete="off"
+          className="w-full min-h-11 pl-12 pr-20 py-3 bg-[#111d2d]/78 hover:bg-[#162538]/88 focus:bg-[#162538] border border-[#30455c] focus:border-[#cea687]/55 rounded-2xl text-[#e6edf5] placeholder:text-[#8295aa] text-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-[#cea687]/55 focus-visible:ring-offset-2 focus-visible:ring-offset-[#07111d] transition-all"
         />
         {searchQuery && (
           <button
             type="button"
-            onClick={() => setSearchQuery('')}
+            onClick={() => {
+              setSearchQuery('');
+              setSearchFocused(true);
+            }}
             aria-label="Effacer la recherche"
             className="absolute right-3 top-1/2 -translate-y-1/2 min-h-9 min-w-9 text-xs text-[#b4c0ce] hover:text-[#f6f8fb] px-2 py-1 bg-[#1b2d43] rounded-md focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#cea687]"
           >
             Effacer
           </button>
+        )}
+
+        {showSuggestions && (
+          <ul
+            id="surah-search-suggestions"
+            role="listbox"
+            className="absolute left-0 right-0 top-[calc(100%+0.4rem)] max-h-72 overflow-y-auto rounded-2xl border border-[#30455c]/60 bg-[#0c1522]/98 shadow-[0_18px_40px_rgba(0,0,0,0.45)] backdrop-blur-md"
+          >
+            {suggestions.map((item, index) => {
+              const active = index === highlightIndex;
+              return (
+                <li key={item.surah.id} role="option" aria-selected={active}>
+                  <button
+                    type="button"
+                    onMouseEnter={() => setHighlightIndex(index)}
+                    onClick={() => selectSuggestion(item.surah)}
+                    className={`flex w-full items-center gap-3 px-3.5 py-2.5 text-left transition-colors ${
+                      active ? 'bg-[#f0d1bc]/12' : 'hover:bg-[#162538]/80'
+                    }`}
+                  >
+                    <span
+                      className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-[11px] font-bold tabular-nums ${
+                        active
+                          ? 'bg-[#f0d1bc]/18 text-[#f1d4c1]'
+                          : 'bg-[#111d2d] text-[#aab7c5] border border-[#30455c]/50'
+                      }`}
+                    >
+                      {item.surah.id}
+                    </span>
+                    <span className="min-w-0 flex-1">
+                      <span className="block truncate text-[13px] font-bold text-[#f6f8fb]">
+                        {item.surah.name}
+                      </span>
+                      <span className="mt-0.5 block truncate text-[11px] text-[#95a7ba]">
+                        {item.reason}
+                      </span>
+                    </span>
+                    <span className="shrink-0 font-serif text-base text-[#d0d9e3] arabic-text">
+                      {item.surah.arabicName}
+                    </span>
+                  </button>
+                </li>
+              );
+            })}
+          </ul>
         )}
       </div>
 
@@ -126,7 +240,9 @@ export const SurahList: React.FC<SurahListProps> = ({ onChooseReciter }) => {
         <p className="min-w-0 truncate text-[11px] font-medium text-[#95a7ba]">
           {playlistActive
             ? `Boucle · ${selectedSurahIds.size} sourate${selectedSurahIds.size > 1 ? 's' : ''}`
-            : 'Touche « Boucle » pour répéter une sélection'}
+            : deferredQuery.trim()
+              ? `${filteredSurahs.length} suggestion${filteredSurahs.length > 1 ? 's' : ''}`
+              : 'Touche « Boucle » pour répéter une sélection'}
         </p>
         <div className="flex items-center gap-1.5 shrink-0">
           <button
@@ -178,6 +294,7 @@ export const SurahList: React.FC<SurahListProps> = ({ onChooseReciter }) => {
             return (
               <div
                 key={surah.id}
+                id={`surah-row-${surah.id}`}
                 className={`group relative px-2.5 py-1.5 min-[390px]:px-3 min-[390px]:py-2 md:px-3.5 md:py-2.5 rounded-xl flex items-center gap-2 md:gap-3 transition-all duration-200 border ${
                   isCurrent
                     ? 'surah-row-active'

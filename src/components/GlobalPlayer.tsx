@@ -6,7 +6,7 @@ import {
   Disc, AlertCircle, RefreshCw, RotateCcw,
   RotateCw, ListMusic, Search, X,
   Settings, Sparkles, Check, Moon, Repeat, Clock
-} from 'lucide-react';
+} from '../icons/motion';
 
 const THEMES: Record<string, {
   name: string;

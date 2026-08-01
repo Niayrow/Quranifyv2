@@ -2,6 +2,7 @@ import React, { createContext, useContext, useState, useEffect, useRef, useCallb
 import type { Reciter, Moshaf, Surah, AudioTrack, PlaybackStatus } from '../types';
 import { SURAHS } from '../data/surahs';
 import { SEEDED_RECITERS } from '../data/recitersSeed';
+import { simplifyMoshafName } from '../utils/moshafLabel';
 import { filterCuratedReciters, CURATED_RECITER_IDS } from '../data/curatedReciters';
 import { getAudioUrl } from '../utils/audioUrl';
 import { syncWidgetPlayback } from '../utils/widgetSync';
@@ -225,11 +226,18 @@ const RECITER_NAME_CORRECTIONS: Record<number, string> = {
 };
 
 const applyNameCorrections = (reciters: Reciter[]): Reciter[] =>
-  reciters.map((r) =>
-    RECITER_NAME_CORRECTIONS[r.id]
+  reciters.map((r) => {
+    const withName = RECITER_NAME_CORRECTIONS[r.id]
       ? { ...r, name: RECITER_NAME_CORRECTIONS[r.id] }
-      : r
-  );
+      : r;
+    return {
+      ...withName,
+      moshaf: withName.moshaf.map((m) => ({
+        ...m,
+        name: simplifyMoshafName(m.name),
+      })),
+    };
+  });
 
 const stabilizeFirstScreenReciters = (apiReciters: Reciter[]) => {
   const corrected = applyNameCorrections(apiReciters);

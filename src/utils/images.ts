@@ -5,35 +5,35 @@
  * IDs without a local file fall back to getGeneratedReciterAvatar.
  */
 export const RECITER_IMAGES: Record<number, string> = {
-  // Curated — local assets
-  123: '/reciters/alafasy.png', // Mishary Rachid Al-Afasy
-  54: '/reciters/sudais.png', // Abderrahmane Al-Soudais
-  102: '/reciters/maher.png', // Maher Al-Mouaiqly
-  92: '/reciters/dosari.png', // Yasser Al-Dossary
-  30: '/reciters/sghamdi.png', // Saad El-Ghamidi
-  31: '/reciters/shuraim.png', // Saoud Al-Shuraim
-  51: '/reciters/basit.png', // Abdel Bassit Abdel Samad
-  112: '/reciters/minshawi.png', // Mohamed Siddiq El-Menchaoui
-  118: '/reciters/husary.png', // Mahmoud Khalil Al-Housary
-  4: '/reciters/shatri.png', // Abou Bakr Al-Chatri
-  5: '/reciters/ajmi.png', // Ahmed El-Ajami
-  89: '/reciters/arrefay.png', // Hani Arrifai
-  86: '/reciters/qatami.png', // Nasser Al-Qatami
-  12: '/reciters/abkar.png', // Idris Abkar
-  81: '/reciters/abbad.png', // Fares Abbad
-  60: '/reciters/basferr.png', // Abdullah Basfar
-  225: '/reciters/ossi.png', // Abdulrahman Aloosi
-  111: '/reciters/jibreel.jpg', // Mohamed Jibreel
-  221: '/reciters/kurdi.png', // Raad Al-Kurdi
-  272: '/reciters/kameny.png', // Okasha Kameny
-  107: '/reciters/luhaidan.png', // Mohamed El-Louhaïdan
-  245: '/reciters/salimi.png', // Mansour Al-Salemi
-  254: '/reciters/turki.png', // Badr Al-Turki
-  20: '/reciters/jalil.png', // Khaled Al-Jalil
+  // Curated — local assets (WebP, max ~384px)
+  123: '/reciters/alafasy.webp', // Mishary Rachid Al-Afasy
+  54: '/reciters/sudais.webp', // Abderrahmane Al-Soudais
+  102: '/reciters/maher.webp', // Maher Al-Mouaiqly
+  92: '/reciters/dosari.webp', // Yasser Al-Dossary
+  30: '/reciters/sghamdi.webp', // Saad El-Ghamidi
+  31: '/reciters/shuraim.webp', // Saoud Al-Shuraim
+  51: '/reciters/basit.webp', // Abdel Bassit Abdel Samad
+  112: '/reciters/minshawi.webp', // Mohamed Siddiq El-Menchaoui
+  118: '/reciters/husary.webp', // Mahmoud Khalil Al-Housary
+  4: '/reciters/shatri.webp', // Abou Bakr Al-Chatri
+  5: '/reciters/ajmi.webp', // Ahmed El-Ajami
+  89: '/reciters/arrefay.webp', // Hani Arrifai
+  86: '/reciters/qatami.webp', // Nasser Al-Qatami
+  12: '/reciters/abkar.webp', // Idris Abkar
+  81: '/reciters/abbad.webp', // Fares Abbad
+  60: '/reciters/basferr.webp', // Abdullah Basfar
+  225: '/reciters/ossi.webp', // Abdulrahman Aloosi
+  111: '/reciters/jibreel.webp', // Mohamed Jibreel
+  221: '/reciters/kurdi.webp', // Raad Al-Kurdi
+  272: '/reciters/kameny.webp', // Okasha Kameny
+  107: '/reciters/luhaidan.webp', // Mohamed El-Louhaïdan
+  245: '/reciters/salimi.webp', // Mansour Al-Salemi
+  254: '/reciters/turki.webp', // Badr Al-Turki
+  20: '/reciters/jalil.webp', // Khaled Al-Jalil
 
   // Extra local assets (kept if they appear elsewhere)
-  1: '/reciters/akhdar.png', // Ibrahim Al-Akhdar
-  62: '/reciters/juhany.png', // Abdullah Al-Johani
+  1: '/reciters/akhdar.webp', // Ibrahim Al-Akhdar
+  62: '/reciters/juhany.webp', // Abdullah Al-Johani
 };
 
 const AVATAR_PALETTES = [

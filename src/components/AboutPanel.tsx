@@ -2,7 +2,7 @@ import React from 'react';
 import {
   Compass, Cloud, HardDrive, Headphones, Shield, Sparkles, Trash2, Wifi,
   MonitorSmartphone, ListMusic, Smartphone, ExternalLink, History, BookOpen, FileText,
-} from 'lucide-react';
+} from '../icons/motion';
 import { useAudio } from '../context/AudioContext';
 
 export const APP_VERSION = '1.2.0';
@@ -114,7 +114,7 @@ export const AboutPanel: React.FC<AboutPanelProps> = ({
         <div className="relative">
           <div className="flex items-center gap-3">
             <img
-              src="/icons/sansfond.png"
+              src="/icons/sansfond.webp"
               alt=""
               className="h-11 w-11 object-contain drop-shadow-[0_2px_12px_rgba(200,160,122,0.45)]"
               draggable={false}

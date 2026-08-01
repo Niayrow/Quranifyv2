@@ -1,5 +1,5 @@
-﻿import type { LucideIcon } from 'lucide-react';
-import { Landmark, MoonStar, Building2, Sparkles } from 'lucide-react';
+﻿import type { AppIcon } from '../icons/motion';
+import { Landmark, MoonStar, Building2, Sparkles } from '../icons/motion';
 import { CURATED_RECITER_ID_SET } from './curatedReciters';
 
 export type ReciterCategoryId = 'makkah' | 'madinah' | 'riyadh' | 'sawra';
@@ -10,7 +10,7 @@ export interface ReciterCategory {
   subtitle: string;
   arabicLabel: string;
   image: string;
-  icon: LucideIcon;
+  icon: AppIcon;
   /** Accent classes for buttons / modal chrome */
   accent: {
     border: string;
@@ -35,7 +35,7 @@ export const RECITER_CATEGORIES: ReciterCategory[] = [
     title: 'La Mecque',
     subtitle: 'Imams du Haram',
     arabicLabel: 'مكة',
-    image: '/img/mecca.jpg',
+    image: '/img/mecca.webp',
     icon: Landmark,
     accent: {
       border: 'border-amber-400/35',
@@ -59,7 +59,7 @@ export const RECITER_CATEGORIES: ReciterCategory[] = [
     title: 'Médine',
     subtitle: 'Imams du Nabawi',
     arabicLabel: 'المدينة',
-    image: '/img/medine.jpg',
+    image: '/img/medine.webp',
     icon: MoonStar,
     accent: {
       border: 'border-emerald-400/35',
@@ -80,7 +80,7 @@ export const RECITER_CATEGORIES: ReciterCategory[] = [
     title: 'Riyad',
     subtitle: 'Voix de la capitale',
     arabicLabel: 'الرياض',
-    image: '/img/riyad.jpg',
+    image: '/img/riyad.webp',
     icon: Building2,
     accent: {
       border: 'border-sky-400/35',
@@ -105,7 +105,7 @@ export const RECITER_CATEGORIES: ReciterCategory[] = [
     title: 'Choix Sawra',
     subtitle: 'Sélection éditoriale',
     arabicLabel: 'مختار',
-    image: '/img/choix.jpg',
+    image: '/img/choix.webp',
     icon: Sparkles,
     accent: {
       border: 'border-rose-400/30',

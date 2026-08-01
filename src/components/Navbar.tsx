@@ -1,8 +1,9 @@
 ﻿import React from 'react';
-import { Heart, Home, Headphones, Play, Settings } from 'lucide-react';
+import { Headphones } from '../icons/motion';
 import type { Reciter, Moshaf } from '../types';
 import { getGeneratedReciterAvatar, getReciterImage } from '../utils/images';
 import type { NavDesktopStyle } from '../utils/navDesktopStyle';
+import { useNavMotionIcons, type NavTabIcon } from '../hooks/useNavMotionIcons';
 import { NavbarDesktopClassic } from './NavbarDesktopClassic';
 
 type NavTabId = 'home' | 'listen' | 'moments' | 'favorites' | 'more';
@@ -30,7 +31,7 @@ interface NavbarProps {
   exploreFusion?: ExploreNavFusionProps | null;
 }
 
-const LOGO_SRC = '/icons/sansfond.png';
+const LOGO_SRC = '/icons/sansfond.webp';
 
 export const Navbar: React.FC<NavbarProps> = ({
   activeTab,
@@ -41,19 +42,19 @@ export const Navbar: React.FC<NavbarProps> = ({
   exploreFusion = null,
 }) => {
   const useClassicDesktop = desktopStyle === 'classic';
+  const { ready: motionReady, icons, MotionIconConfig } = useNavMotionIcons();
 
-  const mainTabs: Array<{ id: NavTabId; label: string; icon: typeof Home }> = [
-    { id: 'home', label: 'Accueil', icon: Home },
-    { id: 'listen', label: 'Écouter', icon: Headphones },
-    { id: 'moments', label: 'Moments', icon: Play },
-    { id: 'favorites', label: 'Favoris', icon: Heart },
+  const mainTabs: Array<{ id: Exclude<NavTabId, 'more'>; label: string; icon: NavTabIcon }> = [
+    { id: 'home', label: 'Accueil', icon: icons.home },
+    { id: 'listen', label: 'Écouter', icon: icons.listen },
+    { id: 'moments', label: 'Moments', icon: icons.moments },
+    { id: 'favorites', label: 'Favoris', icon: icons.favorites },
   ];
 
   const renderTab = (
     id: NavTabId,
     label: string,
-    Icon: typeof Home,
-    options?: { rotateActive?: boolean },
+    Icon: NavTabIcon,
   ) => {
     const isActive = activeTab === id;
 
@@ -62,41 +63,44 @@ export const Navbar: React.FC<NavbarProps> = ({
         key={id}
         type="button"
         onClick={() => setActiveTab(id)}
-        className={`group relative flex flex-col md:flex-row items-center justify-center flex-1 md:flex-none h-full md:h-auto px-1 md:px-3 md:py-1.5 py-1 transition-all duration-300 md:rounded-xl ${
-          isActive
-            ? 'md:bg-[#1b2d43] md:ring-1 md:ring-[#cea687]/40 md:shadow-[inset_0_1px_0_rgba(240,209,188,0.12)]'
-            : 'text-[#9fb1c3] md:hover:bg-[#162538]/70 hover:text-[#eef3f8]'
-        }`}
+        data-motion-icon-group={motionReady ? '' : undefined}
+        className={`nav-tab group relative flex flex-1 flex-col items-center justify-center h-full px-1 py-1 transition-all duration-300 md:flex-none md:rounded-none md:px-3 md:py-1.5 ${
+          isActive ? 'nav-tab--active' : 'nav-tab--idle'
+        } ${motionReady ? 'nav-tab--draw-motion' : ''}`}
         aria-label={label}
         aria-current={isActive ? 'page' : undefined}
       >
-        <div className="relative z-10 flex flex-col md:flex-row items-center gap-0.5 md:gap-2 transition-transform duration-100 ease-out group-active:scale-95">
+        <span className="nav-tab__indicator md:hidden" aria-hidden />
+        <span className="nav-tab__inner relative z-10 flex flex-col items-center gap-0.5 transition-transform duration-100 ease-out group-active:scale-95 md:gap-1">
           <span
-            className={`flex items-center justify-center rounded-lg transition-all duration-300 md:bg-transparent ${
-              isActive ? 'h-8 w-8 bg-[#f0d1bc]/12 md:h-auto md:w-auto md:bg-transparent' : 'h-8 w-8 md:h-auto md:w-auto'
+            className={`nav-tab__icon flex h-8 w-8 items-center justify-center rounded-xl transition-all duration-300 md:h-auto md:w-auto md:rounded-none md:bg-transparent ${
+              isActive ? 'bg-[#f0d1bc]/14 shadow-[inset_0_1px_0_rgba(255,255,255,0.08)] md:bg-transparent md:shadow-none' : ''
             }`}
           >
             <Icon
-              strokeWidth={isActive ? 2.4 : 2}
-              className={`w-[18px] h-[18px] transition-colors duration-300 ${
+              size={18}
+              strokeWidth={isActive ? 2.45 : 2}
+              {...(motionReady
+                ? { trigger: 'parent-hover' as const, mode: 'signature' as const, duration: 0.55 }
+                : {})}
+              className={`nav-tab__glyph transition-colors duration-300 md:h-[17px] md:w-[17px] ${
                 isActive
-                  ? `text-[#f0d1bc] ${options?.rotateActive ? 'md:rotate-90' : ''}`
-                  : `text-[#8fa3b0] group-hover:text-[#eef3f8] ${
-                      options?.rotateActive ? 'group-hover:rotate-45' : ''
-                    }`
+                  ? 'text-[#f0d1bc] drop-shadow-[0_0_10px_rgba(240,209,188,0.35)] md:drop-shadow-none'
+                  : 'text-[#7f93a8] group-hover:text-[#e8eef5] md:group-hover:text-[#f1d4c1]'
               }`}
             />
           </span>
           <span
-            className={`text-[10px] md:text-[13px] font-semibold tracking-wide transition-colors duration-300 ${
+            className={`nav-tab__label text-[10px] font-semibold tracking-wide transition-colors duration-300 md:text-[12px] md:leading-none ${
               isActive
-                ? 'text-[#f0d1bc]'
-                : 'text-[#8295aa] group-hover:text-[#eef3f8] md:text-[#9fb1c3]'
+                ? 'text-[#f1d4c1] md:font-bold'
+                : 'text-[#7a8fa3] group-hover:text-[#e8eef5] md:font-medium md:text-[#9fb1c3]'
             }`}
           >
             {label}
           </span>
-        </div>
+          <span className="nav-tab__aurora hidden md:block" aria-hidden />
+        </span>
       </button>
     );
   };
@@ -109,7 +113,7 @@ export const Navbar: React.FC<NavbarProps> = ({
       ? ({ ['--fusion-p' as string]: String(fusionProgress) } as React.CSSProperties)
       : undefined;
 
-  return (
+  const tabs = (
     <>
       {useClassicDesktop && (
         <NavbarDesktopClassic
@@ -117,6 +121,8 @@ export const Navbar: React.FC<NavbarProps> = ({
           setActiveTab={setActiveTab}
           reciterFusion={reciterFusion}
           exploreFusion={exploreFusion}
+          icons={icons}
+          motionReady={motionReady}
         />
       )}
 
@@ -137,13 +143,11 @@ export const Navbar: React.FC<NavbarProps> = ({
         `}
       >
         <div className="flex h-full flex-col">
-          {/* Mobile row */}
           <div className="flex h-full items-stretch justify-between gap-0 md:hidden">
             {mainTabs.map((tab) => renderTab(tab.id, tab.label, tab.icon))}
-            {renderTab('more', 'Options', Settings, { rotateActive: true })}
+            {renderTab('more', 'Options', icons.more)}
           </div>
 
-          {/* Desktop row V1 — brand | centered tabs | options */}
           {!useClassicDesktop && (
             <div className="relative hidden md:grid md:grid-cols-[1fr_auto_1fr] md:items-center md:gap-3">
               <div className="flex items-center justify-start gap-2.5 min-w-0">
@@ -157,6 +161,9 @@ export const Navbar: React.FC<NavbarProps> = ({
                     <img
                       src={LOGO_SRC}
                       alt=""
+                      width="52"
+                      height="52"
+                      decoding="async"
                       className="h-[3.25rem] w-[3.25rem] object-contain scale-[1.18] drop-shadow-[0_2px_16px_rgba(206,166,135,0.42)] transition-transform duration-300 group-hover/nav-brand:scale-[1.22]"
                       draggable={false}
                     />
@@ -179,7 +186,7 @@ export const Navbar: React.FC<NavbarProps> = ({
 
               <div className="flex items-center justify-end gap-3 min-w-0">
                 <span className="h-7 w-px shrink-0 bg-[#46607b]/40" aria-hidden />
-                {renderTab('more', 'Options', Settings, { rotateActive: true })}
+                {renderTab('more', 'Options', icons.more)}
               </div>
             </div>
           )}
@@ -254,4 +261,14 @@ export const Navbar: React.FC<NavbarProps> = ({
       </nav>
     </>
   );
+
+  if (MotionIconConfig) {
+    return (
+      <MotionIconConfig trigger="hover" mode="signature" duration={0.5}>
+        {tabs}
+      </MotionIconConfig>
+    );
+  }
+
+  return tabs;
 };

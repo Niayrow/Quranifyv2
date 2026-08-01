@@ -1,5 +1,5 @@
 import React, { useMemo } from 'react';
-import { Disc, Heart, Play, RefreshCw } from 'lucide-react';
+import { Disc, Heart, Play, RefreshCw } from '../icons/motion';
 import type { Reciter, Moshaf } from '../types';
 import { getGeneratedReciterAvatar, getReciterImage } from '../utils/images';
 import { useReciterNavFusion } from '../hooks/useReciterNavFusion';
@@ -111,6 +111,8 @@ export const ListenReciterHeader: React.FC<ListenReciterHeaderProps> = ({
                 alt={activeReciter.name}
                 width="96"
                 height="96"
+                decoding="async"
+                fetchPriority="high"
                 className="h-full w-full object-cover"
                 onError={(e) => {
                   const img = e.currentTarget;
