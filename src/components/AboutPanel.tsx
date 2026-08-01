@@ -26,7 +26,7 @@ const UPDATE_HISTORY: Array<{
     date: '27 juil. 2026',
     title: 'Identité & expérience mobile',
     items: [
-      'Nouveau logo et icônes PWA / app (fond transparent).',
+      'Nouveau logo calligraphie + icônes app / PWA (noir & cuivre).',
       'Accueil redesigné : hero compact, accès rapide, lieux et favoris.',
       'Navbar mobile : sélection marine, dock collé au lecteur, sans logo.',
       'Player bar : temps, progression seekable, swipe plein écran, liste des sourates au tap.',
@@ -116,7 +116,7 @@ export const AboutPanel: React.FC<AboutPanelProps> = ({
             <img
               src="/icons/sansfond.png"
               alt=""
-              className="h-11 w-11 object-contain drop-shadow-[0_2px_10px_rgba(122,145,159,0.35)]"
+              className="h-11 w-11 object-contain drop-shadow-[0_2px_12px_rgba(200,160,122,0.45)]"
               draggable={false}
             />
             <div>

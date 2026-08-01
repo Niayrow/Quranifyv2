@@ -1205,7 +1205,7 @@ const AppContent: React.FC = () => {
                     <img
                       src="/icons/sansfond.png"
                       alt=""
-                      className="hero-logo-float h-24 w-24 sm:h-28 sm:w-28 md:h-40 md:w-40 object-contain drop-shadow-[0_12px_36px_rgba(240,209,188,0.28),0_10px_28px_rgba(30,80,140,0.5)]"
+                      className="hero-logo-float h-24 w-24 sm:h-28 sm:w-28 md:h-40 md:w-40 object-contain drop-shadow-[0_12px_36px_rgba(200,160,122,0.4),0_8px_24px_rgba(0,0,0,0.55)]"
                       draggable={false}
                     />
                   </div>
