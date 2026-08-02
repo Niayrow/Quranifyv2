@@ -14,6 +14,13 @@ interface SurahListProps {
 }
 
 const LONG_PRESS_MS = 480;
+const SWIPE_LOCK_PX = 8;
+const SWIPE_MAX_RATIO = 0.45;
+const SWIPE_TRIGGER_RATIO = 0.28;
+const SWIPE_SNAP_MS = 320;
+
+const clampSwipe = (dx: number, max: number) =>
+  Math.max(-max, Math.min(max, dx));
 
 export const SurahList: React.FC<SurahListProps> = ({ onChooseReciter }) => {
   const {
@@ -253,35 +260,200 @@ export const SurahList: React.FC<SurahListProps> = ({ onChooseReciter }) => {
   }, [activeMoshaf, availableSurahs, cachedUrls, checkedIds]);
 
   const touchStartYRef = useRef<number | null>(null);
+  const swipeStartRef = useRef<{
+    id: number;
+    x: number;
+    y: number;
+    lock: 'none' | 'h' | 'v';
+    maxPx: number;
+    triggerPx: number;
+  } | null>(null);
+  const swipeXRef = useRef(0);
+  const swipeRowElsRef = useRef<Map<number, HTMLDivElement>>(new Map());
+  const swipeRevealElsRef = useRef<Map<number, HTMLDivElement>>(new Map());
+  const swipeSnapTimerRef = useRef<number | null>(null);
 
-  const onRowTouchStart = (surahId: number, clientY: number) => {
-    touchStartYRef.current = clientY;
-    longPressFiredRef.current = false;
-    clearLongPressTimer();
-    longPressTimerRef.current = window.setTimeout(() => {
-      longPressFiredRef.current = true;
-      suppressClickRef.current = true;
-      if (selectMode) toggleChecked(surahId);
-      else enterSelectMode(surahId);
-    }, LONG_PRESS_MS);
-  };
-
-  const onRowTouchMove = (clientY: number) => {
-    if (touchStartYRef.current == null) return;
-    if (Math.abs(clientY - touchStartYRef.current) > 10) {
-      clearLongPressTimer();
-      touchStartYRef.current = null;
+  const clearSwipeSnapTimer = () => {
+    if (swipeSnapTimerRef.current != null) {
+      window.clearTimeout(swipeSnapTimerRef.current);
+      swipeSnapTimerRef.current = null;
     }
   };
 
-  const onRowTouchEnd = () => {
+  const getSwipeLimits = (surahId: number) => {
+    const width =
+      swipeRowElsRef.current.get(surahId)?.offsetWidth ||
+      swipeRevealElsRef.current.get(surahId)?.offsetWidth ||
+      320;
+    const maxPx = Math.max(48, Math.round(width * SWIPE_MAX_RATIO));
+    const triggerPx = Math.max(36, Math.round(width * SWIPE_TRIGGER_RATIO));
+    return { maxPx, triggerPx };
+  };
+
+  const paintSwipe = (id: number, x: number, animated: boolean) => {
+    const row = swipeRowElsRef.current.get(id);
+    const reveal = swipeRevealElsRef.current.get(id);
+    if (row) {
+      row.style.transition = animated
+        ? `transform ${SWIPE_SNAP_MS}ms cubic-bezier(0.22, 1, 0.36, 1)`
+        : 'none';
+      row.style.transform = x === 0 ? 'translate3d(0,0,0)' : `translate3d(${x}px,0,0)`;
+      row.style.willChange = x === 0 ? 'auto' : 'transform';
+      if (x === 0) row.style.touchAction = 'pan-y';
+    }
+    if (reveal) {
+      const abs = Math.abs(x);
+      reveal.style.opacity = abs > 2 ? '1' : '0';
+      const left = reveal.firstElementChild as HTMLElement | null;
+      const right = reveal.lastElementChild as HTMLElement | null;
+      if (left) left.style.opacity = x > 6 ? '1' : '0.55';
+      if (right) right.style.opacity = x < -6 ? '1' : '0.55';
+    }
+    swipeXRef.current = x;
+  };
+
+  const resetSwipeVisual = (id?: number, animated = true) => {
+    const targetId = id ?? swipeStartRef.current?.id;
+    if (targetId != null) paintSwipe(targetId, 0, animated);
+    swipeXRef.current = 0;
+    swipeStartRef.current = null;
+  };
+
+  const commitSwipeAction = (surah: Surah, dx: number) => {
+    if (!activeReciter || !activeMoshaf) {
+      resetSwipeVisual(surah.id, true);
+      return;
+    }
+    suppressClickRef.current = true;
+    const limits = swipeStartRef.current?.id === surah.id
+      ? { maxPx: swipeStartRef.current.maxPx, triggerPx: swipeStartRef.current.triggerPx }
+      : getSwipeLimits(surah.id);
+    const triggeredRight = dx >= limits.triggerPx;
+    const triggeredLeft = dx <= -limits.triggerPx;
+
+    if (triggeredRight || triggeredLeft) {
+      const peak = triggeredRight ? limits.maxPx : -limits.maxPx;
+      paintSwipe(surah.id, peak, true);
+      if (typeof navigator !== 'undefined' && 'vibrate' in navigator) {
+        try {
+          navigator.vibrate(10);
+        } catch {
+          // ignore
+        }
+      }
+      if (triggeredRight) {
+        const url = getAudioUrl(activeMoshaf, surah);
+        if (!cachedUrls.has(url) && downloadProgress[url] === undefined && !batchDownload?.active) {
+          void downloadSurah(activeReciter, activeMoshaf, surah);
+        }
+      } else {
+        toggleInLoop(surah.id);
+      }
+      clearSwipeSnapTimer();
+      swipeSnapTimerRef.current = window.setTimeout(() => {
+        paintSwipe(surah.id, 0, true);
+        swipeStartRef.current = null;
+        swipeXRef.current = 0;
+        swipeSnapTimerRef.current = null;
+      }, 160);
+      return;
+    }
+
+    resetSwipeVisual(surah.id, true);
+  };
+
+  const onRowTouchStart = (surahId: number, clientX: number, clientY: number) => {
+    clearSwipeSnapTimer();
+    touchStartYRef.current = clientY;
+    longPressFiredRef.current = false;
+    clearLongPressTimer();
+    const limits = getSwipeLimits(surahId);
+    swipeStartRef.current = {
+      id: surahId,
+      x: clientX,
+      y: clientY,
+      lock: 'none',
+      maxPx: limits.maxPx,
+      triggerPx: limits.triggerPx,
+    };
+    swipeXRef.current = 0;
+
+    // Close any other open swipe
+    swipeRowElsRef.current.forEach((_, id) => {
+      if (id !== surahId) paintSwipe(id, 0, true);
+    });
+
+    if (selectMode) {
+      longPressTimerRef.current = window.setTimeout(() => {
+        longPressFiredRef.current = true;
+        suppressClickRef.current = true;
+        toggleChecked(surahId);
+      }, LONG_PRESS_MS);
+      return;
+    }
+    longPressTimerRef.current = window.setTimeout(() => {
+      if (swipeStartRef.current?.lock === 'h') return;
+      longPressFiredRef.current = true;
+      suppressClickRef.current = true;
+      resetSwipeVisual(surahId, true);
+      enterSelectMode(surahId);
+    }, LONG_PRESS_MS);
+  };
+
+  const onRowTouchMove = (surahId: number, clientX: number, clientY: number) => {
+    const start = swipeStartRef.current;
+    if (!start || start.id !== surahId) return;
+
+    const dx = clientX - start.x;
+    const dy = clientY - start.y;
+
+    if (start.lock === 'none') {
+      if (Math.abs(dx) < SWIPE_LOCK_PX && Math.abs(dy) < SWIPE_LOCK_PX) return;
+      if (Math.abs(dy) >= Math.abs(dx)) {
+        start.lock = 'v';
+        clearLongPressTimer();
+        touchStartYRef.current = null;
+        paintSwipe(surahId, 0, false);
+        return;
+      }
+      start.lock = 'h';
+      clearLongPressTimer();
+      touchStartYRef.current = null;
+      const row = swipeRowElsRef.current.get(surahId);
+      if (row) row.style.touchAction = 'none';
+    }
+
+    if (start.lock === 'v' || selectMode) return;
+
+    paintSwipe(surahId, clampSwipe(dx, start.maxPx), false);
+  };
+
+  const onRowTouchEnd = (surah: Surah) => {
     clearLongPressTimer();
     touchStartYRef.current = null;
+    const start = swipeStartRef.current;
+    const dx = swipeXRef.current;
+    if (
+      start &&
+      start.lock === 'h' &&
+      start.id === surah.id &&
+      !selectMode &&
+      !longPressFiredRef.current
+    ) {
+      commitSwipeAction(surah, dx);
+      return;
+    }
+    if (start?.id != null) resetSwipeVisual(start.id, true);
+    else swipeStartRef.current = null;
   };
 
   const onRowClick = (surah: Surah) => {
     if (suppressClickRef.current) {
       suppressClickRef.current = false;
+      return;
+    }
+    if (Math.abs(swipeXRef.current) > 4) {
+      resetSwipeVisual(surah.id, true);
       return;
     }
     if (selectMode) {
@@ -290,6 +462,10 @@ export const SurahList: React.FC<SurahListProps> = ({ onChooseReciter }) => {
     }
     handlePlay(surah);
   };
+
+  useEffect(() => {
+    return () => clearSwipeSnapTimer();
+  }, []);
 
   useEffect(() => {
     if (typeof window === 'undefined') return;
@@ -326,7 +502,7 @@ export const SurahList: React.FC<SurahListProps> = ({ onChooseReciter }) => {
 
   return (
     <div className={`flex flex-col gap-3 md:gap-4 ${selectMode ? 'max-md:pb-36' : ''}`}>
-      <div ref={searchWrapRef} className="relative z-10">
+      <div ref={searchWrapRef} className="relative z-40">
         <label htmlFor="surah-search" className="sr-only">
           Rechercher une sourate
         </label>
@@ -381,7 +557,7 @@ export const SurahList: React.FC<SurahListProps> = ({ onChooseReciter }) => {
           <ul
             id="surah-search-suggestions"
             role="listbox"
-            className="absolute left-0 right-0 top-[calc(100%+0.4rem)] max-h-72 overflow-y-auto rounded-2xl border border-[#30455c]/60 bg-[#0c1522]/98 shadow-[0_18px_40px_rgba(0,0,0,0.45)] backdrop-blur-md"
+            className="absolute left-0 right-0 top-[calc(100%+0.4rem)] z-50 max-h-72 overflow-y-auto rounded-2xl border border-[#30455c]/60 bg-[#0c1522] shadow-[0_18px_40px_rgba(0,0,0,0.55)] backdrop-blur-md"
           >
             {suggestions.map((item, index) => {
               const active = index === highlightIndex;
@@ -536,7 +712,7 @@ export const SurahList: React.FC<SurahListProps> = ({ onChooseReciter }) => {
                 ? `${filteredSurahs.length} suggestion${filteredSurahs.length > 1 ? 's' : ''}`
                 : (
                   <>
-                    <span className="md:hidden">Appui long pour sélectionner</span>
+                    <span className="md:hidden">Glisse → télécharger · ← boucle</span>
                     <span className="hidden md:inline">Touche « Boucle » pour répéter une sélection</span>
                   </>
                 )}
@@ -593,37 +769,78 @@ export const SurahList: React.FC<SurahListProps> = ({ onChooseReciter }) => {
               <div
                 key={surah.id}
                 id={`surah-row-${surah.id}`}
-                role="button"
-                tabIndex={0}
-                onTouchStart={(e) => onRowTouchStart(surah.id, e.touches[0]?.clientY ?? 0)}
-                onTouchMove={(e) => onRowTouchMove(e.touches[0]?.clientY ?? 0)}
-                onTouchEnd={onRowTouchEnd}
-                onTouchCancel={onRowTouchEnd}
-                onClick={(e) => {
-                  if ((e.target as HTMLElement).closest('[data-row-action]')) return;
-                  onRowClick(surah);
-                }}
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter' || e.key === ' ') {
-                    e.preventDefault();
-                    onRowClick(surah);
-                  }
-                }}
-                onContextMenu={(e) => {
-                  if (window.matchMedia('(max-width: 767px)').matches) e.preventDefault();
-                }}
-                className={`group relative px-3 py-2.5 min-[390px]:px-3.5 min-[390px]:py-3 md:px-4 md:py-3.5 rounded-2xl flex items-center gap-2.5 md:gap-3.5 transition-all duration-200 border select-none [-webkit-touch-callout:none] ${
-                  selectMode && isChecked
-                    ? 'border-[#cea687]/45 bg-[#f0d1bc]/[0.08]'
-                    : isCurrent
-                      ? 'surah-row-active'
-                      : isDimmed
-                        ? 'border-[#30455c]/20 bg-[#111d2d]/20 opacity-45'
-                        : inLoop
-                          ? 'border-[#cea687]/28 bg-[#f0d1bc]/[0.05]'
-                          : 'border-[#30455c]/45 bg-[#111d2d]/36 hover:bg-[#162538]/88 hover:border-[#46607b]/60'
-                }`}
+                className="relative overflow-hidden rounded-2xl md:overflow-visible"
               >
+                {!selectMode && (
+                  <div
+                    ref={(node) => {
+                      if (node) swipeRevealElsRef.current.set(surah.id, node);
+                      else swipeRevealElsRef.current.delete(surah.id);
+                    }}
+                    className="pointer-events-none absolute inset-0 z-0 bg-[#111d2d] opacity-0 md:hidden"
+                    aria-hidden
+                  >
+                    <div className="absolute inset-y-0 left-0 flex w-[45%] items-center gap-1.5 bg-[#f0d1bc]/22 px-3 text-[#f1d4c1] opacity-55">
+                      <CloudDownload className="h-4 w-4 shrink-0" strokeWidth={2.4} />
+                      <span className="truncate text-[11px] font-bold">
+                        {isDownloaded ? 'Déjà hors ligne' : 'Télécharger'}
+                      </span>
+                    </div>
+                    <div className="absolute inset-y-0 right-0 flex w-[45%] items-center justify-end gap-1.5 bg-[#cea687]/20 px-3 text-[#f1d4c1] opacity-55">
+                      <span className="truncate text-[11px] font-bold">
+                        {inLoop ? 'Retirer boucle' : 'Boucle'}
+                      </span>
+                      <Repeat className="h-4 w-4 shrink-0" strokeWidth={2.4} />
+                    </div>
+                  </div>
+                )}
+
+                <div
+                  ref={(node) => {
+                    if (node) swipeRowElsRef.current.set(surah.id, node);
+                    else swipeRowElsRef.current.delete(surah.id);
+                  }}
+                  role="button"
+                  tabIndex={0}
+                  onTouchStart={(e) =>
+                    onRowTouchStart(surah.id, e.touches[0]?.clientX ?? 0, e.touches[0]?.clientY ?? 0)
+                  }
+                  onTouchMove={(e) => {
+                    const touch = e.touches[0];
+                    if (!touch) return;
+                    onRowTouchMove(surah.id, touch.clientX, touch.clientY);
+                    if (swipeStartRef.current?.lock === 'h') {
+                      e.preventDefault();
+                    }
+                  }}
+                  onTouchEnd={() => onRowTouchEnd(surah)}
+                  onTouchCancel={() => onRowTouchEnd(surah)}
+                  onClick={(e) => {
+                    if ((e.target as HTMLElement).closest('[data-row-action]')) return;
+                    onRowClick(surah);
+                  }}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' || e.key === ' ') {
+                      e.preventDefault();
+                      onRowClick(surah);
+                    }
+                  }}
+                  onContextMenu={(e) => {
+                    if (window.matchMedia('(max-width: 767px)').matches) e.preventDefault();
+                  }}
+                  style={{ touchAction: 'pan-y' }}
+                  className={`group relative z-[1] px-3 py-2.5 min-[390px]:px-3.5 min-[390px]:py-3 md:px-4 md:py-3.5 rounded-2xl flex items-center gap-2.5 md:gap-3.5 border select-none [-webkit-touch-callout:none] max-md:bg-[#111d2d] transition-[border-color,background-color,opacity] duration-200 will-change-transform ${
+                    selectMode && isChecked
+                      ? 'border-[#cea687]/45 max-md:bg-[#162538] bg-[#f0d1bc]/[0.08]'
+                      : isCurrent
+                        ? 'surah-row-active'
+                        : isDimmed
+                          ? 'border-[#30455c]/20 max-md:bg-[#0d1622] bg-[#111d2d]/20 opacity-45'
+                          : inLoop
+                            ? 'border-[#cea687]/28 max-md:bg-[#141f2e] bg-[#f0d1bc]/[0.05]'
+                            : 'border-[#30455c]/45 max-md:bg-[#111d2d] bg-[#111d2d]/36 hover:bg-[#162538]/88 hover:border-[#46607b]/60'
+                  }`}
+                >
                 {selectMode && (
                   <div
                     className={`md:hidden flex h-8 w-8 min-[390px]:h-9 min-[390px]:w-9 shrink-0 items-center justify-center rounded-full border transition-colors ${
@@ -813,6 +1030,7 @@ export const SurahList: React.FC<SurahListProps> = ({ onChooseReciter }) => {
                     <CloudDownload className="w-4 h-4" strokeWidth={2.25} />
                   )}
                 </button>
+                </div>
               </div>
             );
           })}
