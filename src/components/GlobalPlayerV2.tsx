@@ -584,14 +584,22 @@ export const GlobalPlayerV2: React.FC<{
                 openEffects();
               }}
               className={`w-10 h-10 rounded-full border flex items-center justify-center tap-feedback ${
-                effectsActive || showEffects
+                showEffects
                   ? `${theme.accentBgLight} ${theme.accentBorderActive} ${theme.accentText}`
-                  : 'bg-[#111d2d] border-[#30455c] text-[#e6edf5]'
+                  : 'bg-[#111d2d] border-[#30455c]'
               }`}
               aria-label="Effets audio"
               title="Effets audio"
             >
-              <SlidersVertical className="w-4 h-4" />
+              <SlidersVertical
+                className={`w-4 h-4 ${
+                  showEffects
+                    ? ''
+                    : effectsActive
+                      ? theme.accentText
+                      : 'text-[#e6edf5]'
+                }`}
+              />
             </button>
             <div className={`flex items-center gap-1 ${remoteSession ? 'opacity-40' : ''}`}>
               <button
@@ -820,13 +828,19 @@ export const GlobalPlayerV2: React.FC<{
             <button
               type="button"
               onClick={openEffects}
-              className={`h-9 w-9 rounded-xl flex items-center justify-center text-[#aab7c5] hover:text-[#f6f8fb] hover:bg-[#111d2d]/70 shrink-0 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#cea687] ${
-                effectsActive || showEffects ? `${theme.accentText} ${theme.accentBgLight}` : ''
+              className={`h-9 w-9 rounded-xl flex items-center justify-center shrink-0 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#cea687] ${
+                showEffects
+                  ? `${theme.accentText} ${theme.accentBgLight}`
+                  : 'text-[#aab7c5] hover:text-[#f6f8fb] hover:bg-[#111d2d]/70'
               }`}
               title="Effets audio"
               aria-label="Ouvrir les effets audio"
             >
-              <SlidersVertical className="w-4.5 h-4.5" />
+              <SlidersVertical
+                className={`w-4.5 h-4.5 ${
+                  !showEffects && effectsActive ? theme.accentText : ''
+                }`}
+              />
             </button>
             <button
               type="button"
@@ -1056,12 +1070,16 @@ export const GlobalPlayerV2: React.FC<{
                 type="button"
                 onClick={openEffects}
                 className={`h-12 rounded-2xl border text-xs font-bold flex items-center justify-center gap-1.5 tap-feedback ${
-                  effectsActive
+                  showEffects
                     ? `${theme.accentBgLight} ${theme.accentBorderActive} ${theme.accentText}`
                     : 'border-[#30455c] text-[#d0d9e3]'
                 }`}
               >
-                <SlidersVertical className="w-4 h-4" />
+                <SlidersVertical
+                  className={`w-4 h-4 ${
+                    !showEffects && effectsActive ? theme.accentText : ''
+                  }`}
+                />
                 Effets
               </button>
               <button

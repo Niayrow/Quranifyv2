@@ -258,7 +258,7 @@ export const AccountPanel: React.FC = () => {
                   <input
                     value={displayName}
                     onChange={(e) => setDisplayName(e.target.value)}
-                    placeholder="Ex. Ahmed"
+                    placeholder="Ex. Sofiane"
                     tabIndex={isSignIn ? -1 : 0}
                     className="w-full rounded-2xl border border-[#30455c]/55 bg-[#0c1522]/70 py-3 pl-11 pr-3.5 text-sm text-[#f6f8fb] placeholder:text-[#6f8499] transition-colors focus:border-[#cea687]/50 focus:outline-none focus:ring-2 focus:ring-[#cea687]/20"
                   />

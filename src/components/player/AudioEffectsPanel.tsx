@@ -33,7 +33,7 @@ const EffectSlider: React.FC<{
   onInteract: () => void;
 }> = ({ label, value, min, max, step, display, accent, onChange, onInteract }) => (
   <label className="block">
-    <div className="mb-1.5 flex items-center justify-between gap-2">
+    <div className="mb-0 flex items-end justify-between gap-2 leading-none">
       <span className="text-xs font-semibold text-[#d0d9e3]">{label}</span>
       <span className="text-[11px] font-mono tabular-nums text-[#95a7ba]">{display}</span>
     </div>
@@ -48,8 +48,8 @@ const EffectSlider: React.FC<{
         onInteract();
         onChange(parseFloat(e.target.value));
       }}
-      className="w-full h-1.5 rounded appearance-none cursor-pointer bg-[#162538]"
-      style={{ accentColor: accent }}
+      className="effect-slider mt-px w-full cursor-pointer"
+      style={{ ['--effect-thumb' as string]: accent, accentColor: accent }}
     />
   </label>
 );
@@ -119,15 +119,14 @@ export const AudioEffectsPanel: React.FC<Props> = ({ effects, supported, theme, 
 
   return (
     <div className="flex flex-col gap-4">
-      <div className="flex items-start justify-between gap-3">
-        <div className="flex items-center gap-2 min-w-0">
+      <div className="flex items-center justify-between gap-3">
+        <div className="flex items-center gap-2.5 min-w-0">
           <span className={`h-9 w-9 rounded-xl flex items-center justify-center shrink-0 ${theme.accentBgLight} ${theme.accentText}`}>
             <Waves className="w-4 h-4" />
           </span>
-          <div className="min-w-0">
-            <h4 className="text-sm font-bold text-[#f6f8fb]">Effets audio</h4>
-            <p className="text-[11px] text-[#95a7ba]">Reverb, écho, basses &amp; clarté</p>
-          </div>
+          <p className="text-[11px] leading-snug text-[#95a7ba]">
+            Reverb, écho, basses &amp; clarté
+          </p>
         </div>
         <button
           type="button"
@@ -148,17 +147,20 @@ export const AudioEffectsPanel: React.FC<Props> = ({ effects, supported, theme, 
               key={preset.id}
               type="button"
               onClick={() => applyPreset(preset.id)}
-              className={`rounded-xl border px-1.5 py-2.5 text-center tap-feedback ${
+              className={`rounded-xl border px-1.5 py-2.5 text-center transition-[opacity,filter,border-color,background-color] duration-200 tap-feedback ${
                 active
                   ? `${theme.accentBgLight} ${theme.accentBorderActive}`
-                  : 'border-[#30455c] bg-[#111d2d]/35'
+                  : 'border-[#30455c]/70 bg-[#111d2d]/25 opacity-[0.48] hover:opacity-75'
               }`}
               title={preset.description}
+              aria-pressed={active}
             >
-              <span className={`block text-[11px] font-bold ${active ? theme.accentText : 'text-[#d0d9e3]'}`}>
+              <span className={`block text-[11px] font-bold ${active ? theme.accentText : 'text-[#9aabbc]'}`}>
                 {preset.label}
               </span>
-              <span className="block text-[9px] text-[#8092a6] mt-0.5 leading-tight">{preset.description}</span>
+              <span className={`block text-[9px] mt-0.5 leading-tight ${active ? 'text-[#8092a6]' : 'text-[#657687]'}`}>
+                {preset.description}
+              </span>
             </button>
           );
         })}
@@ -167,24 +169,30 @@ export const AudioEffectsPanel: React.FC<Props> = ({ effects, supported, theme, 
           ref={customBtnRef}
           type="button"
           onClick={() => applyPreset('custom')}
-          className={`rounded-xl border px-1.5 py-2.5 text-center tap-feedback outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-offset-[#07111d] ${
+          className={`rounded-xl border-2 px-1.5 py-2.5 text-center transition-[opacity,filter,border-color,background-color,box-shadow] duration-200 tap-feedback outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-offset-[#07111d] ${
             customActive
               ? `${theme.accentBgLight} ${theme.accentBorderActive}`
-              : 'border-[#30455c] bg-[#111d2d]/35'
+              : 'border-dashed border-[#cea687]/35 bg-[#f0d1bc]/[0.04] opacity-[0.48] hover:opacity-75'
           }`}
-          style={customActive ? { boxShadow: `0 0 0 1px ${theme.sliderAccentColor}55` } : undefined}
+          style={
+            customActive
+              ? { boxShadow: `0 0 0 1px ${theme.sliderAccentColor}66, 0 0 18px ${theme.sliderAccentColor}28` }
+              : { boxShadow: 'inset 0 1px 0 rgba(240,209,188,0.05)' }
+          }
           title="Réglages manuels"
           aria-pressed={customActive}
         >
-          <span className={`flex items-center justify-center gap-1 text-[11px] font-bold ${customActive ? theme.accentText : 'text-[#d0d9e3]'}`}>
-            <SlidersHorizontal className="w-3 h-3" />
+          <span className={`flex items-center justify-center gap-1 text-[11px] font-black ${customActive ? theme.accentText : 'text-[#a89a88]'}`}>
+            <SlidersHorizontal className="w-3.5 h-3.5" strokeWidth={2.4} />
             Perso
           </span>
-          <span className="block text-[9px] text-[#8092a6] mt-0.5 leading-tight">Personnalisé</span>
+          <span className={`block text-[9px] mt-0.5 leading-tight ${customActive ? 'text-[#b8a08a]' : 'text-[#6f6558]'}`}>
+            Personnalisé
+          </span>
         </button>
       </div>
 
-      <div className="flex flex-col gap-3.5">
+      <div className="flex flex-col gap-3">
         <EffectSlider
           label="Basses"
           value={effects.bass}

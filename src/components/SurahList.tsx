@@ -4,7 +4,7 @@ import { useAudio } from '../context/AudioContext';
 import type { Surah } from '../types';
 import {
   Search, Play, Pause, Disc, CloudDownload, CloudCheck,
-  Repeat1, Repeat, X, Trash2,
+  Repeat1, Repeat, X, Trash2, Check,
 } from '../icons/motion';
 import { getAudioUrl } from '../utils/audioUrl';
 import { getSurahSuggestions, scoreSurahMatch } from '../utils/surahSearch';
@@ -12,6 +12,8 @@ import { getSurahSuggestions, scoreSurahMatch } from '../utils/surahSearch';
 interface SurahListProps {
   onChooseReciter?: () => void;
 }
+
+const LONG_PRESS_MS = 480;
 
 export const SurahList: React.FC<SurahListProps> = ({ onChooseReciter }) => {
   const {
@@ -39,8 +41,13 @@ export const SurahList: React.FC<SurahListProps> = ({ onChooseReciter }) => {
   const [searchFocused, setSearchFocused] = useState(false);
   const [highlightIndex, setHighlightIndex] = useState(0);
   const [showDeleteAllModal, setShowDeleteAllModal] = useState(false);
+  const [selectMode, setSelectMode] = useState(false);
+  const [checkedIds, setCheckedIds] = useState<Set<number>>(() => new Set());
   const deferredQuery = useDeferredValue(searchQuery);
   const searchWrapRef = useRef<HTMLDivElement>(null);
+  const longPressTimerRef = useRef<number | null>(null);
+  const longPressFiredRef = useRef(false);
+  const suppressClickRef = useRef(false);
 
   const availableSurahs = useMemo(() => {
     return getAvailableSurahs(activeReciter, activeMoshaf);
@@ -74,6 +81,11 @@ export const SurahList: React.FC<SurahListProps> = ({ onChooseReciter }) => {
   }, [deferredQuery]);
 
   useEffect(() => {
+    setSelectMode(false);
+    setCheckedIds(new Set());
+  }, [activeReciter?.id, activeMoshaf?.id]);
+
+  useEffect(() => {
     if (!showDeleteAllModal) return;
     const previous = document.body.style.overflow;
     document.body.style.overflow = 'hidden';
@@ -101,6 +113,48 @@ export const SurahList: React.FC<SurahListProps> = ({ onChooseReciter }) => {
       document.removeEventListener('touchstart', onPointerDown);
     };
   }, []);
+
+  const clearLongPressTimer = () => {
+    if (longPressTimerRef.current != null) {
+      window.clearTimeout(longPressTimerRef.current);
+      longPressTimerRef.current = null;
+    }
+  };
+
+  const exitSelectMode = () => {
+    setSelectMode(false);
+    setCheckedIds(new Set());
+  };
+
+  const enterSelectMode = (surahId: number) => {
+    setSelectMode(true);
+    setCheckedIds(new Set([surahId]));
+    if (typeof navigator !== 'undefined' && 'vibrate' in navigator) {
+      try {
+        navigator.vibrate(12);
+      } catch {
+        // ignore
+      }
+    }
+  };
+
+  const toggleChecked = (surahId: number) => {
+    setCheckedIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(surahId)) next.delete(surahId);
+      else next.add(surahId);
+      return next;
+    });
+  };
+
+  useEffect(() => {
+    if (!selectMode) return;
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') exitSelectMode();
+    };
+    window.addEventListener('keydown', onKeyDown);
+    return () => window.removeEventListener('keydown', onKeyDown);
+  }, [selectMode]);
 
   const selectSuggestion = (surah: Surah) => {
     setSearchQuery('');
@@ -151,6 +205,74 @@ export const SurahList: React.FC<SurahListProps> = ({ onChooseReciter }) => {
     }
   };
 
+  const applyLoopFromSelection = () => {
+    if (checkedIds.size === 0) return;
+    setSelectedSurahIds(new Set(checkedIds));
+    exitSelectMode();
+  };
+
+  const downloadFromSelection = () => {
+    if (!activeReciter || !activeMoshaf || checkedIds.size === 0) return;
+    const toDownload = availableSurahs.filter(
+      (surah) => checkedIds.has(surah.id) && !cachedUrls.has(getAudioUrl(activeMoshaf, surah))
+    );
+    exitSelectMode();
+    void (async () => {
+      for (const surah of toDownload) {
+        await downloadSurah(activeReciter, activeMoshaf, surah);
+      }
+    })();
+  };
+
+  const touchStartYRef = useRef<number | null>(null);
+
+  const onRowTouchStart = (surahId: number, clientY: number) => {
+    touchStartYRef.current = clientY;
+    longPressFiredRef.current = false;
+    clearLongPressTimer();
+    longPressTimerRef.current = window.setTimeout(() => {
+      longPressFiredRef.current = true;
+      suppressClickRef.current = true;
+      if (selectMode) toggleChecked(surahId);
+      else enterSelectMode(surahId);
+    }, LONG_PRESS_MS);
+  };
+
+  const onRowTouchMove = (clientY: number) => {
+    if (touchStartYRef.current == null) return;
+    if (Math.abs(clientY - touchStartYRef.current) > 10) {
+      clearLongPressTimer();
+      touchStartYRef.current = null;
+    }
+  };
+
+  const onRowTouchEnd = () => {
+    clearLongPressTimer();
+    touchStartYRef.current = null;
+  };
+
+  const onRowClick = (surah: Surah) => {
+    if (suppressClickRef.current) {
+      suppressClickRef.current = false;
+      return;
+    }
+    if (selectMode) {
+      toggleChecked(surah.id);
+      return;
+    }
+    handlePlay(surah);
+  };
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const mq = window.matchMedia('(min-width: 768px)');
+    const onChange = () => {
+      if (mq.matches) exitSelectMode();
+    };
+    mq.addEventListener('change', onChange);
+    return () => mq.removeEventListener('change', onChange);
+  }, []);
+
   if (!activeReciter || !activeMoshaf) {
     return (
       <div className="flex flex-col items-center justify-center p-12 text-center glass-panel rounded-3xl gap-4">
@@ -175,7 +297,7 @@ export const SurahList: React.FC<SurahListProps> = ({ onChooseReciter }) => {
   }
 
   return (
-    <div className="flex flex-col gap-3 md:gap-4">
+    <div className={`flex flex-col gap-3 md:gap-4 ${selectMode ? 'max-md:pb-36' : ''}`}>
       <div ref={searchWrapRef} className="relative z-20">
         <label htmlFor="surah-search" className="sr-only">
           Rechercher une sourate
@@ -308,12 +430,11 @@ export const SurahList: React.FC<SurahListProps> = ({ onChooseReciter }) => {
               type="button"
               disabled={batchDownload?.active}
               onClick={() => setShowDeleteAllModal(true)}
-              className="inline-flex h-10 shrink-0 items-center justify-center gap-1.5 rounded-xl border border-red-400/35 bg-red-500/10 px-3 text-[11px] font-semibold text-red-300 hover:bg-red-500/15 tap-feedback disabled:opacity-50"
+              className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-[#46607b]/55 bg-[#162538]/70 text-[#95a7ba] hover:border-[#46607b]/80 hover:bg-[#1b2d43] hover:text-[#d0d9e3] tap-feedback disabled:opacity-50"
               title="Supprimer toutes les sourates hors-ligne de ce récitateur"
               aria-label="Tout supprimer hors-ligne"
             >
               <Trash2 className="h-3.5 w-3.5" />
-              <span className="hidden min-[400px]:inline">Tout supprimer</span>
             </button>
           )}
         </div>
@@ -379,11 +500,18 @@ export const SurahList: React.FC<SurahListProps> = ({ onChooseReciter }) => {
 
       <div className="flex items-center justify-between gap-3 px-0.5">
         <p className="min-w-0 truncate text-[11px] font-medium text-[#95a7ba]">
-          {playlistActive
-            ? `Boucle · ${selectedSurahIds.size} sourate${selectedSurahIds.size > 1 ? 's' : ''}`
-            : deferredQuery.trim()
-              ? `${filteredSurahs.length} suggestion${filteredSurahs.length > 1 ? 's' : ''}`
-              : 'Touche « Boucle » pour répéter une sélection'}
+          {selectMode
+            ? `${checkedIds.size} sélectionnée${checkedIds.size > 1 ? 's' : ''}`
+            : playlistActive
+              ? `Boucle · ${selectedSurahIds.size} sourate${selectedSurahIds.size > 1 ? 's' : ''}`
+              : deferredQuery.trim()
+                ? `${filteredSurahs.length} suggestion${filteredSurahs.length > 1 ? 's' : ''}`
+                : (
+                  <>
+                    <span className="md:hidden">Appui long pour sélectionner</span>
+                    <span className="hidden md:inline">Touche « Boucle » pour répéter une sélection</span>
+                  </>
+                )}
         </p>
         <div className="flex items-center gap-1.5 shrink-0">
           <button
@@ -398,7 +526,7 @@ export const SurahList: React.FC<SurahListProps> = ({ onChooseReciter }) => {
           >
             <Repeat1 className="w-3.5 h-3.5" />
           </button>
-          {playlistActive && (
+          {playlistActive && !selectMode && (
             <button
               type="button"
               onClick={() => setSelectedSurahIds(new Set())}
@@ -426,31 +554,63 @@ export const SurahList: React.FC<SurahListProps> = ({ onChooseReciter }) => {
             const isPlaying = isCurrent && playbackStatus === 'playing';
             const isBuffering = isCurrent && playbackStatus === 'buffering';
             const inLoop = selectedSurahIds.has(surah.id);
-            const isDimmed = playlistActive && !inLoop;
+            const isDimmed = playlistActive && !inLoop && !selectMode;
             const url = getAudioUrl(activeMoshaf, surah);
             const isDownloaded = cachedUrls.has(url);
             const progress = downloadProgress[url];
             const isDownloading = progress !== undefined;
+            const isChecked = checkedIds.has(surah.id);
 
             return (
               <div
                 key={surah.id}
                 id={`surah-row-${surah.id}`}
-                className={`group relative px-3 py-2.5 min-[390px]:px-3.5 min-[390px]:py-3 md:px-4 md:py-3.5 rounded-2xl flex items-center gap-2.5 md:gap-3.5 transition-all duration-200 border ${
-                  isCurrent
-                    ? 'surah-row-active'
-                    : isDimmed
-                      ? 'border-[#30455c]/20 bg-[#111d2d]/20 opacity-45'
-                      : inLoop
-                        ? 'border-[#cea687]/28 bg-[#f0d1bc]/[0.05]'
-                        : 'border-[#30455c]/45 bg-[#111d2d]/36 hover:bg-[#162538]/88 hover:border-[#46607b]/60'
+                role="button"
+                tabIndex={0}
+                onTouchStart={(e) => onRowTouchStart(surah.id, e.touches[0]?.clientY ?? 0)}
+                onTouchMove={(e) => onRowTouchMove(e.touches[0]?.clientY ?? 0)}
+                onTouchEnd={onRowTouchEnd}
+                onTouchCancel={onRowTouchEnd}
+                onClick={(e) => {
+                  if ((e.target as HTMLElement).closest('[data-row-action]')) return;
+                  onRowClick(surah);
+                }}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault();
+                    onRowClick(surah);
+                  }
+                }}
+                onContextMenu={(e) => {
+                  if (window.matchMedia('(max-width: 767px)').matches) e.preventDefault();
+                }}
+                className={`group relative px-3 py-2.5 min-[390px]:px-3.5 min-[390px]:py-3 md:px-4 md:py-3.5 rounded-2xl flex items-center gap-2.5 md:gap-3.5 transition-all duration-200 border select-none [-webkit-touch-callout:none] ${
+                  selectMode && isChecked
+                    ? 'border-[#cea687]/45 bg-[#f0d1bc]/[0.08]'
+                    : isCurrent
+                      ? 'surah-row-active'
+                      : isDimmed
+                        ? 'border-[#30455c]/20 bg-[#111d2d]/20 opacity-45'
+                        : inLoop
+                          ? 'border-[#cea687]/28 bg-[#f0d1bc]/[0.05]'
+                          : 'border-[#30455c]/45 bg-[#111d2d]/36 hover:bg-[#162538]/88 hover:border-[#46607b]/60'
                 }`}
               >
-                <button
-                  type="button"
-                  onClick={() => handlePlay(surah)}
-                  className="flex items-center gap-2 md:gap-3 min-w-0 flex-1 text-left tap-feedback"
-                >
+                {selectMode && (
+                  <div
+                    className={`md:hidden flex h-8 w-8 min-[390px]:h-9 min-[390px]:w-9 shrink-0 items-center justify-center rounded-full border transition-colors ${
+                      isChecked
+                        ? 'border-[#cea687] bg-[#f0d1bc] text-[#111d2d]'
+                        : 'border-[#46607b]/80 bg-transparent text-transparent'
+                    }`}
+                    aria-hidden
+                  >
+                    <Check className="h-4 w-4" strokeWidth={2.5} />
+                  </div>
+                )}
+
+                <div className="flex items-center gap-2 md:gap-3 min-w-0 flex-1 text-left">
+                  {!selectMode && (
                   <div className="relative flex items-center justify-center w-8 h-8 min-[390px]:w-9 min-[390px]:h-9 shrink-0">
                     <div
                       className={`absolute inset-0 rotate-45 rounded-md border transition-all duration-500 ${
@@ -488,14 +648,22 @@ export const SurahList: React.FC<SurahListProps> = ({ onChooseReciter }) => {
                       )}
                     </span>
                   </div>
+                  )}
 
                   <div className="min-w-0 flex-1">
                     <h5
-                      className={`font-bold text-sm leading-snug transition-colors ${
+                      className={`font-bold text-sm leading-snug transition-colors flex items-center gap-1.5 ${
                         isCurrent ? 'text-[#f8fbff]' : 'text-[#f1f5f9] group-hover:text-[#ffffff]'
                       }`}
                     >
-                      {surah.name}
+                      <span className="truncate">{surah.name}</span>
+                      {isDownloaded && !selectMode && (
+                        <CloudCheck
+                          className="md:hidden h-3.5 w-3.5 shrink-0 text-[#e8c4a8]/90"
+                          strokeWidth={2.25}
+                          aria-label="Hors ligne"
+                        />
+                      )}
                     </h5>
                     <p className="text-[11px] text-[#aab7c5]/85 truncate mt-1 font-medium leading-snug">
                       {surah.translation}
@@ -509,12 +677,13 @@ export const SurahList: React.FC<SurahListProps> = ({ onChooseReciter }) => {
                   >
                     {surah.arabicName}
                   </span>
-                </button>
+                </div>
 
                 <button
                   type="button"
+                  data-row-action
                   onClick={() => toggleInLoop(surah.id)}
-                  className={`shrink-0 inline-flex items-center gap-1 h-8 min-w-8 px-2 rounded-full text-[11px] font-semibold tracking-wide transition-all tap-feedback ${
+                  className={`hidden md:inline-flex shrink-0 items-center gap-1 h-8 min-w-8 px-2 rounded-full text-[11px] font-semibold tracking-wide transition-all tap-feedback ${
                     inLoop
                       ? 'bg-[#f0d1bc] text-[#111d2d]'
                       : 'bg-transparent text-[#aab7c5] ring-1 ring-inset ring-[#46607b]/80 hover:text-[#f1d4c1] hover:ring-[#cea687]/35'
@@ -529,8 +698,9 @@ export const SurahList: React.FC<SurahListProps> = ({ onChooseReciter }) => {
 
                 <button
                   type="button"
+                  data-row-action
                   onClick={() => handlePlay(surah)}
-                  className={`w-9 h-9 rounded-full flex items-center justify-center transition-all shrink-0 tap-feedback ${
+                  className={`hidden md:flex w-9 h-9 rounded-full items-center justify-center transition-all shrink-0 tap-feedback ${
                     isCurrent
                       ? 'text-[#111d2d] shadow-[0_4px_14px_rgba(206,166,135,0.25)]'
                       : 'bg-[#162538] text-[#d0d9e3] group-hover:text-[#111d2d] group-hover:bg-[#f0d1bc] border border-[#46607b]'
@@ -554,6 +724,7 @@ export const SurahList: React.FC<SurahListProps> = ({ onChooseReciter }) => {
 
                 <button
                   type="button"
+                  data-row-action
                   onClick={(e) => {
                     e.stopPropagation();
                     if (isDownloading) return;
@@ -564,7 +735,7 @@ export const SurahList: React.FC<SurahListProps> = ({ onChooseReciter }) => {
                     downloadSurah(activeReciter, activeMoshaf, surah);
                   }}
                   disabled={isDownloading}
-                  className={`group/dl w-9 h-9 rounded-full flex items-center justify-center transition-all shrink-0 tap-feedback border ${
+                  className={`hidden md:flex group/dl w-9 h-9 rounded-full items-center justify-center transition-all shrink-0 tap-feedback border ${
                     isDownloaded
                       ? 'border-[#e8c4a8]/60 bg-[#f5dcc8]/22 text-[#f5dcc8] shadow-[0_0_16px_rgba(230,190,155,0.30)] hover:border-red-400/60 hover:bg-red-500/15 hover:text-red-400 hover:shadow-[0_0_14px_rgba(239,68,68,0.25)]'
                       : isDownloading
@@ -602,6 +773,45 @@ export const SurahList: React.FC<SurahListProps> = ({ onChooseReciter }) => {
           })}
         </div>
       )}
+
+      {selectMode &&
+        createPortal(
+          <div
+            className="pointer-events-none fixed inset-x-0 z-[55] md:hidden px-3"
+            style={{
+              bottom: 'calc(10.85rem + env(safe-area-inset-bottom, 0px))',
+            }}
+          >
+            <div className="pointer-events-auto mx-auto flex max-w-lg items-center gap-2 rounded-2xl border-2 border-[#f0d1bc]/55 bg-[#121f30] px-2.5 py-2.5 shadow-[0_-10px_40px_rgba(0,0,0,0.55),0_0_0_1px_rgba(240,209,188,0.12),0_0_28px_rgba(206,166,135,0.22)] backdrop-blur-xl">
+              <button
+                type="button"
+                onClick={applyLoopFromSelection}
+                disabled={checkedIds.size === 0}
+                className="inline-flex flex-1 items-center justify-center gap-1.5 rounded-xl bg-gradient-to-b from-[#f7e0ce] to-[#e8c4a4] px-2.5 py-2.5 text-[11px] font-black text-[#0c1522] shadow-[0_4px_16px_rgba(232,196,164,0.45)] transition-opacity disabled:opacity-40 tap-feedback"
+              >
+                <Repeat className="h-3.5 w-3.5" strokeWidth={2.5} />
+                Mettre en boucle
+              </button>
+              <button
+                type="button"
+                onClick={downloadFromSelection}
+                disabled={checkedIds.size === 0}
+                className="inline-flex flex-1 items-center justify-center gap-1.5 rounded-xl border-2 border-[#f0d1bc]/70 bg-[#f0d1bc]/18 px-2.5 py-2.5 text-[11px] font-black text-[#f7e0ce] shadow-[inset_0_1px_0_rgba(255,255,255,0.08),0_4px_14px_rgba(206,166,135,0.2)] transition-opacity disabled:opacity-40 tap-feedback"
+              >
+                <CloudDownload className="h-3.5 w-3.5" strokeWidth={2.5} />
+                Télécharger
+              </button>
+              <button
+                type="button"
+                onClick={exitSelectMode}
+                className="inline-flex shrink-0 items-center justify-center rounded-xl border-2 border-[#7a93ab]/55 bg-[#1a2b40] px-3 py-2.5 text-[11px] font-bold text-[#e8eef5] tap-feedback"
+              >
+                Annuler
+              </button>
+            </div>
+          </div>,
+          document.body
+        )}
     </div>
   );
 };

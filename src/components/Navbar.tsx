@@ -47,7 +47,7 @@ export const Navbar: React.FC<NavbarProps> = ({
   const useClassicDesktop = desktopStyle === 'classic';
   const { ready: motionReady, icons, MotionIconConfig } = useNavMotionIcons();
 
-  const mainTabs: Array<{ id: Exclude<NavTabId, 'more'>; label: string; icon: NavTabIcon }> = [
+  const desktopTabs: Array<{ id: Exclude<NavTabId, 'more'>; label: string; icon: NavTabIcon }> = [
     { id: 'home', label: 'Accueil', icon: icons.home },
     { id: 'listen', label: 'Écouter', icon: icons.listen },
     ...(showMoments
@@ -57,18 +57,39 @@ export const Navbar: React.FC<NavbarProps> = ({
     { id: 'account', label: 'Connexion', icon: icons.account },
   ];
 
+  /** Mobile: 4 onglets — Moments vit sous Favoris, Connexion dans Options */
+  const mobileTabs: Array<{
+    id: Exclude<NavTabId, 'more' | 'moments' | 'account'>;
+    label: string;
+    icon: NavTabIcon;
+  }> = [
+    { id: 'home', label: 'Accueil', icon: icons.home },
+    { id: 'listen', label: 'Écouter', icon: icons.listen },
+    {
+      id: 'favorites',
+      label: activeTab === 'moments' && showMoments ? 'Moments' : 'Favoris',
+      icon: activeTab === 'moments' && showMoments ? icons.moments : icons.favorites,
+    },
+  ];
+
   const renderTab = (
     id: NavTabId,
     label: string,
     Icon: NavTabIcon,
+    options?: { alsoActive?: NavTabId[] },
   ) => {
-    const isActive = activeTab === id;
+    const isActive =
+      activeTab === id || Boolean(options?.alsoActive?.includes(activeTab));
 
     return (
       <button
         key={id}
         type="button"
-        onClick={() => setActiveTab(id)}
+        onClick={() => {
+          if (activeTab === id) return;
+          if (options?.alsoActive?.includes(activeTab)) return;
+          setActiveTab(id);
+        }}
         data-motion-icon-group={motionReady ? '' : undefined}
         className={`nav-tab group relative flex flex-1 flex-col items-center justify-center h-full px-1 py-1 transition-all duration-300 md:flex-none md:rounded-none md:px-3 md:py-1.5 ${
           isActive ? 'nav-tab--active' : 'nav-tab--idle'
@@ -151,7 +172,16 @@ export const Navbar: React.FC<NavbarProps> = ({
       >
         <div className="flex h-full flex-col">
           <div className="flex h-full items-stretch justify-between gap-0 md:hidden">
-            {mainTabs.map((tab) => renderTab(tab.id, tab.label, tab.icon))}
+            {mobileTabs.map((tab) =>
+              renderTab(
+                tab.id,
+                tab.label,
+                tab.icon,
+                tab.id === 'favorites'
+                  ? { alsoActive: showMoments ? ['moments'] : [] }
+                  : undefined,
+              ),
+            )}
             {renderTab('more', 'Options', icons.more)}
           </div>
 
@@ -188,7 +218,7 @@ export const Navbar: React.FC<NavbarProps> = ({
               </div>
 
               <div className="flex items-center justify-center gap-1">
-                {mainTabs.map((tab) => renderTab(tab.id, tab.label, tab.icon))}
+                {desktopTabs.map((tab) => renderTab(tab.id, tab.label, tab.icon))}
               </div>
 
               <div className="flex items-center justify-end gap-3 min-w-0">

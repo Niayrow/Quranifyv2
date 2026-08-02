@@ -465,6 +465,60 @@
   text-shadow: 0 0 10px rgba(206, 166, 135, 0.45);
 }
 
+/* Audio effects modal — larger range thumbs */
+.effect-slider {
+  -webkit-appearance: none;
+  appearance: none;
+  display: block;
+  width: 100%;
+  height: 20px;
+  margin: 0;
+  padding: 0;
+  border-radius: 9999px;
+  background: transparent;
+  outline: none;
+}
+
+.effect-slider::-webkit-slider-runnable-track {
+  height: 6px;
+  border-radius: 9999px;
+  background: #162538;
+}
+
+.effect-slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 20px;
+  height: 20px;
+  margin-top: -7px;
+  border-radius: 9999px;
+  background: var(--effect-thumb, #f0d1bc);
+  border: 2px solid #0c1522;
+  box-shadow:
+    0 0 0 1px color-mix(in srgb, var(--effect-thumb, #f0d1bc) 45%, transparent),
+    0 2px 8px rgba(0, 0, 0, 0.35);
+  cursor: pointer;
+}
+
+.effect-slider::-moz-range-track {
+  height: 6px;
+  border-radius: 9999px;
+  background: #162538;
+  border: none;
+}
+
+.effect-slider::-moz-range-thumb {
+  width: 20px;
+  height: 20px;
+  border-radius: 9999px;
+  background: var(--effect-thumb, #f0d1bc);
+  border: 2px solid #0c1522;
+  box-shadow:
+    0 0 0 1px color-mix(in srgb, var(--effect-thumb, #f0d1bc) 45%, transparent),
+    0 2px 8px rgba(0, 0, 0, 0.35);
+  cursor: pointer;
+}
+
 /* Custom Micro-interactions */
 .tap-feedback {
   transition: transform 0.1s ease;
@@ -839,6 +893,19 @@
   }
 }
 
+@keyframes hero-title-glow {
+  0%, 100% {
+    color: #e8c9b0;
+    text-shadow: 0 0 0 transparent;
+  }
+  50% {
+    color: #f7e4d4;
+    text-shadow:
+      0 0 18px rgba(241, 212, 193, 0.4),
+      0 0 36px rgba(206, 166, 135, 0.2);
+  }
+}
+
 .hero-logo-float {
   animation: hero-logo-float 5.5s ease-in-out infinite;
 }
@@ -865,6 +932,24 @@
 
 .hero-fade-up-delay-4 {
   animation-delay: 0.32s;
+}
+
+.hero-title-line {
+  display: block;
+}
+
+.hero-title-accent {
+  display: inline-block;
+  color: #f1d4c1;
+  animation: hero-title-glow 4.8s ease-in-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .hero-title-accent {
+    animation: none;
+    color: #f1d4c1;
+    text-shadow: none;
+  }
 }
 
 /* Hero — Continuer la lecture */

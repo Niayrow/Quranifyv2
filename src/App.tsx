@@ -5,7 +5,7 @@ import { ReciterCard } from './components/ReciterCard';
 import { Navbar } from './components/Navbar';
 import { 
   Search, Heart, AlertTriangle, Headphones, Play, ArrowRight,
-  Bookmark, Download, ExternalLink, Cloud, ChevronDown, History, Share,
+  Bookmark, Download, ExternalLink, Cloud, ChevronDown, History, Share, User,
 } from './icons/motion';
 import type { AppIcon } from './icons/motion';
 import type { Reciter } from './types';
@@ -1234,8 +1234,10 @@ const AppContent: React.FC = () => {
                     draggable={false}
                   />
                   <h2 className="text-[1.85rem] font-black tracking-tight text-white leading-[1.05]">
-                    Le Coran,
-                    <span className="block text-[#f1d4c1]">simplement.</span>
+                    <span className="hero-title-line">Le Coran,</span>
+                    <span className="hero-title-line">
+                      <span className="hero-title-accent">simplement.</span>
+                    </span>
                   </h2>
                   <p className="max-w-[18rem] text-[13px] leading-snug text-[#d0d9e3]/78">
                     Reprenez votre lecture, trouvez une belle voix et restez concentré sur l'essentiel.
@@ -1249,8 +1251,10 @@ const AppContent: React.FC = () => {
                 <div className="mb-5 hidden items-center justify-between gap-4 md:flex">
                   <div className="min-w-0">
                     <h2 className="text-[3.2rem] font-black tracking-tight text-white leading-[1.05]">
-                      Le Coran,
-                      <span className="block text-[#f1d4c1]">simplement.</span>
+                      <span className="hero-title-line">Le Coran,</span>
+                      <span className="hero-title-line">
+                        <span className="hero-title-accent">simplement.</span>
+                      </span>
                     </h2>
                     <p className="mt-3 max-w-sm text-[15px] leading-relaxed text-[#d0d9e3]/78">
                       Reprenez votre lecture, trouvez une belle voix et restez concentré sur l'essentiel.
@@ -1770,8 +1774,47 @@ const AppContent: React.FC = () => {
           </div>
         )}
 
+        {((activeTab === 'moments' && isOnline) || activeTab === 'favorites') && (
+          <div className="md:hidden pt-4 pb-1">
+            <div
+              className="flex gap-1 rounded-2xl border border-[#30455c]/50 bg-[#0f1928]/80 p-1"
+              role="tablist"
+              aria-label="Favoris et Moments"
+            >
+              <button
+                type="button"
+                role="tab"
+                aria-selected={activeTab === 'favorites'}
+                onClick={() => handleNavigate('favorites')}
+                className={`min-h-10 flex-1 rounded-xl px-2 py-2 text-[11px] font-bold transition-all tap-feedback ${
+                  activeTab === 'favorites'
+                    ? 'bg-[#f0d1bc]/14 text-[#f1d4c1]'
+                    : 'text-[#95a7ba] hover:text-[#e6edf5]'
+                }`}
+              >
+                Favoris
+              </button>
+              {isOnline && (
+                <button
+                  type="button"
+                  role="tab"
+                  aria-selected={activeTab === 'moments'}
+                  onClick={() => handleNavigate('moments')}
+                  className={`min-h-10 flex-1 rounded-xl px-2 py-2 text-[11px] font-bold transition-all tap-feedback ${
+                    activeTab === 'moments'
+                      ? 'bg-[#f0d1bc]/14 text-[#f1d4c1]'
+                      : 'text-[#95a7ba] hover:text-[#e6edf5]'
+                  }`}
+                >
+                  Moments
+                </button>
+              )}
+            </div>
+          </div>
+        )}
+
         {activeTab === 'moments' && isOnline && (
-          <div className="flex flex-col gap-5 pb-16 sm:pb-20 max-md:pt-4 md:pt-3">
+          <div className="flex flex-col gap-5 pb-16 sm:pb-20 max-md:pt-2 md:pt-3">
             <section className="relative overflow-hidden rounded-3xl border border-[#30455c]/55 bg-[linear-gradient(180deg,rgba(17,29,45,0.94),rgba(9,17,28,0.98))] p-5 sm:p-6">
               <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,rgba(240,209,188,0.12),transparent_42%),radial-gradient(circle_at_85%_20%,rgba(121,144,161,0.14),transparent_28%)]" aria-hidden="true" />
               <div className="relative z-10 flex flex-col gap-5">
@@ -1830,7 +1873,7 @@ const AppContent: React.FC = () => {
 
         {/* 2.2 Tab Favorites View */}
         {activeTab === 'favorites' && (
-          <div className="flex flex-col gap-5 pb-16 sm:pb-20 max-md:pt-4 md:pt-3">
+          <div className="flex flex-col gap-5 pb-16 sm:pb-20 max-md:pt-2 md:pt-3">
             <h2 className="text-lg font-bold text-[#f6f8fb] flex items-center gap-2">
               <Heart className="w-5 h-5 text-red-500 fill-current" />
               Vos Récitateurs Favoris
@@ -1871,7 +1914,7 @@ const AppContent: React.FC = () => {
 
         {/* 2.2b Tab Connexion */}
         {activeTab === 'account' && (
-          <div className="flex min-h-[min(70vh,40rem)] flex-col justify-center gap-5 pb-16 sm:pb-20 max-md:pt-8 md:pt-10 md:max-w-lg md:mx-auto md:w-full">
+          <div className="flex flex-col justify-center gap-5 max-md:min-h-[calc(100dvh-5.1rem-env(safe-area-inset-bottom,0px))] max-md:py-4 md:min-h-[min(70vh,40rem)] md:pt-10 md:pb-12 md:max-w-lg md:mx-auto md:w-full">
             <Suspense fallback={<div className="shimmer-loader h-48 rounded-3xl border border-slate-900" />}>
               <AccountPanel />
             </Suspense>
@@ -1890,6 +1933,23 @@ const AppContent: React.FC = () => {
                   <h2 className="mt-3 text-lg font-black text-[#f6f8fb]">Fonctions avancées et informations</h2>
                 </div>
               </div>
+
+              <button
+                type="button"
+                onClick={() => handleNavigate('account')}
+                className="mt-5 flex w-full items-center gap-3 rounded-2xl border border-[#cea687]/30 bg-[#f0d1bc]/[0.08] px-4 py-3.5 text-left transition-colors hover:bg-[#f0d1bc]/[0.14] tap-feedback md:hidden"
+              >
+                <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-[#20334a] text-[#f1d4c1]">
+                  <User className="h-5 w-5" />
+                </span>
+                <span className="min-w-0 flex-1">
+                  <span className="block text-[13px] font-black text-[#f6f8fb]">Connexion</span>
+                  <span className="mt-0.5 block text-[11px] leading-snug text-[#95a7ba]">
+                    {user ? 'Compte synchronisé — favoris & reprise' : 'Synchroniser favoris et reprise de lecture'}
+                  </span>
+                </span>
+                <ArrowRight className="h-4 w-4 shrink-0 text-[#cea687]/80" />
+              </button>
 
               <NavDesktopStyleToggle
                 value={navDesktopStyle}

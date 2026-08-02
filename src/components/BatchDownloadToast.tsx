@@ -179,7 +179,7 @@ export const BatchDownloadToast: React.FC = () => {
     ? 'Déjà à jour'
     : isDone
       ? 'Téléchargement terminé'
-      : 'Téléchargement hors-ligne';
+      : 'Téléchargement en cours';
 
   const subtitle = alreadyUpToDate
     ? reciterName || 'Récitateur'
@@ -262,16 +262,16 @@ export const BatchDownloadToast: React.FC = () => {
                   />
                 </svg>
                 <span
-                  className={`absolute inset-[6px] flex items-center justify-center rounded-full ${
+                  className={`absolute inset-[5px] flex items-center justify-center rounded-full ${
                     isDone
                       ? 'bg-[#4ade80]/18 text-[#86efac]'
-                      : 'bg-[#162538]/90 text-[#f1d4c1]'
+                      : 'bg-[#f0d1bc]/16 text-[#f7e0ce]'
                   }`}
                 >
                   {isDone ? (
-                    <Check className="h-4 w-4" strokeWidth={2.6} />
+                    <Check className="h-5 w-5" strokeWidth={2.6} />
                   ) : (
-                    <CloudDownload className="h-4 w-4" />
+                    <CloudDownload className="h-5 w-5" strokeWidth={2.35} />
                   )}
                 </span>
               </div>
@@ -280,7 +280,7 @@ export const BatchDownloadToast: React.FC = () => {
                 <div className="flex items-start justify-between gap-2">
                   <div className="min-w-0">
                     <p
-                      className={`truncate text-[12.5px] font-bold tracking-tight ${
+                      className={`truncate text-[13px] font-bold tracking-tight ${
                         isDone ? 'text-[#86efac]' : 'text-[#f6f8fb]'
                       }`}
                     >
@@ -297,12 +297,12 @@ export const BatchDownloadToast: React.FC = () => {
 
                   {!alreadyUpToDate ? (
                     <span
-                      className={`shrink-0 pt-0.5 text-[15px] font-extrabold tabular-nums leading-none ${
+                      className={`shrink-0 pt-0.5 text-[18px] font-black tabular-nums leading-none tracking-tight ${
                         isDone ? 'text-[#4ade80]' : 'text-[#f0d1bc]'
                       }`}
                     >
                       {percent}
-                      <span className="ml-px text-[10px] font-bold opacity-70">%</span>
+                      <span className="ml-0.5 text-[11px] font-bold opacity-75">%</span>
                     </span>
                   ) : null}
                 </div>
@@ -335,10 +335,10 @@ export const BatchDownloadToast: React.FC = () => {
                   <button
                     type="button"
                     onClick={cancelBatchDownload}
-                    className="mt-2.5 inline-flex items-center gap-1 rounded-lg px-1.5 py-1 text-[10.5px] font-semibold text-[#8295aa] transition-colors hover:bg-[#1b2d43]/70 hover:text-[#e6edf5] tap-feedback"
+                    className="mt-2.5 inline-flex items-center gap-1.5 rounded-lg border border-[#7a93ab]/40 bg-[#1b2d43]/80 px-2.5 py-1.5 text-[12px] font-bold text-[#e8eef5] transition-colors hover:border-[#95a7ba]/55 hover:bg-[#243850] tap-feedback"
                     aria-label="Arrêter le téléchargement"
                   >
-                    <X className="h-3 w-3" />
+                    <X className="h-3.5 w-3.5" strokeWidth={2.4} />
                     Arrêter
                   </button>
                 ) : null}
