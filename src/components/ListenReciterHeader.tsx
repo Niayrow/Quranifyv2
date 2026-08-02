@@ -113,7 +113,7 @@ export const ListenReciterHeader: React.FC<ListenReciterHeaderProps> = ({
             (sectionRef as React.MutableRefObject<HTMLElement | null>).current = node;
           }
         }}
-        className={`listen-surah-header relative sticky top-0 z-20 md:top-24 md:scroll-mt-6 ${
+        className={`listen-surah-header relative sticky top-0 z-30 md:top-24 md:scroll-mt-6 ${
           fusionEnabled && progress > 0.01 ? 'is-fusing' : ''
         }`}
         style={fusionEnabled ? mergeStyle : undefined}

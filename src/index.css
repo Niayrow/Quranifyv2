@@ -249,6 +249,7 @@
       top: 0 !important;
       position: -webkit-sticky;
       position: sticky;
+      z-index: 30;
       background:
         linear-gradient(180deg, rgba(22, 37, 56, 0.98) 0%, rgba(12, 21, 34, 0.98) 100%);
       /* Kill rubber-band gap above the sticky chrome */
@@ -1444,6 +1445,22 @@
     will-change: transform, opacity;
     transition: none;
     filter: blur(calc(var(--fusion-p) * 1.8px));
+  }
+
+  /* Fusion morph is desktop-only — keep mobile layout stable */
+  @media (max-width: 767px) {
+    .reciter-fusion-card {
+      transform: none !important;
+      opacity: 1 !important;
+      filter: none !important;
+      will-change: auto;
+    }
+
+    .listen-surah-header.is-fusing .reciter-fusion-actions {
+      max-height: none !important;
+      opacity: 1 !important;
+      overflow: visible !important;
+    }
   }
 
   .home-explore-fusion {

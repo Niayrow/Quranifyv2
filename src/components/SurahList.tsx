@@ -298,7 +298,7 @@ export const SurahList: React.FC<SurahListProps> = ({ onChooseReciter }) => {
 
   return (
     <div className={`flex flex-col gap-3 md:gap-4 ${selectMode ? 'max-md:pb-36' : ''}`}>
-      <div ref={searchWrapRef} className="relative z-20">
+      <div ref={searchWrapRef} className="relative z-10">
         <label htmlFor="surah-search" className="sr-only">
           Rechercher une sourate
         </label>

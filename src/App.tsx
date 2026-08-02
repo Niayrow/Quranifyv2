@@ -1756,7 +1756,7 @@ const AppContent: React.FC = () => {
                   sectionRef={surahSectionRef}
                 />
 
-                <div className="max-md:px-0 max-md:pt-4">
+                <div className="relative z-0 max-md:px-0 max-md:pt-4">
                   <Suspense fallback={<div className="shimmer-loader h-40 rounded-2xl border border-slate-900" />}>
                     <SurahList onChooseReciter={handleChangeReciter} />
                   </Suspense>
