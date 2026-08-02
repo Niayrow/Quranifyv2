@@ -31,6 +31,7 @@ export const SurahList: React.FC<SurahListProps> = ({ onChooseReciter }) => {
     cachedUrls,
     downloadProgress,
     downloadSurah,
+    downloadSurahs,
     downloadAllSurahs,
     deleteAllSurahs,
     batchDownload,
@@ -217,12 +218,39 @@ export const SurahList: React.FC<SurahListProps> = ({ onChooseReciter }) => {
       (surah) => checkedIds.has(surah.id) && !cachedUrls.has(getAudioUrl(activeMoshaf, surah))
     );
     exitSelectMode();
+    if (toDownload.length === 0) return;
+    void downloadSurahs(activeReciter, activeMoshaf, toDownload);
+  };
+
+  const deleteFromSelection = () => {
+    if (!activeReciter || !activeMoshaf || checkedIds.size === 0) return;
+    const toDelete = availableSurahs.filter(
+      (surah) => checkedIds.has(surah.id) && cachedUrls.has(getAudioUrl(activeMoshaf, surah))
+    );
+    exitSelectMode();
+    if (toDelete.length === 0) return;
     void (async () => {
-      for (const surah of toDownload) {
-        await downloadSurah(activeReciter, activeMoshaf, surah);
+      for (const surah of toDelete) {
+        await deleteSurah(activeReciter, activeMoshaf, surah);
       }
     })();
   };
+
+  const selectionDownloadCount = useMemo(() => {
+    if (!activeMoshaf || checkedIds.size === 0) return 0;
+    return availableSurahs.reduce((count, surah) => {
+      if (!checkedIds.has(surah.id)) return count;
+      return cachedUrls.has(getAudioUrl(activeMoshaf, surah)) ? count : count + 1;
+    }, 0);
+  }, [activeMoshaf, availableSurahs, cachedUrls, checkedIds]);
+
+  const selectionDeleteCount = useMemo(() => {
+    if (!activeMoshaf || checkedIds.size === 0) return 0;
+    return availableSurahs.reduce((count, surah) => {
+      if (!checkedIds.has(surah.id)) return count;
+      return cachedUrls.has(getAudioUrl(activeMoshaf, surah)) ? count + 1 : count;
+    }, 0);
+  }, [activeMoshaf, availableSurahs, cachedUrls, checkedIds]);
 
   const touchStartYRef = useRef<number | null>(null);
 
@@ -657,12 +685,29 @@ export const SurahList: React.FC<SurahListProps> = ({ onChooseReciter }) => {
                       }`}
                     >
                       <span className="truncate">{surah.name}</span>
-                      {isDownloaded && !selectMode && (
-                        <CloudCheck
-                          className="md:hidden h-3.5 w-3.5 shrink-0 text-[#e8c4a8]/90"
-                          strokeWidth={2.25}
-                          aria-label="Hors ligne"
-                        />
+                      {isDownloading && (
+                        <span
+                          className="md:hidden shrink-0 text-[10px] font-black tabular-nums text-[#f0d1bc]"
+                          aria-label={`Téléchargement ${progress}%`}
+                        >
+                          {progress}%
+                        </span>
+                      )}
+                      {isDownloaded && !selectMode && !isDownloading && (
+                        <button
+                          type="button"
+                          data-row-action
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            deleteSurah(activeReciter, activeMoshaf, surah);
+                          }}
+                          className="md:hidden group/rm flex h-7 w-7 shrink-0 items-center justify-center rounded-full border border-[#e8c4a8]/45 bg-[#f5dcc8]/15 text-[#e8c4a8] tap-feedback active:border-red-400/50 active:bg-red-500/15 active:text-red-300"
+                          title="Supprimer le hors-ligne"
+                          aria-label={`Supprimer ${surah.name} du hors-ligne`}
+                        >
+                          <CloudCheck className="h-3.5 w-3.5 group-active/rm:hidden" strokeWidth={2.25} />
+                          <Trash2 className="hidden h-3.5 w-3.5 group-active/rm:block" strokeWidth={2.25} />
+                        </button>
                       )}
                     </h5>
                     <p className="text-[11px] text-[#aab7c5]/85 truncate mt-1 font-medium leading-snug">
@@ -782,31 +827,41 @@ export const SurahList: React.FC<SurahListProps> = ({ onChooseReciter }) => {
               bottom: 'calc(10.85rem + env(safe-area-inset-bottom, 0px))',
             }}
           >
-            <div className="pointer-events-auto mx-auto flex max-w-lg items-center gap-2 rounded-2xl border-2 border-[#f0d1bc]/55 bg-[#121f30] px-2.5 py-2.5 shadow-[0_-10px_40px_rgba(0,0,0,0.55),0_0_0_1px_rgba(240,209,188,0.12),0_0_28px_rgba(206,166,135,0.22)] backdrop-blur-xl">
+            <div className="pointer-events-auto mx-auto flex max-w-lg items-center gap-1.5 rounded-2xl border-2 border-[#f0d1bc]/55 bg-[#121f30] px-2 py-2.5 shadow-[0_-10px_40px_rgba(0,0,0,0.55),0_0_0_1px_rgba(240,209,188,0.12),0_0_28px_rgba(206,166,135,0.22)] backdrop-blur-xl">
               <button
                 type="button"
                 onClick={applyLoopFromSelection}
                 disabled={checkedIds.size === 0}
-                className="inline-flex flex-1 items-center justify-center gap-1.5 rounded-xl bg-gradient-to-b from-[#f7e0ce] to-[#e8c4a4] px-2.5 py-2.5 text-[11px] font-black text-[#0c1522] shadow-[0_4px_16px_rgba(232,196,164,0.45)] transition-opacity disabled:opacity-40 tap-feedback"
+                className="inline-flex min-w-0 flex-1 items-center justify-center gap-1 rounded-xl bg-gradient-to-b from-[#f7e0ce] to-[#e8c4a4] px-2 py-2.5 text-[10px] font-black text-[#0c1522] shadow-[0_4px_16px_rgba(232,196,164,0.45)] transition-opacity disabled:opacity-40 tap-feedback"
               >
-                <Repeat className="h-3.5 w-3.5" strokeWidth={2.5} />
-                Mettre en boucle
+                <Repeat className="h-3.5 w-3.5 shrink-0" strokeWidth={2.5} />
+                <span className="truncate">Boucle</span>
               </button>
               <button
                 type="button"
                 onClick={downloadFromSelection}
-                disabled={checkedIds.size === 0}
-                className="inline-flex flex-1 items-center justify-center gap-1.5 rounded-xl border-2 border-[#f0d1bc]/70 bg-[#f0d1bc]/18 px-2.5 py-2.5 text-[11px] font-black text-[#f7e0ce] shadow-[inset_0_1px_0_rgba(255,255,255,0.08),0_4px_14px_rgba(206,166,135,0.2)] transition-opacity disabled:opacity-40 tap-feedback"
+                disabled={selectionDownloadCount === 0}
+                className="inline-flex min-w-0 flex-1 items-center justify-center gap-1 rounded-xl border-2 border-[#f0d1bc]/70 bg-[#f0d1bc]/18 px-2 py-2.5 text-[10px] font-black text-[#f7e0ce] shadow-[inset_0_1px_0_rgba(255,255,255,0.08),0_4px_14px_rgba(206,166,135,0.2)] transition-opacity disabled:opacity-40 tap-feedback"
               >
-                <CloudDownload className="h-3.5 w-3.5" strokeWidth={2.5} />
-                Télécharger
+                <CloudDownload className="h-3.5 w-3.5 shrink-0" strokeWidth={2.5} />
+                <span className="truncate">Télécharger</span>
+              </button>
+              <button
+                type="button"
+                onClick={deleteFromSelection}
+                disabled={selectionDeleteCount === 0}
+                className="inline-flex min-w-0 flex-1 items-center justify-center gap-1 rounded-xl border-2 border-[#7a93ab]/45 bg-[#1a2b40] px-2 py-2.5 text-[10px] font-black text-[#d0d9e3] transition-opacity disabled:opacity-40 tap-feedback"
+              >
+                <Trash2 className="h-3.5 w-3.5 shrink-0" strokeWidth={2.5} />
+                <span className="truncate">Supprimer</span>
               </button>
               <button
                 type="button"
                 onClick={exitSelectMode}
-                className="inline-flex shrink-0 items-center justify-center rounded-xl border-2 border-[#7a93ab]/55 bg-[#1a2b40] px-3 py-2.5 text-[11px] font-bold text-[#e8eef5] tap-feedback"
+                className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border-2 border-[#7a93ab]/55 bg-[#1a2b40] text-[#e8eef5] tap-feedback"
+                aria-label="Annuler"
               >
-                Annuler
+                <X className="h-4 w-4" strokeWidth={2.4} />
               </button>
             </div>
           </div>,

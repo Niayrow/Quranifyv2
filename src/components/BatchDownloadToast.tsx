@@ -178,7 +178,9 @@ export const BatchDownloadToast: React.FC = () => {
   const title = alreadyUpToDate
     ? 'Déjà à jour'
     : isDone
-      ? 'Téléchargement terminé'
+      ? done < total && total > 0
+        ? 'Téléchargement arrêté'
+        : 'Téléchargement terminé'
       : 'Téléchargement en cours';
 
   const subtitle = alreadyUpToDate
@@ -334,7 +336,16 @@ export const BatchDownloadToast: React.FC = () => {
                 {active && !isExiting ? (
                   <button
                     type="button"
-                    onClick={cancelBatchDownload}
+                    onPointerDown={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      cancelBatchDownload();
+                    }}
+                    onClick={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      cancelBatchDownload();
+                    }}
                     className="mt-2.5 inline-flex items-center gap-1.5 rounded-lg border border-[#7a93ab]/40 bg-[#1b2d43]/80 px-2.5 py-1.5 text-[12px] font-bold text-[#e8eef5] transition-colors hover:border-[#95a7ba]/55 hover:bg-[#243850] tap-feedback"
                     aria-label="Arrêter le téléchargement"
                   >

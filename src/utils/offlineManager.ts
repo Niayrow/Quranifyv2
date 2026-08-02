@@ -41,19 +41,25 @@ export const getCachedBlobUrl = async (url: string): Promise<string | null> => {
 };
 
 /**
- * Downloads and caches an audio file with real-time progress callbacks
+ * Downloads and caches an audio file with real-time progress callbacks.
+ * Pass an AbortSignal to cancel mid-download.
  */
 export const downloadAndCacheUrl = async (
   url: string,
-  onProgress: (progress: number) => void
+  onProgress: (progress: number) => void,
+  signal?: AbortSignal
 ): Promise<boolean> => {
   if (!isCacheSupported()) {
     throw new Error('Le stockage hors-ligne n\'est pas supporté par ce navigateur.');
   }
 
+  if (signal?.aborted) {
+    throw new DOMException('Aborted', 'AbortError');
+  }
+
   try {
     onProgress(0);
-    const response = await fetch(url);
+    const response = await fetch(url, { signal });
     if (!response.ok) {
       throw new Error(`HTTP error! status: ${response.status}`);
     }
@@ -78,21 +84,46 @@ export const downloadAndCacheUrl = async (
       onProgress(100);
       return true;
     }
+
+    const abortReader = () => {
+      void reader.cancel().catch(() => undefined);
+    };
+    if (signal) {
+      if (signal.aborted) {
+        abortReader();
+        throw new DOMException('Aborted', 'AbortError');
+      }
+      signal.addEventListener('abort', abortReader, { once: true });
+    }
+
     // Stream download to track progress (monotonic — never report a lower %)
     const chunks: BlobPart[] = [];
     let lastProgress = 0;
-    while (true) {
-      const { done, value } = await reader.read();
-      if (done) break;
-      if (value) {
-        chunks.push(value);
-        loadedBytes += value.length;
-        const progress = Math.min(99, Math.round((loadedBytes / totalBytes) * 100));
-        if (progress > lastProgress) {
-          lastProgress = progress;
-          onProgress(progress);
+    try {
+      while (true) {
+        if (signal?.aborted) {
+          throw new DOMException('Aborted', 'AbortError');
+        }
+        const { done, value } = await reader.read();
+        if (done) break;
+        if (value) {
+          chunks.push(value);
+          loadedBytes += value.length;
+          const progress = Math.min(99, Math.round((loadedBytes / totalBytes) * 100));
+          if (progress > lastProgress) {
+            lastProgress = progress;
+            onProgress(progress);
+          }
         }
       }
+    } finally {
+      if (signal) {
+        signal.removeEventListener('abort', abortReader);
+      }
+    }
+
+    if (signal?.aborted) {
+      throw new DOMException('Aborted', 'AbortError');
     }
 
     const blob = new Blob(chunks, { type: 'audio/mpeg' });
@@ -108,6 +139,9 @@ export const downloadAndCacheUrl = async (
     onProgress(100);
     return true;
   } catch (error) {
+    if (error instanceof DOMException && error.name === 'AbortError') {
+      throw error;
+    }
     console.error('Error downloading and caching track:', error);
     throw error;
   }

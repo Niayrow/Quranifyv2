@@ -82,6 +82,7 @@ interface AudioContextType {
     startedAt?: number;
   } | null;
   downloadSurah: (reciter: Reciter, moshaf: Moshaf, surah: Surah) => Promise<void>;
+  downloadSurahs: (reciter: Reciter, moshaf: Moshaf, surahs: Surah[]) => Promise<void>;
   downloadAllSurahs: (reciter: Reciter, moshaf: Moshaf) => Promise<void>;
   deleteAllSurahs: (reciter: Reciter, moshaf: Moshaf) => Promise<void>;
   cancelBatchDownload: () => void;
@@ -390,6 +391,7 @@ export const AudioProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     startedAt?: number;
   } | null>(null);
   const batchAbortRef = useRef(false);
+  const batchAbortControllerRef = useRef<AbortController | null>(null);
 
   const refreshCacheInfo = useCallback(async () => {
     const info = await getAudioCacheInfo();
@@ -400,41 +402,9 @@ export const AudioProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   useEffect(() => {
     refreshCacheInfo();
   }, [refreshCacheInfo]);
-  const downloadSurah = useCallback(async (_reciter: Reciter, moshaf: Moshaf, surah: Surah) => {
-    const url = getAudioUrl(moshaf, surah);
-    try {
-      setDownloadProgress(prev => ({ ...prev, [url]: 0 }));
-      await downloadAndCacheUrl(url, (progress) => {
-        setDownloadProgress(prev => ({ ...prev, [url]: progress }));
-      });
-      await refreshCacheInfo();
-    } catch (e) {
-      console.error('Failed to download surah', e);
-    } finally {
-      // Clear progress indicator shortly after completion
-      setTimeout(() => {
-        setDownloadProgress(prev => {
-          const next = { ...prev };
-          delete next[url];
-          return next;
-        });
-      }, 1500);
-    }
-  }, [refreshCacheInfo]);
 
-  const cancelBatchDownload = useCallback(() => {
-    batchAbortRef.current = true;
-  }, []);
-
-  const downloadAllSurahs = useCallback(async (reciter: Reciter, moshaf: Moshaf) => {
-    if (batchDownload?.active) return;
-
-    const availableIds = moshaf.surah_list
-      .split(',')
-      .map((s) => parseInt(s.trim(), 10))
-      .filter((n) => !Number.isNaN(n));
-    const surahs = SURAHS.filter((surah) => availableIds.includes(surah.id));
-    if (surahs.length === 0) return;
+  const downloadSurahs = useCallback(async (reciter: Reciter, moshaf: Moshaf, surahs: Surah[]) => {
+    if (batchDownload?.active || surahs.length === 0) return;
 
     const pending: Surah[] = [];
     for (const surah of surahs) {
@@ -456,6 +426,8 @@ export const AudioProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 
     const startedAt = Date.now();
     batchAbortRef.current = false;
+    const controller = new AbortController();
+    batchAbortControllerRef.current = controller;
     setBatchDownload({
       done: 0,
       total: pending.length,
@@ -466,9 +438,13 @@ export const AudioProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       startedAt,
     });
     let done = 0;
+    let cancelled = false;
 
     for (const surah of pending) {
-      if (batchAbortRef.current) break;
+      if (batchAbortRef.current || controller.signal.aborted) {
+        cancelled = true;
+        break;
+      }
       const url = getAudioUrl(moshaf, surah);
       try {
         setDownloadProgress((prev) => ({ ...prev, [url]: 0 }));
@@ -481,16 +457,29 @@ export const AudioProvider: React.FC<{ children: React.ReactNode }> = ({ childre
           reciterName: reciter.name,
           startedAt,
         });
-        await downloadAndCacheUrl(url, (progress) => {
-          const clamped = Math.min(100, Math.max(0, progress));
-          setDownloadProgress((prev) => ({ ...prev, [url]: clamped }));
-          setBatchDownload((prev) =>
-            prev?.active
-              ? { ...prev, fileProgress: Math.max(prev.fileProgress, clamped) }
-              : prev
-          );
-        });
-        // Clear file progress before incrementing done to avoid double-count rollbacks
+        await downloadAndCacheUrl(
+          url,
+          (progress) => {
+            if (controller.signal.aborted) return;
+            const clamped = Math.min(100, Math.max(0, progress));
+            setDownloadProgress((prev) => ({ ...prev, [url]: clamped }));
+            setBatchDownload((prev) =>
+              prev?.active
+                ? { ...prev, fileProgress: Math.max(prev.fileProgress, clamped) }
+                : prev
+            );
+          },
+          controller.signal
+        );
+        if (controller.signal.aborted || batchAbortRef.current) {
+          cancelled = true;
+          setDownloadProgress((prev) => {
+            const next = { ...prev };
+            delete next[url];
+            return next;
+          });
+          break;
+        }
         setDownloadProgress((prev) => {
           const next = { ...prev };
           delete next[url];
@@ -508,12 +497,20 @@ export const AudioProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         });
         await refreshCacheInfo();
       } catch (e) {
-        console.error('Failed to download surah in batch', surah.id, e);
+        const aborted =
+          batchAbortRef.current ||
+          controller.signal.aborted ||
+          (e instanceof DOMException && e.name === 'AbortError');
         setDownloadProgress((prev) => {
           const next = { ...prev };
           delete next[url];
           return next;
         });
+        if (aborted) {
+          cancelled = true;
+          break;
+        }
+        console.error('Failed to download surah in batch', surah.id, e);
         setBatchDownload({
           done,
           total: pending.length,
@@ -526,17 +523,52 @@ export const AudioProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       }
     }
 
+    batchAbortControllerRef.current = null;
+    setDownloadProgress({});
     setBatchDownload({
       done,
       total: pending.length,
-      fileProgress: 0,
+      fileProgress: cancelled ? 0 : 100,
       currentSurahName: undefined,
       active: false,
       reciterName: reciter.name,
       startedAt,
     });
-    window.setTimeout(() => setBatchDownload(null), 3200);
+    window.setTimeout(() => setBatchDownload(null), cancelled ? 1600 : 3200);
   }, [batchDownload?.active, refreshCacheInfo]);
+
+  const downloadSurah = useCallback(async (reciter: Reciter, moshaf: Moshaf, surah: Surah) => {
+    await downloadSurahs(reciter, moshaf, [surah]);
+  }, [downloadSurahs]);
+
+  const cancelBatchDownload = useCallback(() => {
+    batchAbortRef.current = true;
+    batchAbortControllerRef.current?.abort();
+    setDownloadProgress({});
+    setBatchDownload((prev) =>
+      prev?.active
+        ? {
+            ...prev,
+            active: false,
+            fileProgress: 0,
+            currentSurahName: undefined,
+          }
+        : prev
+    );
+  }, []);
+
+  const downloadAllSurahs = useCallback(async (reciter: Reciter, moshaf: Moshaf) => {
+    if (batchDownload?.active) return;
+
+    const availableIds = moshaf.surah_list
+      .split(',')
+      .map((s) => parseInt(s.trim(), 10))
+      .filter((n) => !Number.isNaN(n));
+    const surahs = SURAHS.filter((surah) => availableIds.includes(surah.id));
+    if (surahs.length === 0) return;
+
+    await downloadSurahs(reciter, moshaf, surahs);
+  }, [batchDownload?.active, downloadSurahs]);
 
   const deleteAllSurahs = useCallback(async (_reciter: Reciter, moshaf: Moshaf) => {
     if (batchDownload?.active) return;
@@ -1364,6 +1396,7 @@ export const AudioProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       cacheInfo,
       batchDownload,
       downloadSurah,
+      downloadSurahs,
       downloadAllSurahs,
       deleteAllSurahs,
       cancelBatchDownload,
